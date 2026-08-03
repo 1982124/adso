@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Providers } from "@/components/Providers";
 import { Toaster } from "@/components/ui/toaster";
 
 const geistSans = Geist({
@@ -14,26 +15,29 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ADSO Blueprint — Global AI Driving Education Ecosystem",
+  title: "ADSO — Auto Drive School Online",
   description:
-    "Document de Spécification Maître — Auto Drive School Online. Blueprint complet de l'écosystème mondial d'éducation à la conduite par IA 2026-2030.",
+    "La première plateforme intelligente de conduite automobile. Formation accessible, personnalisée et de qualité pour chaque conducteur dans le monde.",
   keywords: [
     "ADSO",
-    "Blueprint",
     "Auto Drive School Online",
-    "AI Driving Education",
-    "Spécification",
-    "Écosystème IA",
-    "2026-2030",
+    "conduite automobile",
+    "permis de conduire",
+    "formation en ligne",
+    "IA",
+    "intelligence artificielle",
+    "code de la route",
+    "quiz",
+    "auto-école",
   ],
   authors: [{ name: "ADSO Engineering" }],
   icons: {
     icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
   },
   openGraph: {
-    title: "ADSO Blueprint — Global AI Driving Education Ecosystem",
+    title: "ADSO — Auto Drive School Online",
     description:
-      "Document de Spécification Maître — Blueprint 2026-2030 pour l'écosystème mondial d'éducation à la conduite automobile par IA.",
+      "Démocratiser l'éducation à la conduite grâce à l'intelligence artificielle. Formation accessible, personnalisée et de qualité pour chaque conducteur.",
     type: "website",
   },
 };
@@ -48,7 +52,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        {children}
+        <Providers>
+          {children}
+        </Providers>
         <Toaster />
       </body>
     </html>
