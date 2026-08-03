@@ -14,27 +14,26 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ADSO — Auto Drive School Online | La plateforme de conduite intelligente",
+  title: "ADSO Blueprint — Global AI Driving Education Ecosystem",
   description:
-    "ADSO démocratise l'accès à la formation à la conduite automobile grâce à l'IA. Cours en ligne, AI Coach personnel, examens adaptatifs et certification mondiale.",
+    "Document de Spécification Maître — Auto Drive School Online. Blueprint complet de l'écosystème mondial d'éducation à la conduite par IA 2026-2030.",
   keywords: [
     "ADSO",
+    "Blueprint",
     "Auto Drive School Online",
-    "conduite",
-    "code de la route",
-    "école de conduite en ligne",
-    "IA",
-    "permis de conduire",
-    "formation automobile",
+    "AI Driving Education",
+    "Spécification",
+    "Écosystème IA",
+    "2026-2030",
   ],
-  authors: [{ name: "ADSO Team" }],
+  authors: [{ name: "ADSO Engineering" }],
   icons: {
     icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
   },
   openGraph: {
-    title: "ADSO — Auto Drive School Online",
+    title: "ADSO Blueprint — Global AI Driving Education Ecosystem",
     description:
-      "La première plateforme intelligente et mondiale dédiée à l'apprentissage de la conduite automobile.",
+      "Document de Spécification Maître — Blueprint 2026-2030 pour l'écosystème mondial d'éducation à la conduite automobile par IA.",
     type: "website",
   },
 };

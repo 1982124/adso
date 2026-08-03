@@ -43,73 +43,69 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/*
+ * ADSO Blueprint Theme — Dark Navy + Cyan/Teal
+ * Inspired by professional specification PDF documents
+ */
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+
+  /* Deep navy backgrounds */
+  --background: #020617;           /* slate-950 */
+  --foreground: #e2e8f0;           /* slate-200 */
+
+  /* Cards — slightly lighter for contrast */
+  --card: rgba(15, 23, 42, 0.6);  /* slate-900/60 */
+  --card-foreground: #e2e8f0;      /* slate-200 */
+
+  /* Popovers */
+  --popover: #0f172a;              /* slate-900 */
+  --popover-foreground: #e2e8f0;   /* slate-200 */
+
+  /* Primary = cyan-500 accent */
+  --primary: #06b6d4;              /* cyan-500 */
+  --primary-foreground: #020617;   /* slate-950 */
+
+  /* Secondary — subtle slate */
+  --secondary: #1e293b;            /* slate-800 */
+  --secondary-foreground: #cbd5e1; /* slate-300 */
+
+  /* Muted */
+  --muted: #1e293b;                /* slate-800 */
+  --muted-foreground: #94a3b8;     /* slate-400 */
+
+  /* Accent — cyan tinted */
+  --accent: rgba(6, 182, 212, 0.12); /* cyan-500/12 */
+  --accent-foreground: #22d3ee;    /* cyan-400 */
+
+  /* Destructive */
+  --destructive: #ef4444;          /* red-500 */
+
+  /* Borders & inputs */
+  --border: rgba(148, 163, 184, 0.15); /* slate-400/15 */
+  --input: rgba(148, 163, 184, 0.2);   /* slate-400/20 */
+  --ring: #06b6d4;                  /* cyan-500 */
+
+  /* Charts — cyan-teal palette */
+  --chart-1: #06b6d4;              /* cyan-500 */
+  --chart-2: #14b8a6;              /* teal-500 */
+  --chart-3: #0ea5e9;              /* sky-500 */
+  --chart-4: #22d3ee;              /* cyan-400 */
+  --chart-5: #2dd4bf;              /* teal-400 */
+
+  /* Sidebar */
+  --sidebar: #0f172a;              /* slate-900 */
+  --sidebar-foreground: #cbd5e1;   /* slate-300 */
+  --sidebar-primary: #06b6d4;      /* cyan-500 */
+  --sidebar-primary-foreground: #020617;
+  --sidebar-accent: rgba(6, 182, 212, 0.1); /* cyan-500/10 */
+  --sidebar-accent-foreground: #22d3ee; /* cyan-400 */
+  --sidebar-border: rgba(148, 163, 184, 0.12); /* slate-400/12 */
+  --sidebar-ring: #06b6d4;         /* cyan-500 */
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* Same as :root — always dark for blueprint viewer */
 }
 
 @layer base {
@@ -118,5 +114,23 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Custom scrollbar for blueprint viewer */
+@layer base {
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.25);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.4);
   }
 }

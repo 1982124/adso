@@ -1,47 +1,39 @@
 # ADSO Worklog
 
-## Task 1: Database Schema & Seed
-- Created comprehensive Prisma schema with 10 models: User, Course, Module, StudentProgress, Enrollment, Question, QuizAttempt, ChatMessage, School, AnalyticsEvent
-- Pushed schema to SQLite database
-- Created seed script with 8 French driving courses, 27 modules, 20 quiz questions, 2 demo users (student + instructor), 3 enrollments with progress
+## Phase 1: Initial Landing Page (Replaced)
+- Built initial Next.js app with landing page, quiz, chat, analytics
+- Created Prisma schema, API routes, database seed
+- This was NOT what the user wanted — they wanted a Blueprint Document Viewer
 
-## Task 2: API Routes
-- `/api/courses` — GET list courses with modules and optional user progress
-- `/api/courses/[id]` — GET single course with modules
-- `/api/quiz` — GET random 10-question quiz / POST submit quiz attempt
-- `/api/chat` — POST AI Coach chat using z-ai-web-dev-sdk (ZAI class)
-- `/api/analytics` — GET platform statistics
-- `/api/leaderboard` — GET top quiz scores
+## Phase 2: Blueprint Document Viewer Rebuild (Current)
 
-## Task 3: Landing Sections
-- HeroSection: Full-viewport gradient hero with stats bar (120+ Pays, 2M+ Elèves, 95% Réussite, 500+ Auto-écoles)
-- StatsSection: Global road safety statistics with animated counters (1.35M deaths, 50M injuries, 73% youth, $518B cost)
-- EcosystemSection: CSS-only hierarchy diagram showing all 6 platform layers
+### Task: rebuild-theme (Layout + Theme)
+- Rebuilt globals.css with dark navy theme (slate-950 bg, cyan-500 accents) matching PDF cover
+- Updated layout.tsx with French metadata
+- Created BluePrintLayout.tsx: fixed sidebar with 13-part navigation, IntersectionObserver tracking, mobile hamburger
+- Created BluePrintCover.tsx: PDF cover replica with framer-motion animations
+- Created BlueprintPart.tsx: reusable section wrapper
 
-## Task 4: Features & Dashboard
-- AIFeaturesSection: 6 AI feature cards (Coach, Teacher, Examiner, Simulator, Business Analyst, Support) + AI-SCOS callout
-- StudentDashboard: Interactive dashboard with progress ring, stat cards, course grid with real API data, progress bars
+### Task: rebuild-parts-1-6 (Parts 1-6)
+- VisionEntreprise.tsx: Mission (3 pillars), Vision 2030, Problème Mondial (problems vs solutions), Avantages (5 cards), Positionnement EdTech (comparison)
+- EcosystemeComplet.tsx: 2.1-2.6 with tabs for student app, cards for instructor/SaaS/enterprise/admin, CSS ecosystem diagram
+- ArchitectureTechnique.tsx: Cloud, Frontend stack, 12 backend services, DB schema table, Auth, Storage
+- AISCArchitecture.tsx: AI-SCOS overview, 12 agents in 4×3 grid, inter-agent communication diagram
+- IAProduit.tsx: 8 AI products (Coach, Teacher, Examiner, Simulator, Translation, Business Analyst, Support, Security)
+- Monetisation.tsx: B2C pricing table (4 plans), B2B cards (3 tiers), Marketplace commissions, API tiers, Country pricing zones
 
-## Task 5: Interactive Features
-- QuizSection: Full state machine (idle→playing→results) with real questions, answer feedback, explanations, scoring
-- AIChatSection: Modern chat UI with message bubbles, quick-action chips, loading animation, LLM integration
-- AnalyticsSection: KPI cards + recharts (line, bar, pie) with platform data
+### Task: rebuild-parts-7-13 (Parts 7-13)
+- SecuriteEntreprise.tsx: Data protection, encryption stack, MFA + RBAC, audit logs, backup architecture
+- Internationalisation.tsx: Multi-country stats, 120+ countries, 50+ languages with RTL, 135+ currencies payment methods
+- UXUIDesign.tsx: Atomic design hierarchy, mobile/accessibility principles, conversion funnel
+- DataAnalytics.tsx: 4 dashboard mockups, BI architecture, 6 KPI metrics table
+- DevOps.tsx: Git workflow, 7-stage CI/CD pipeline, 4 environments, performance targets
+- Roadmap.tsx: 5-phase vertical timeline with color-coded status (green/amber-pulsing/slate)
+- DirectivesIA.tsx: 7 mandatory development rules with numbered cards
 
-## Task 6: Business Sections
-- PricingSection: B2C (4 plans: Gratuit/Starter/Pro/Premium) + B2B (3 plans: Starter/Professionnel/Enterprise) with tab switcher
-- RoadmapSection: 5-phase vertical timeline (Fondation→Expansion Mondiale) with color-coded status badges
-- SecuritySection: CISO features (encryption, MFA, audit, backup) + International stats (120+ countries, 50+ languages, 135+ currencies)
-- Footer: 4-column professional footer with branding, navigation, legal links
-
-## Task 13: Final Assembly
-- Created Navbar with scroll detection, mobile menu, active section highlighting
-- Assembled all 12 sections in page.tsx with QueryClientProvider, CTA divider, final CTA section
-- Updated layout.tsx with ADSO branding and French metadata
-- Fixed z-ai-web-dev-sdk import (use default import ZAI class instead of named export LLM)
-
-## Verification
+### Final Assembly
+- Rewrote page.tsx to use BluePrintLayout + all 13 part components
 - All ESLint checks pass (0 errors)
-- All API routes return 200
-- Browser verified: Hero, Stats, Ecosystem, AI Features, Dashboard, Quiz, Chat, Analytics, Pricing, Roadmap, Security, Footer all rendering correctly
-- Quiz interactive flow tested: start → answer → validation with explanation → next question
-- Responsive design verified
+- All 13 sections verified in browser with correct positions
+- Sidebar navigation tracks active section via IntersectionObserver
+- Mobile-responsive with collapsible sidebar drawer
