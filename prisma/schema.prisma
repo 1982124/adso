@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ADSO: Auto Drive School Online ───
+// Prisma Schema — SQLite (development)
+
+// ─── Users & Roles ───
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  avatar        String?
+  role          String   @default("student") // student | instructor | school_admin | enterprise_admin | super_admin
+  country       String   @default("FR")
+  language      String   @default("fr")
+  subscription  String   @default("free") // free | starter | pro | premium
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  studentProgress StudentProgress[]
+  quizAttempts    QuizAttempt[]
+  enrollments     Enrollment[]
+  chatMessages    ChatMessage[]
+}
+
+// ─── Courses & Content ───
+model Course {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  category    String   // theory | practice | safety | regulations | eco-driving | highway
+  level       String   @default("beginner") // beginner | intermediate | advanced
+  duration    Int      // in minutes
+  order       Int      @default(0)
+  icon        String?
+  isPremium   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  modules     Module[]
+  enrollments Enrollment[]
+}
+
+model Module {
+  id          String   @id @default(cuid())
+  courseId    String
+  title       String
+  content     String   // markdown content
+  type        String   @default("lesson") // lesson | video | interactive | quiz
+  order       Int      @default(0)
+  duration    Int      // in minutes
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+// ─── Student Progress ───
+model StudentProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  courseId    String
+  progress    Float    @default(0) // 0-100 percentage
+  status      String   @default("not_started") // not_started | in_progress | completed
+  lastAccess  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollment  Enrollment @relation(fields: [courseId, userId], references: [courseId, userId])
+
+  @@unique([courseId, userId])
+}
+
+model Enrollment {
+  courseId    String
+  userId      String
+  enrolledAt  DateTime @default(now())
+  status      String   @default("active") // active | completed | dropped
+
+  course      Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  progress    StudentProgress?
+
+  @@id([courseId, userId])
+}
+
+// ─── Quiz System ───
+model Question {
+  id          String   @id @default(cuid())
+  courseId    String?
+  question    String
+  options     String   // JSON array of options
+  correctIndex Int     // index of correct answer
+  explanation String
+  difficulty  String   @default("easy") // easy | medium | hard
+  category    String   // regulation | safety | sign | priority
+  createdAt   DateTime @default(now())
+}
+
+model QuizAttempt {
+  id              String   @id @default(cuid())
+  userId          String
+  totalQuestions  Int
+  correctAnswers  Int
+  score           Float
+  duration        Int      // seconds
+  passed          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── AI Chat ───
+model ChatMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  role      String   // user | assistant
+  content   String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── School (B2B) ───
+model School {
+  id          String   @id @default(cuid())
+  name        String
+  country     String
+  city        String
+  plan        String   @default("starter") // starter | professional | enterprise
+  maxStudents Int      @default(50)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ─── Analytics Events ───
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  eventType String   // page_view | quiz_start | quiz_complete | course_start | course_complete
+  userId    String?
+  metadata  String   // JSON
+  createdAt DateTime @default(now())
+}
