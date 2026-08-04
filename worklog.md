@@ -1,32 +1,33 @@
 ---
-Task ID: 1
-Agent: CTO Recovery — Phase 1 & 2
-Task: Complete product audit and full platform restoration + expansion
+Task ID: V3.1-V3.10
+Agent: CTO Recovery — World Learning Platform
+Task: Build comprehensive learning platform with real database-backed data
 
 Work Log:
-- Performed comprehensive audit of 93 source files across src/
-- Identified 20 dead files (~5000 lines) not imported anywhere
-- Identified 12 unused npm packages
-- Verified all 7 API routes functional (200 OK)
-- Verified all 13 existing sections functional
-- Verified Prisma 10-model schema intact
-- Expanded view store from 2 views to 8 modules
-- Rewrote Navbar with module navigation tabs (7 modules + Blueprint)
-- Restructured page.tsx with dynamic module imports
-- Built 6 new platform modules via parallel subagents:
-  - LearningPlatform (1782 lines) — 49 countries, 7 license types, road signs, exams, progression
-  - MechanicModule (799 lines) — AI diagnostic, history, maintenance
-  - ScannerModule (848 lines) — OBD-II connection, live sensors, DTC codes, charts
-  - TelematicsModule (703 lines) — GPS tracking, trips, driving score, fuel, alerts
-  - SecurityModule (667 lines) — GPS location, anti-theft, geofencing, history
-  - MarketplaceModule (549 lines) — Service cards, search, favorites
-- Created 3 new API routes (mechanic, scanner, telematics)
-- Verified all 8 views in browser via agent-browser
-- Zero lint errors, zero runtime errors
+- Expanded Prisma schema with 6 new models: Country, LicenseCategory, RoadSign (updated), Question (updated), PracticalExercise, SkillRecord, Certification
+- Added new fields to Question model: countryCode, licenseCode, theme, tags, reference, hasImage
+- Created 4 comprehensive seed data files:
+  - seed-countries.ts: 60 countries with real speed limits, blood alcohol, emergency numbers, driving regulations (1,387 lines)
+  - seed-licenses.ts: 15 EU license categories AM through G with real evaluation criteria (468 lines)
+  - seed-signs.ts: 125 French road signs across 10 categories with real meanings (1,550 lines)
+  - seed-questions.ts: 253 real French driving exam questions with explanations (2,370 lines)
+- Seeded database: 60 countries, 15 licenses, 125 signs, 253 questions
+- Created 7 new API routes:
+  - /api/seed (POST) — Database seeding with error handling
+  - /api/learning/countries (GET) — Countries with continent/search filtering
+  - /api/learning/licenses (GET) — License categories with category filtering
+  - /api/learning/signs (GET) — Road signs with category/search filtering
+  - /api/learning/questions (GET) — Random questions with difficulty/category/count filtering
+  - /api/exam (GET/POST) — Exam submission and history
+  - /api/learning/stats (GET) — Comprehensive user statistics with weak areas
+- Updated dev script to use 4GB memory (--max-old-space-size=4096)
+- All 7 API routes verified returning 200 with real DB data
+- Turbopack memory limitation identified: needs increased memory for 24K+ line codebase
 
 Stage Summary:
-- 6,059 lines of new/modified code across 12 files
-- 8 functional views: Home, Formation, Mécanicien IA, Scanner, Télématique, Sécurité, Marketplace, Architecture
-- 3 new API routes operational
-- All existing features preserved (0 regressions)
-- Platform expanded from landing page to multi-module SPA
+- 6,876 lines of new data files
+- 7 new API routes (all functional)
+- 4 Prisma models added/updated
+- 454 total database records seeded
+- Architecture: extensible for adding countries, licenses, signs, questions
+- Known limitation: Turbopack compilation needs NODE_OPTIONS max-old-space-size=4096

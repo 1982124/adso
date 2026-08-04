@@ -7,8 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─── ADSO: Auto Drive School Online ───
+// ═══════════════════════════════════════════════════════════
+// ADSO V3 — Auto Drive School Online — World Learning Platform
 // Prisma Schema — SQLite (development)
+// ═══════════════════════════════════════════════════════════
 
 // ─── Users & Roles ───
 model User {
@@ -23,11 +25,61 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  // Relations
   studentProgress StudentProgress[]
   quizAttempts    QuizAttempt[]
   enrollments     Enrollment[]
   chatMessages    ChatMessage[]
+  skillRecords    SkillRecord[]
+  certifications  Certification[]
+}
+
+// ─── Countries & Regulations ───
+model Country {
+  id               String   @id @default(cuid())
+  code             String   @unique // ISO 3166-1 alpha-2: FR, ML, US...
+  name             String
+  flag             String   // emoji: 🇫🇷
+  continent        String   // Europe, Africa, Asia, Americas, Oceania
+  capital          String
+  languages        String   // JSON array: ["Français", "Anglais"]
+  currency         String   // JSON: {"code":"EUR","symbol":"€","name":"Euro"}
+  drivingSide      String   @default("right") // left | right
+  authority        String   // Competent authority name
+  emergencyPhone   String   // e.g., 15, 112, 911
+  minAge           Int      @default(18)
+  speedUrban       Int      // km/h
+  speedRural       Int      // km/h
+  speedHighway     Int      // km/h
+  bloodAlcohol     Float    // g/L, e.g., 0.5
+  requiredDocuments String   // JSON array of required documents
+  requiredEquipment String   // JSON array of required equipment
+  specialFeatures  String   // JSON array of national particularities
+  licenseCategories String  // JSON array of category codes: ["AM","A1","A2","A","B","BE","C1","C","CE","D1","D","DE","F","G"]
+  commonInfractions String  // JSON array of frequent infractions
+  sanctions       String   // JSON array of sanction details
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+// ─── License Categories ───
+model LicenseCategory {
+  id               String   @id @default(cuid())
+  code             String   @unique // AM, A1, A2, A, B, B96, BE, C1, C, CE, D1, D, DE, F, G
+  name             String
+  description      String
+  category         String   // motorcycle | automobile | heavy | special
+  minAge           Int
+  minAgeHeld       Int?     // age if holding lower license (e.g., A2 -> A)
+  vehicles         String   // JSON array of authorized vehicle types
+  prerequisites    String   // JSON array of prerequisite codes
+  duration         Int      // average months to obtain
+  theoryExam       Boolean  @default(true)
+  practicalExam    Boolean  @default(true)
+  evaluationCriteria String // JSON array of evaluation criteria
+  icon             String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 // ─── Courses & Content ───
@@ -35,12 +87,14 @@ model Course {
   id          String   @id @default(cuid())
   title       String
   description String
-  category    String   // theory | practice | safety | regulations | eco-driving | highway
+  category    String   // theory | practice | safety | regulations | eco-driving | highway | night | weather | first_aid
   level       String   @default("beginner") // beginner | intermediate | advanced
   duration    Int      // in minutes
   order       Int      @default(0)
   icon        String?
   isPremium   Boolean  @default(false)
+  countryCode String   @default("FR")
+  licenseCode String?  // associated license category code
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -53,9 +107,12 @@ model Module {
   courseId    String
   title       String
   content     String   // markdown content
-  type        String   @default("lesson") // lesson | video | interactive | quiz
+  type        String   @default("lesson") // lesson | video | interactive | quiz | summary
   order       Int      @default(0)
   duration    Int      // in minutes
+  objectives  String?  // JSON array of learning objectives
+  tips        String?  // JSON array of tips
+  commonMistakes String? // JSON array of common mistakes
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -64,17 +121,18 @@ model Module {
 
 // ─── Student Progress ───
 model StudentProgress {
-  id          String   @id @default(cuid())
-  userId      String
-  courseId    String
-  progress    Float    @default(0) // 0-100 percentage
-  status      String   @default("not_started") // not_started | in_progress | completed
-  lastAccess  DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  userId        String
+  courseId      String
+  progress      Float    @default(0) // 0-100 percentage
+  status        String   @default("not_started") // not_started | in_progress | completed
+  completedModules String? // JSON array of completed module IDs
+  lastAccess    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  enrollment  Enrollment @relation(fields: [courseId, userId], references: [courseId, userId])
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollment    Enrollment @relation(fields: [courseId, userId], references: [courseId, userId])
 
   @@unique([courseId, userId])
 }
@@ -92,17 +150,41 @@ model Enrollment {
   @@id([courseId, userId])
 }
 
-// ─── Quiz System ───
+// ─── Road Signs ───
+model RoadSign {
+  id            String   @id @default(cuid())
+  countryCode   String   @default("FR")
+  category      String   // danger | prohibition | obligation | priority | direction | information | service | temporary | marking | traffic_light | agent_gesture
+  subcategory   String?  // e.g., "speed_limit", "no_entry"
+  name          String
+  description   String
+  meaning       String   // detailed meaning
+  useCase       String?  // when/where this sign applies
+  shape         String   // circle | triangle | octagon | rectangle | diamond | arrow
+  colors        String   // JSON: ["red","white"]
+  imageUrl      String?  // future image URL
+  questions     String?  // JSON array of associated question IDs
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// ─── Question Bank ───
 model Question {
-  id          String   @id @default(cuid())
-  courseId    String?
-  question    String
-  options     String   // JSON array of options
-  correctIndex Int     // index of correct answer
-  explanation String
-  difficulty  String   @default("easy") // easy | medium | hard
-  category    String   // regulation | safety | sign | priority
-  createdAt   DateTime @default(now())
+  id            String   @id @default(cuid())
+  countryCode   String   @default("FR")
+  licenseCode   String?  // associated license code
+  courseId      String?
+  question      String
+  options       String   // JSON array of options
+  correctIndex  Int
+  explanation   String
+  difficulty    String   @default("easy") // easy | medium | hard
+  category      String   // regulation | safety | sign | priority | highway | intersection | parking | first_aid | eco_driving | weather | vehicle
+  theme         String?  // specific theme: "roundabout", "pedestrian", etc.
+  tags          String?  // JSON array of tags
+  reference     String?  // regulatory reference
+  hasImage      Boolean  @default(false)
+  createdAt     DateTime @default(now())
 }
 
 model QuizAttempt {
@@ -113,9 +195,70 @@ model QuizAttempt {
   score           Float
   duration        Int      // seconds
   passed          Boolean  @default(false)
+  type            String   @default("practice") // practice | mock_exam | official | adaptive
+  country         String   @default("FR")
+  licenseCode     String?
+  wrongAnswers    String?  // JSON array of wrong question IDs for error analysis
   createdAt       DateTime @default(now())
 
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── Practical Exercises ───
+model PracticalExercise {
+  id            String   @id @default(cuid())
+  title         String
+  description   String
+  category      String   // city | highway | rural | mountain | night | rain | fog | snow | parking | maneuver | intersection | priority | roundabout | overtaking | emergency_braking | eco_driving
+  difficulty    String   @default("beginner")
+  objectives    String   // JSON array
+  steps         String   // JSON array of ordered steps
+  criteria      String   // JSON array of evaluation criteria
+  tips          String?  // JSON array
+  scoring       String?  // JSON: scoring rubric
+  countryCode   String   @default("FR")
+  licenseCode   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// ─── Skill Tracking ───
+model SkillRecord {
+  id            String   @id @default(cuid())
+  userId        String
+  skill         String   // e.g., "priority_management", "parking", "highway_entry"
+  category      String   // theory | practice | behavior | knowledge
+  level         Int      @default(0) // 0-100 mastery level
+  attempts      Int      @default(0)
+  lastAttempt   DateTime?
+  strengths     String?  // JSON array of strength descriptions
+  weaknesses    String?  // JSON array of weakness descriptions
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, skill])
+}
+
+// ─── Certifications ───
+model Certification {
+  id            String   @id @default(cuid())
+  userId        String
+  type          String   // course_completion | exam_passed | full_license | safety_award
+  title         String
+  description   String
+  countryCode   String   @default("FR")
+  licenseCode   String?
+  score         Float?
+  qrCode        String?  // verification QR code hash
+  certificateId String   @unique // public verification ID
+  issuedAt      DateTime @default(now())
+  expiresAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // ─── AI Chat ───
@@ -144,7 +287,7 @@ model School {
 // ─── Analytics Events ───
 model AnalyticsEvent {
   id        String   @id @default(cuid())
-  eventType String   // page_view | quiz_start | quiz_complete | course_start | course_complete
+  eventType String   // page_view | quiz_start | quiz_complete | course_start | course_complete | exam_start | exam_complete | sign_viewed | skill_updated
   userId    String?
   metadata  String   // JSON
   createdAt DateTime @default(now())
