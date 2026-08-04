@@ -118,7 +118,7 @@ export default function Home() {
         {currentView === 'telematics' && <TelematicsModule />}
         {currentView === 'security' && <SecurityModule />}
         {currentView === 'marketplace' && <MarketplaceModule />}
-        {currentView === 'insurance' && <InsuranceModule />}
+        {currentView === "insurance" && <InsuranceModule />}
         {currentView === 'fleet' && <FleetModule />}
         {currentView === 'government' && <GovernmentModule />}
         {currentView === 'enterprise' && <EnterpriseModule />}

@@ -1,0 +1,1938 @@
+     1→'use client'
+     2→
+     3→import { useState, useEffect, useCallback } from 'react'
+     4→import { motion } from 'framer-motion'
+     5→import {
+     6→  Shield,
+     7→  FileCheck,
+     8→  AlertTriangle,
+     9→  BarChart3,
+    10→  Activity,
+    11→  TrendingUp,
+    12→  TrendingDown,
+    13→  Share2,
+    14→  Plus,
+    15→  Clock,
+    16→  CheckCircle2,
+    17→  XCircle,
+    18→  Eye,
+    19→  MapPin,
+    20→  Calendar,
+    21→  Camera,
+    22→  Send,
+    23→  ChevronRight,
+    24→  Bell,
+    25→  Search,
+    26→  Award,
+    27→  Zap,
+    28→  Heart,
+    29→  Phone,
+    30→  Siren,
+    31→  Gauge,
+    32→  Route,
+    33→  Star,
+    34→  Users,
+    35→  FileText,
+    36→  CircleDollarSign,
+    37→  Target,
+    38→  ShieldCheck,
+    39→  ShieldAlert,
+    40→  BrainCircuit,
+    41→  Wrench,
+    42→  AlertOctagon,
+    43→  Info,
+    44→  ArrowRight,
+    45→} from 'lucide-react'
+    46→import {
+    47→  Card,
+    48→  CardContent,
+    49→  CardDescription,
+    50→  CardHeader,
+    51→  CardTitle,
+    52→} from '@/components/ui/card'
+    53→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+    54→import { Badge } from '@/components/ui/badge'
+    55→import { Button } from '@/components/ui/button'
+    56→import { Input } from '@/components/ui/input'
+    57→import { Label } from '@/components/ui/label'
+    58→import { Textarea } from '@/components/ui/textarea'
+    59→import { Progress } from '@/components/ui/progress'
+    60→import { Separator } from '@/components/ui/separator'
+    61→import { Skeleton } from '@/components/ui/skeleton'
+    62→import {
+    63→  Select,
+    64→  SelectContent,
+    65→  SelectItem,
+    66→  SelectTrigger,
+    67→  SelectValue,
+    68→} from '@/components/ui/select'
+    69→import {
+    70→  Table,
+    71→  TableBody,
+    72→  TableCell,
+    73→  TableHead,
+    74→  TableHeader,
+    75→  TableRow,
+    76→} from '@/components/ui/table'
+    77→import {
+    78→  Dialog,
+    79→  DialogContent,
+    80→  DialogDescription,
+    81→  DialogHeader,
+    82→  DialogTitle,
+    83→  DialogTrigger,
+    84→} from '@/components/ui/dialog'
+    85→import {
+    86→  LineChart,
+    87→  Line,
+    88→  BarChart,
+    89→  Bar,
+    90→  XAxis,
+    91→  YAxis,
+    92→  CartesianGrid,
+    93→  Tooltip,
+    94→  ResponsiveContainer,
+    95→  AreaChart,
+    96→  Area,
+    97→  RadarChart,
+    98→  PolarGrid,
+    99→  PolarAngleAxis,
+   100→  PolarRadiusAxis,
+   101→  Radar,
+   102→} from 'recharts'
+   103→
+   104→// ─── Types ───────────────────────────────────────────────────
+   105→interface TrustScoreData {
+   106→  id: string
+   107→  overallScore: number
+   108→  drivingQuality: number
+   109→  mechanicalHealth: number
+   110→  maintenanceQuality: number
+   111→  learningProgress: number
+   112→  examPerformance: number
+   113→  telematicsScore: number
+   114→  accidentHistory: number
+   115→  fraudRisk: number
+   116→  compliance: number
+   117→  lastCalculated: string
+   118→}
+   119→
+   120→interface Policy {
+   121→  id: string
+   122→  policyNumber: string
+   123→  type: string
+   124→  provider: string
+   125→  vehicleType: string
+   126→  premium: number
+   127→  deductible: number
+   128→  status: string
+   129→  startDate: string
+   130→  endDate: string
+   131→  paydEnabled: boolean
+   132→  phydEnabled: boolean
+   133→}
+   134→
+   135→interface Claim {
+   136→  id: string
+   137→  policyId: string
+   138→  type: string
+   139→  status: string
+   140→  description: string
+   141→  damageAssessment: string | null
+   142→  estimatedCost: number | null
+   143→  approvedAmount: number | null
+   144→  location: string | null
+   145→  incidentDate: string | null
+   146→  createdAt: string
+   147→}
+   148→
+   149→interface RiskData {
+   150→  vehicleRiskScore: number
+   151→  driverRiskLevel: string
+   152→  locationRisk: number
+   153→  riskFactors: { name: string; value: number; description: string }[]
+   154→ premiumRecommendation: number
+   155→}
+   156→
+   157→// ─── Mock Data ───────────────────────────────────────────────
+   158→const scoreHistory = [
+   159→  { mois: 'Jan', score: 62 },
+   160→  { mois: 'Fév', score: 65 },
+   161→  { mois: 'Mar', score: 64 },
+   162→  { mois: 'Avr', score: 70 },
+   163→  { mois: 'Mai', score: 73 },
+   164→  { mois: 'Jun', score: 76 },
+   165→  { mois: 'Jul', score: 78 },
+   166→  { mois: 'Aoû', score: 82 },
+   167→]
+   168→
+   169→const mockPolicies: Policy[] = [
+   170→  {
+   171→    id: 'pol-1',
+   172→    policyNumber: 'ADS-2024-001478',
+   173→    type: 'Tous risques',
+   174→    provider: 'ADSO Assurances',
+   175→    vehicleType: 'Renault Clio V',
+   176→    premium: 890,
+   177→    deductible: 150,
+   178→    status: 'active',
+   179→    startDate: '2024-01-15',
+   180→    endDate: '2025-01-15',
+   181→    paydEnabled: true,
+   182→    phydEnabled: true,
+   183→  },
+   184→  {
+   185→    id: 'pol-2',
+   186→    policyNumber: 'ADS-2024-001902',
+   187→    type: 'Responsabilité civile',
+   188→    provider: 'ADSO Assurances',
+   189→    vehicleType: 'Peugeot 208',
+   190→    premium: 420,
+   191→    deductible: 0,
+   192→    status: 'active',
+   193→    startDate: '2024-03-01',
+   194→    endDate: '2025-03-01',
+   195→    paydEnabled: false,
+   196→    phydEnabled: false,
+   197→  },
+   198→  {
+   199→    id: 'pol-3',
+   200→    policyNumber: 'ADS-2024-002356',
+   201→    type: 'Collision',
+   202→    provider: 'Mutuelle Mobilité',
+   203→    vehicleType: 'Citroën C3',
+   204→    premium: 650,
+   205→    deductible: 200,
+   206→    status: 'pending',
+   207→    startDate: '2024-09-01',
+   208→    endDate: '2025-09-01',
+   209→    paydEnabled: true,
+   210→    phydEnabled: false,
+   211→  },
+   212→]
+   213→
+   214→const mockClaims: Claim[] = [
+   215→  {
+   216→    id: 'clm-1',
+   217→    policyId: 'pol-1',
+   218→    type: 'collision',
+   219→    status: 'approved',
+   220→    description: 'Accrochage à un carrefour lors d\'un tour à droite. Autre véhicule endommagé au niveau du pare-chocs avant.',
+   221→    damageAssessment: JSON.stringify({
+   222→      severity: 'modéré',
+   223→      zones: ['pare-chocs avant', 'phaire gauche'],
+   224→      repairTime: '3 jours',
+   225→      parts: ['pare-chocs', 'phaire', 'support phare'],
+   226→    }),
+   227→    estimatedCost: 1850,
+   228→    approvedAmount: 1650,
+   229→    location: 'Paris 11ème, Bd Voltaire',
+   230→    incidentDate: '2024-06-15T14:30:00',
+   231→    createdAt: '2024-06-15T15:00:00',
+   232→  },
+   233→  {
+   234→    id: 'clm-2',
+   235→    policyId: 'pol-1',
+   236→    type: 'vandalisme',
+   237→    status: 'reviewing',
+   238→    description: 'Rayures profondes sur le côté gauche du véhicule, probablement causées par une clé.',
+   239→    damageAssessment: JSON.stringify({
+   240→      severity: 'léger',
+   241→      zones: ['porte conducteur', 'aile arrière gauche'],
+   242→      repairTime: '2 jours',
+   243→      parts: ['repeinture porte', 'repeinture aile'],
+   244→    }),
+   245→    estimatedCost: 620,
+   246→    approvedAmount: null,
+   247→    location: 'Lyon 3ème, Rue de la Part-Dieu',
+   248→    incidentDate: '2024-08-02T08:00:00',
+   249→    createdAt: '2024-08-02T09:30:00',
+   250→  },
+   251→  {
+   252→    id: 'clm-3',
+   253→    policyId: 'pol-1',
+   254→    type: 'intempérie',
+   255→    status: 'paid',
+   256→    description: 'Dégâts causés par la grêle sur le toit et le capot du véhicule.',
+   257→    damageAssessment: JSON.stringify({
+   258→      severity: 'modéré',
+   259→      zones: ['toit', 'capot'],
+   260→      repairTime: '4 jours',
+   261→      parts: ['débosselage toit', 'débosselage capot', 'peinture'],
+   262→    }),
+   263→    estimatedCost: 2100,
+   264→    approvedAmount: 1890,
+   265→    location: 'Marseille, Vieux Port',
+   266→    incidentDate: '2024-05-20T16:00:00',
+   267→    createdAt: '2024-05-20T17:00:00',
+   268→  },
+   269→  {
+   270→    id: 'clm-4',
+   271→    policyId: 'pol-2',
+   272→    type: 'vol',
+   273→    status: 'submitted',
+   274→    description: 'Tentative de vol du véhicule. Vitre brisée et colonne de direction endommagée.',
+   275→    damageAssessment: null,
+   276→    estimatedCost: null,
+   277→    approvedAmount: null,
+   278→    location: 'Toulouse, Place du Capitole',
+   279→    incidentDate: '2024-08-10T22:00:00',
+   280→    createdAt: '2024-08-11T08:00:00',
+   281→  },
+   282→  {
+   283→    id: 'clm-5',
+   284→    policyId: 'pol-1',
+   285→    type: 'collision',
+   286→    status: 'denied',
+   287→    description: 'Collision avec un poteau en marchant arrière dans un parking.',
+   288→    damageAssessment: JSON.stringify({
+   289→      severity: 'léger',
+   290→      zones: ['pare-chocs arrière'],
+   291→      repairTime: '1 jour',
+   292→      parts: ['pare-chocs arrière'],
+   293→    }),
+   294→    estimatedCost: 450,
+   295→    approvedAmount: 0,
+   296→    location: 'Bordeaux, Parking Sainte-Catherine',
+   297→    incidentDate: '2024-04-05T10:00:00',
+   298→    createdAt: '2024-04-05T11:00:00',
+   299→  },
+   300→]
+   301→
+   302→const mockRiskData: RiskData = {
+   303→  vehicleRiskScore: 35,
+   304→  driverRiskLevel: 'Faible',
+   305→  locationRisk: 42,
+   306→  riskFactors: [
+   307→    { name: 'Âge du conducteur', value: 15, description: 'Conducteur expérimenté (30-45 ans)' },
+   308→    { name: 'Historique accidents', value: 25, description: '2 sinistres en 3 ans' },
+   309→    { name: 'Kilométrage annuel', value: 40, description: 'Environ 12 000 km/an' },
+   310→    { name: 'Zone géographique', value: 42, description: 'Zone urbaine moyenne' },
+   311→    { name: 'Type de véhicule', value: 20, description: 'Berline compacte, catégorie standard' },
+   312→    { name: 'Score de conduite', value: 18, description: 'Excellent comportement de conduite' },
+   313→    { name: 'Fréquence d\'utilisation', value: 30, description: 'Usage quotidien modéré' },
+   314→    { name: 'Stationnement', value: 50, description: 'Stationnement principalement en rue' },
+   315→  ],
+   316→  premiumRecommendation: 780,
+   317→}
+   318→
+   319→const telematicsWeekly = [
+   320→  { jour: 'Lun', score: 78, km: 32 },
+   321→  { jour: 'Mar', score: 82, km: 28 },
+   322→  { jour: 'Mer', score: 75, km: 45 },
+   323→  { jour: 'Jeu', score: 88, km: 22 },
+   324→  { jour: 'Ven', score: 71, km: 51 },
+   325→  { jour: 'Sam', score: 65, km: 68 },
+   326→  { jour: 'Dim', score: 60, km: 15 },
+   327→]
+   328→
+   329→const radarData = [
+   330→  { subject: 'Freinage', A: 85, fullMark: 100 },
+   331→  { subject: 'Accélération', A: 78, fullMark: 100 },
+   332→  { subject: 'Vitesse', A: 90, fullMark: 100 },
+   333→  { subject: 'Virages', A: 72, fullMark: 100 },
+   334→  { subject: 'Distance', A: 88, fullMark: 100 },
+   335→  { subject: 'Anticipation', A: 80, fullMark: 100 },
+   336→]
+   337→
+   338→const tripScores = [
+   339→  { id: 1, date: '08/08/2024', depart: 'Domicile', arrivee: 'Bureau', distance: '12 km', duree: '25 min', score: 85 },
+   340→  { id: 2, date: '08/08/2024', depart: 'Bureau', arrivee: 'Domicile', distance: '14 km', duree: '32 min', score: 72 },
+   341→  { id: 3, date: '07/08/2024', depart: 'Domicile', arrivee: 'Centre commercial', distance: '8 km', duree: '18 min', score: 91 },
+   342→  { id: 4, date: '07/08/2024', depart: 'Centre commercial', arrivee: 'Domicile', distance: '9 km', duree: '20 min', score: 88 },
+   343→  { id: 5, date: '06/08/2024', depart: 'Domicile', arrivee: 'Gare', distance: '18 km', duree: '35 min', score: 65 },
+   344→]
+   345→
+   346→const safeDriverRewards = [
+   347→  { mois: 'Février', prime: '-45 €', niveau: 'Bronze' },
+   348→  { mois: 'Mars', prime: '-62 €', niveau: 'Bronze' },
+   349→  { mois: 'Avril', prime: '-78 €', niveau: 'Argent' },
+   350→  { mois: 'Mai', prime: '-85 €', niveau: 'Argent' },
+   351→  { mois: 'Juin', prime: '-95 €', niveau: 'Or' },
+   352→  { mois: 'Juillet', prime: '-110 €', niveau: 'Or' },
+   353→  { mois: 'Août', prime: '-118 €', niveau: 'Or' },
+   354→]
+   355→
+   356→// ─── Helpers ─────────────────────────────────────────────────
+   357→function getStatusBadge(status: string) {
+   358→  const map: Record<string, { label: string; variant: string }> = {
+   359→    active: { label: 'Active', variant: 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30' },
+   360→    pending: { label: 'En attente', variant: 'bg-amber-600/20 text-amber-400 border-amber-500/30' },
+   361→    expired: { label: 'Expirée', variant: 'bg-slate-600/20 text-slate-400 border-slate-500/30' },
+   362→    cancelled: { label: 'Annulée', variant: 'bg-red-600/20 text-red-400 border-red-500/30' },
+   363→    submitted: { label: 'Soumis', variant: 'bg-blue-600/20 text-blue-400 border-blue-500/30' },
+   364→    reviewing: { label: 'En cours', variant: 'bg-amber-600/20 text-amber-400 border-amber-500/30' },
+   365→    approved: { label: 'Approuvé', variant: 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30' },
+   366→    denied: { label: 'Refusé', variant: 'bg-red-600/20 text-red-400 border-red-500/30' },
+   367→    paid: { label: 'Payé', variant: 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30' },
+   368→    closed: { label: 'Fermé', variant: 'bg-slate-600/20 text-slate-400 border-slate-500/30' },
+   369→  }
+   370→  const s = map[status] || { label: status, variant: 'bg-slate-600/20 text-slate-400 border-slate-500/30' }
+   371→  return <Badge variant="outline" className={s.variant}>{s.label}</Badge>
+   372→}
+   373→
+   374→function getClaimTypeLabel(type: string) {
+   375→  const map: Record<string, string> = {
+   376→    collision: 'Collision',
+   377→    theft: 'Vol',
+   378→    vandalism: 'Vandalisme',
+   379→    weather: 'Intempérie',
+   380→    fire: 'Incendie',
+   381→    flood: 'Inondation',
+   382→    liability: 'Responsabilité civile',
+   383→    uninsured: 'Non assuré',
+   384→  }
+   385→  return map[type] || type
+   386→}
+   387→
+   388→function getScoreColor(score: number): string {
+   389→  if (score >= 80) return 'text-emerald-400'
+   390→  if (score >= 60) return 'text-amber-400'
+   391→  if (score >= 40) return 'text-orange-400'
+   392→  return 'text-red-400'
+   393→}
+   394→
+   395→function getProgressColor(score: number): string {
+   396→  if (score >= 80) return '[&>div]:bg-emerald-500'
+   397→  if (score >= 60) return '[&>div]:bg-amber-500'
+   398→  if (score >= 40) return '[&>div]:bg-orange-500'
+   399→  return '[&>div]:bg-red-500'
+   400→}
+   401→
+   402→// ─── Animated Number ─────────────────────────────────────────
+   403→function AnimatedNumber({ value, className = '' }: { value: number; className?: string }) {
+   404→  const [display, setDisplay] = useState(0)
+   405→  useEffect(() => {
+   406→    let start = 0
+   407→    const end = value
+   408→    const duration = 1200
+   409→    const step = (end - start) / (duration / 16)
+   410→    const timer = setInterval(() => {
+   411→      start += step
+   412→      if ((step > 0 && start >= end) || (step < 0 && start <= end)) {
+   413→        setDisplay(end)
+   414→        clearInterval(timer)
+   415→      } else {
+   416→        setDisplay(Math.round(start))
+   417→      }
+   418→    }, 16)
+   419→    return () => clearInterval(timer)
+   420→  }, [value])
+   421→  return <span className={className}>{display}</span>
+   422→}
+   423→
+   424→// ═══════════════════════════════════════════════════════════════
+   425→// MAIN COMPONENT
+   426→// ═══════════════════════════════════════════════════════════════
+   427→export default function InsuranceModule() {
+   428→  const [loading, setLoading] = useState(true)
+   429→  const [trustScore, setTrustScore] = useState<TrustScoreData | null>(null)
+   430→  const [policies, setPolicies] = useState<Policy[]>([])
+   431→  const [claims, setClaims] = useState<Claim[]>([])
+   432→  const [riskData, setRiskData] = useState<RiskData | null>(null)
+   433→  const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null)
+   434→  const [newClaimOpen, setNewClaimOpen] = useState(false)
+   435→  const [claimForm, setClaimForm] = useState({
+   436→    type: 'collision',
+   437→    description: '',
+   438→    date: '',
+   439→    location: '',
+   440→  })
+   441→
+   442→  const fetchData = useCallback(async () => {
+   443→    setLoading(true)
+   444→    try {
+   445→      const [tsRes, polRes, clRes, riskRes] = await Promise.all([
+   446→        fetch('/api/insurance/trust-score').then(r => r.json()),
+   447→        fetch('/api/insurance/policies').then(r => r.json()),
+   448→        fetch('/api/insurance/claims').then(r => r.json()),
+   449→        fetch('/api/insurance/risk').then(r => r.json()),
+   450→      ])
+   451→      if (tsRes.trustScore) setTrustScore(tsRes.trustScore)
+   452→      else setTrustScore({
+   453→        id: 'ts-mock', overallScore: 78, drivingQuality: 82, mechanicalHealth: 71,
+   454→        maintenanceQuality: 68, learningProgress: 85, examPerformance: 76,
+   455→        telematicsScore: 80, accidentHistory: 55, fraudRisk: 8, compliance: 90,
+   456→        lastCalculated: new Date().toISOString(),
+   457→      })
+   458→      if (polRes.policies?.length) setPolicies(polRes.policies)
+   459→      else setPolicies(mockPolicies)
+   460→      if (clRes.claims?.length) setClaims(clRes.claims)
+   461→      else setClaims(mockClaims)
+   462→      if (riskData) setRiskData(riskData)
+   463→      else setRiskData(mockRiskData)
+   464→    } catch {
+   465→      setTrustScore({
+   466→        id: 'ts-mock', overallScore: 78, drivingQuality: 82, mechanicalHealth: 71,
+   467→        maintenanceQuality: 68, learningProgress: 85, examPerformance: 76,
+   468→        telematicsScore: 80, accidentHistory: 55, fraudRisk: 8, compliance: 90,
+   469→        lastCalculated: new Date().toISOString(),
+   470→      })
+   471→      setPolicies(mockPolicies)
+   472→      setClaims(mockClaims)
+   473→      setRiskData(mockRiskData)
+   474→    }
+   475→    setLoading(false)
+   476→  }, [riskData])
+   477→
+   478→  useEffect(() => { fetchData() }, []) // eslint-disable-line react-hooks/set-state-in-effect
+   479→
+   480→  const handleShareScore = async () => {
+   481→    try {
+   482→      await navigator.clipboard.writeText(`Mon Score de Confiance ADSO : ${trustScore?.overallScore}/100 — Partagé via ADSO Assurance IA`)
+   483→    } catch { /* clipboard not available */ }
+   484→  }
+   485→
+   486→  const handleFileClaim = async () => {
+   487→    if (!claimForm.description || !claimForm.date) return
+   488→    try {
+   489→      await fetch('/api/insurance/claims', {
+   490→        method: 'POST',
+   491→        headers: { 'Content-Type': 'application/json' },
+   492→        body: JSON.stringify(claimForm),
+   493→      })
+   494→      setNewClaimOpen(false)
+   495→      setClaimForm({ type: 'collision', description: '', date: '', location: '' })
+   496→      fetchData()
+   497→    } catch { /* error handled silently */ }
+   498→  }
+   499→
+   500→  const claimsPipeline = [
+   501→    { key: 'submitted', label: 'Soumis', count: claims.filter(c => c.status === 'submitted').length, color: 'border-blue-500 bg-blue-500/10' },
+   502→    { key: 'reviewing', label: 'En cours', count: claims.filter(c => c.status === 'reviewing').length, color: 'border-amber-500 bg-amber-500/10' },
+   503→    { key: 'approved', label: 'Approuvé', count: claims.filter(c => c.status === 'approved').length, color: 'border-emerald-500 bg-emerald-500/10' },
+   504→    { key: 'denied', label: 'Refusé', count: claims.filter(c => c.status === 'denied').length, color: 'border-red-500 bg-red-500/10' },
+   505→    { key: 'paid', label: 'Payé', count: claims.filter(c => c.status === 'paid').length, color: 'border-emerald-400 bg-emerald-400/10' },
+   506→    { key: 'closed', label: 'Fermé', count: claims.filter(c => c.status === 'closed').length, color: 'border-slate-500 bg-slate-500/10' },
+   507→  ]
+   508→
+   509→  if (loading) return <LoadingState />
+   510→  if (!trustScore) return null
+   511→
+   512→  return (
+   513→    <div className="min-h-screen bg-slate-950 pt-20 pb-8">
+   514→      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   515→        {/* Header */}
+   516→        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+   517→          <div className="flex items-center gap-3 mb-2">
+   518→            <div className="w-10 h-10 rounded-xl bg-emerald-600/20 flex items-center justify-center">
+   519→              <Shield className="w-5 h-5 text-emerald-400" />
+   520→            </div>
+   521→            <div>
+   522→              <h1 className="text-2xl sm:text-3xl font-bold text-white">Assurance IA</h1>
+   523→              <p className="text-slate-400 text-sm">Plateforme d'intelligence assurance ADSO v4.1</p>
+   524→            </div>
+   525→          </div>
+   526→        </motion.div>
+   527→
+   528→        <Tabs defaultValue="trust" className="space-y-6">
+   529→          <TabsList className="bg-slate-900 border border-slate-800 flex-wrap h-auto gap-1 p-1">
+   530→            <TabsTrigger value="trust" className="data-[state=active]:bg-emerald-600/20 data-[state=active]:text-emerald-400 text-slate-300">
+   531→              <ShieldCheck className="w-4 h-4 mr-1.5" /><span className="hidden sm:inline">Score de Confiance</span><span className="sm:hidden">Score</span>
+   532→            </TabsTrigger>
+   533→            <TabsTrigger value="dashboard" className="data-[state=active]:bg-emerald-600/20 data-[state=active]:text-emerald-400 text-slate-300">
+   534→              <BarChart3 className="w-4 h-4 mr-1.5" /><span className="hidden sm:inline">Tableau de bord</span><span className="sm:hidden">TdB</span>
+   535→            </TabsTrigger>
+   536→            <TabsTrigger value="claims" className="data-[state=active]:bg-emerald-600/20 data-[state=active]:text-emerald-400 text-slate-300">
+   537→              <FileCheck className="w-4 h-4 mr-1.5" /><span className="hidden sm:inline">Sinistres</span><span className="sm:hidden">Sinistres</span>
+   538→            </TabsTrigger>
+   539→            <TabsTrigger value="fraud" className="data-[state=active]:bg-emerald-600/20 data-[state=active]:text-emerald-400 text-slate-300">
+   540→              <AlertTriangle className="w-4 h-4 mr-1.5" /><span className="hidden sm:inline">Anti-Fraude</span><span className="sm:hidden">Fraude</span>
+   541→            </TabsTrigger>
+   542→            <TabsTrigger value="risk" className="data-[state=active]:bg-emerald-600/20 data-[state=active]:text-emerald-400 text-slate-300">
+   543→              <Target className="w-4 h-4 mr-1.5" /><span className="hidden sm:inline">Évaluation Risque</span><span className="sm:hidden">Risque</span>
+   544→            </TabsTrigger>
+   545→            <TabsTrigger value="accident" className="data-[state=active]:bg-emerald-600/20 data-[state=active]:text-emerald-400 text-slate-300">
+   546→              <AlertTriangle className="w-4 h-4 mr-1.5" /><span className="hidden sm:inline">Accidents</span><span className="sm:hidden">Accidents</span>
+   547→            </TabsTrigger>
+   548→            <TabsTrigger value="telematics" className="data-[state=active]:bg-emerald-600/20 data-[state=active]:text-emerald-400 text-slate-300">
+   549→              <Activity className="w-4 h-4 mr-1.5" /><span className="hidden sm:inline">Télématique</span><span className="sm:hidden">Télém.</span>
+   550→            </TabsTrigger>
+   551→          </TabsList>
+   552→
+   553→          {/* ═══════ TAB 1: TRUST SCORE ═══════ */}
+   554→          <TabsContent value="trust">
+   555→            <TrustScoreTab trustScore={trustScore} scoreHistory={scoreHistory} onShare={handleShareScore} />
+   556→          </TabsContent>
+   557→
+   558→          {/* ═══════ TAB 2: INSURANCE DASHBOARD ═══════ */}
+   559→          <TabsContent value="dashboard">
+   560→            <InsuranceDashboardTab policies={policies} claims={claims} />
+   561→          </TabsContent>
+   562→
+   563→          {/* ═══════ TAB 3: CLAIMS CENTER ═══════ */}
+   564→          <TabsContent value="claims">
+   565→            <ClaimsCenterTab
+   566→              claims={claims}
+   567→              policies={policies}
+   568→              pipeline={claimsPipeline}
+   569→              selectedClaim={selectedClaim}
+   570→              onSelectClaim={setSelectedClaim}
+   571→              newClaimOpen={newClaimOpen}
+   572→              setNewClaimOpen={setNewClaimOpen}
+   573→              claimForm={claimForm}
+   574→              setClaimForm={setClaimForm}
+   575→              onFileClaim={handleFileClaim}
+   576→            />
+   577→          </TabsContent>
+   578→
+   579→          {/* ═══════ TAB 4: FRAUD DETECTION ═══════ */}
+   580→          <TabsContent value="fraud">
+   581→            <FraudDetectionTab trustScore={trustScore} />
+   582→          </TabsContent>
+   583→
+   584→          {/* ═══════ TAB 5: RISK ASSESSMENT ═══════ */}
+   585→          <TabsContent value="risk">
+   586→            <RiskAssessmentTab riskData={riskData} />
+   587→          </TabsContent>
+   588→
+   589→          {/* ═══════ TAB 6: ACCIDENT CENTER ═══════ */}
+   590→          <TabsContent value="accident">
+   591→            <AccidentCenterTab />
+   592→          </TabsContent>
+   593→
+   594→          {/* ═══════ TAB 7: TELEMATICS CENTER ═══════ */}
+   595→          <TabsContent value="telematics">
+   596→            <TelematicsCenterTab />
+   597→          </TabsContent>
+   598→        </Tabs>
+   599→      </div>
+   600→    </div>
+   601→  )
+   602→}
+   603→
+   604→// ═══════════════════════════════════════════════════════════════
+   605→// LOADING STATE
+   606→// ═══════════════════════════════════════════════════════════════
+   607→function LoadingState() {
+   608→  return (
+   609→    <div className="min-h-screen bg-slate-950 pt-20 pb-8">
+   610→      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+   611→        <div className="flex items-center gap-3">
+   612→          <Skeleton className="w-10 h-10 rounded-xl bg-slate-800" />
+   613→          <div className="space-y-2">
+   614→            <Skeleton className="h-8 w-48 bg-slate-800" />
+   615→            <Skeleton className="h-4 w-72 bg-slate-800" />
+   616→          </div>
+   617→        </div>
+   618→        <Skeleton className="h-12 w-full bg-slate-800 rounded-lg" />
+   619→        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+   620→          {[...Array(6)].map((_, i) => (
+   621→            <Skeleton key={i} className="h-48 bg-slate-900 rounded-xl" />
+   622→          ))}
+   623→        </div>
+   624→      </div>
+   625→    </div>
+   626→  )
+   627→}
+   628→
+   629→// ═══════════════════════════════════════════════════════════════
+   630→// TAB 1: TRUST SCORE DASHBOARD
+   631→// ═══════════════════════════════════════════════════════════════
+   632→function TrustScoreTab({
+   633→  trustScore,
+   634→  scoreHistory,
+   635→  onShare,
+   636→}: {
+   637→  trustScore: TrustScoreData
+   638→  scoreHistory: { mois: string; score: number }[]
+   639→  onShare: () => void
+   640→}) {
+   641→  const score = trustScore.overallScore
+   642→  const circumference = 2 * Math.PI * 90
+   643→  const dashOffset = circumference - (score / 100) * circumference
+   644→
+   645→  const factors = [
+   646→    { name: 'Qualité de conduite', value: trustScore.drivingQuality, icon: <AlertTriangle className="w-4 h-4" /> },
+   647→    { name: 'Santé mécanique', value: trustScore.mechanicalHealth, icon: <Wrench className="w-4 h-4" /> },
+   648→    { name: 'Maintenance', value: trustScore.maintenanceQuality, icon: <Wrench className="w-4 h-4" /> },
+   649→    { name: 'Progression apprentissage', value: trustScore.learningProgress, icon: <TrendingUp className="w-4 h-4" /> },
+   650→    { name: 'Performance examens', value: trustScore.examPerformance, icon: <Award className="w-4 h-4" /> },
+   651→    { name: 'Télématique', value: trustScore.telematicsScore, icon: <Activity className="w-4 h-4" /> },
+   652→    { name: 'Historique accidents', value: trustScore.accidentHistory, icon: <AlertOctagon className="w-4 h-4" /> },
+   653→    { name: 'Risque de fraude', value: trustScore.fraudRisk, icon: <ShieldAlert className="w-4 h-4" />, inverse: true },
+   654→    { name: 'Conformité', value: trustScore.compliance, icon: <ShieldCheck className="w-4 h-4" /> },
+   655→  ]
+   656→
+   657→  const recommendations = [
+   658→    { text: 'Planifiez un entretien mécanique pour améliorer votre score de santé véhicule.', priority: 'high' },
+   659→    { text: 'Réduisez les freinages brusques — votre score télématique peut encore s\'améliorer.', priority: 'medium' },
+   660→    { text: 'Passez la certification avancée pour booster votre score de progression.', priority: 'low' },
+   661→  ]
+   662→
+   663→  const getLevel = (s: number) => {
+   664→    if (s >= 90) return { label: 'Excellent', color: 'text-emerald-400' }
+   665→    if (s >= 75) return { label: 'Très bon', color: 'text-emerald-400' }
+   666→    if (s >= 60) return { label: 'Bon', color: 'text-amber-400' }
+   667→    if (s >= 40) return { label: 'Moyen', color: 'text-orange-400' }
+   668→    return { label: 'Faible', color: 'text-red-400' }
+   669→  }
+   670→
+   671→  const level = getLevel(score)
+   672→
+   673→  return (
+   674→    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+   675→      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+   676→        {/* Score Gauge */}
+   677→        <Card className="bg-slate-900 border border-slate-800 rounded-xl lg:col-span-1">
+   678→          <CardHeader className="pb-2">
+   679→            <CardTitle className="text-white text-lg flex items-center gap-2">
+   680→              <ShieldCheck className="w-5 h-5 text-emerald-400" />
+   681→              Score de Confiance ADSO
+   682→            </CardTitle>
+   683→          </CardHeader>
+   684→          <CardContent className="flex flex-col items-center py-6">
+   685→            <div className="relative w-56 h-56 mb-4">
+   686→              <svg className="w-56 h-56 -rotate-90" viewBox="0 0 200 200">
+   687→                <circle cx="100" cy="100" r="90" fill="none" stroke="rgb(30,41,59)" strokeWidth="12" />
+   688→                <circle
+   689→                  cx="100" cy="100" r="90" fill="none"
+   690→                  stroke={score >= 75 ? 'rgb(16,185,129)' : score >= 50 ? 'rgb(245,158,11)' : 'rgb(239,68,68)'}
+   691→                  strokeWidth="12"
+   692→                  strokeDasharray={circumference}
+   693→                  strokeDashoffset={dashOffset}
+   694→                  strokeLinecap="round"
+   695→                  className="transition-all duration-1000 ease-out"
+   696→                />
+   697→              </svg>
+   698→              <div className="absolute inset-0 flex flex-col items-center justify-center">
+   699→                <AnimatedNumber value={score} className={`text-5xl font-bold ${level.color}`} />
+   700→                <span className="text-slate-400 text-sm mt-1">sur 100</span>
+   701→                <span className={`text-xs font-medium mt-1 ${level.color}`}>{level.label}</span>
+   702→              </div>
+   703→            </div>
+   704→            <Button
+   705→              onClick={onShare}
+   706→              variant="outline"
+   707→              className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 mt-2"
+   708→            >
+   709→              <Share2 className="w-4 h-4 mr-2" />
+   710→              Partager avec l\'assureur
+   711→            </Button>
+   712→            <p className="text-slate-500 text-xs mt-3">
+   713→              Dernière mise à jour : {new Date(trustScore.lastCalculated).toLocaleDateString('fr-FR')}
+   714→            </p>
+   715→          </CardContent>
+   716→        </Card>
+   717→
+   718→        {/* Score Breakdown */}
+   719→        <Card className="bg-slate-900 border border-slate-800 rounded-xl lg:col-span-1">
+   720→          <CardHeader className="pb-2">
+   721→            <CardTitle className="text-white text-lg">Détail du Score</CardTitle>
+   722→            <CardDescription className="text-slate-400">Composition par facteur</CardDescription>
+   723→          </CardHeader>
+   724→          <CardContent className="space-y-3 max-h-[400px] overflow-y-auto">
+   725→            {factors.map((f) => (
+   726→              <div key={f.name} className="space-y-1">
+   727→                <div className="flex items-center justify-between text-sm">
+   728→                  <div className="flex items-center gap-2 text-slate-300">
+   729→                    <span className="text-slate-500">{f.icon}</span>
+   730→                    <span>{f.name}</span>
+   731→                  </div>
+   732→                  <span className={`font-medium ${getScoreColor(f.inverse ? 100 - f.value : f.value)}`}>
+   733→                    {f.inverse ? `${100 - f.value}%` : `${f.value}%`}
+   734→                  </span>
+   735→                </div>
+   736→                <Progress
+   737→                  value={f.inverse ? 100 - f.value : f.value}
+   738→                  className={`h-2 ${getProgressColor(f.inverse ? 100 - f.value : f.value)}`}
+   739→                />
+   740→              </div>
+   741→            ))}
+   742→          </CardContent>
+   743→        </Card>
+   744→
+   745→        {/* Trend & Recommendations */}
+   746→        <Card className="bg-slate-900 border border-slate-800 rounded-xl lg:col-span-1">
+   747→          <CardHeader className="pb-2">
+   748→            <CardTitle className="text-white text-lg flex items-center gap-2">
+   749→              <TrendingUp className="w-5 h-5 text-emerald-400" />
+   750→              Évolution
+   751→            </CardTitle>
+   752→          </CardHeader>
+   753→          <CardContent>
+   754→            <div className="h-48">
+   755→              <ResponsiveContainer width="100%" height="100%">
+   756→                <AreaChart data={scoreHistory}>
+   757→                  <defs>
+   758→                    <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
+   759→                      <stop offset="5%" stopColor="rgb(16,185,129)" stopOpacity={0.3} />
+   760→                      <stop offset="95%" stopColor="rgb(16,185,129)" stopOpacity={0} />
+   761→                    </linearGradient>
+   762→                  </defs>
+   763→                  <CartesianGrid strokeDasharray="3 3" stroke="rgb(51,65,85)" />
+   764→                  <XAxis dataKey="mois" stroke="rgb(100,116,139)" fontSize={12} />
+   765→                  <YAxis domain={[0, 100]} stroke="rgb(100,116,139)" fontSize={12} />
+   766→                  <Tooltip
+   767→                    contentStyle={{ backgroundColor: 'rgb(15,23,42)', border: '1px solid rgb(51,65,85)', borderRadius: '8px' }}
+   768→                    labelStyle={{ color: 'rgb(148,163,184)' }}
+   769→                  />
+   770→                  <Area type="monotone" dataKey="score" stroke="rgb(16,185,129)" fill="url(#scoreGrad)" strokeWidth={2} />
+   771→                </AreaChart>
+   772→              </ResponsiveContainer>
+   773→            </div>
+   774→            <Separator className="my-4 bg-slate-800" />
+   775→            <h4 className="text-white text-sm font-medium mb-3 flex items-center gap-2">
+   776→              <Zap className="w-4 h-4 text-amber-400" />
+   777→              Recommandations
+   778→            </h4>
+   779→            <div className="space-y-2">
+   780→              {recommendations.map((r, i) => (
+   781→                <div key={i} className="flex gap-2 text-sm">
+   782→                  <ChevronRight className={`w-4 h-4 mt-0.5 shrink-0 ${r.priority === 'high' ? 'text-red-400' : r.priority === 'medium' ? 'text-amber-400' : 'text-slate-500'}`} />
+   783→                  <p className="text-slate-300">{r.text}</p>
+   784→                </div>
+   785→              ))}
+   786→            </div>
+   787→          </CardContent>
+   788→        </Card>
+   789→      </div>
+   790→    </motion.div>
+   791→  )
+   792→}
+   793→
+   794→// ═══════════════════════════════════════════════════════════════
+   795→// TAB 2: INSURANCE DASHBOARD
+   796→// ═══════════════════════════════════════════════════════════════
+   797→function InsuranceDashboardTab({ policies, claims }: { policies: Policy[]; claims: Claim[] }) {
+   798→  const activePolicies = policies.filter(p => p.status === 'active')
+   799→  const pendingClaims = claims.filter(c => ['submitted', 'reviewing'].includes(c.status))
+   800→  const totalPremium = activePolicies.reduce((s, p) => s + (p.premium || 0), 0)
+   801→  const avgRisk = 35
+   802→
+   803→  const summary = [
+   804→    { label: 'Polices actives', value: activePolicies.length, icon: <FileCheck className="w-5 h-5" />, color: 'text-emerald-400', bg: 'bg-emerald-600/10' },
+   805→    { label: 'Sinistres en cours', value: pendingClaims.length, icon: <Clock className="w-5 h-5" />, color: 'text-amber-400', bg: 'bg-amber-600/10' },
+   806→    { label: 'Prime totale/an', value: `${totalPremium.toLocaleString('fr-FR')} €`, icon: <CircleDollarSign className="w-5 h-5" />, color: 'text-blue-400', bg: 'bg-blue-600/10' },
+   807→    { label: 'Niveau de risque', value: avgRisk <= 30 ? 'Faible' : avgRisk <= 60 ? 'Moyen' : 'Élevé', icon: <Target className="w-5 h-5" />, color: avgRisk <= 30 ? 'text-emerald-400' : avgRisk <= 60 ? 'text-amber-400' : 'text-red-400', bg: avgRisk <= 30 ? 'bg-emerald-600/10' : avgRisk <= 60 ? 'bg-amber-600/10' : 'bg-red-600/10' },
+   808→  ]
+   809→
+   810→  const claimsOverview = [
+   811→    { label: 'Soumis', count: claims.filter(c => c.status === 'submitted').length, color: 'bg-blue-500' },
+   812→    { label: 'En cours', count: claims.filter(c => c.status === 'reviewing').length, color: 'bg-amber-500' },
+   813→    { label: 'Approuvés', count: claims.filter(c => c.status === 'approved').length, color: 'bg-emerald-500' },
+   814→    { label: 'Payés', count: claims.filter(c => c.status === 'paid').length, color: 'bg-emerald-400' },
+   815→  ]
+   816→
+   817→  return (
+   818→    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+   819→      {/* Summary Cards */}
+   820→      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+   821→        {summary.map((s) => (
+   822→          <Card key={s.label} className="bg-slate-900 border border-slate-800 rounded-xl">
+   823→            <CardContent className="p-4">
+   824→              <div className={`w-10 h-10 rounded-lg ${s.bg} flex items-center justify-center mb-3 ${s.color}`}>
+   825→                {s.icon}
+   826→              </div>
+   827→              <p className="text-slate-400 text-xs">{s.label}</p>
+   828→              <p className={`text-xl font-bold ${s.color} mt-1`}>{s.value}</p>
+   829→            </CardContent>
+   830→          </Card>
+   831→        ))}
+   832→      </div>
+   833→
+   834→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+   835→        {/* Active Policies */}
+   836→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+   837→          <CardHeader>
+   838→            <CardTitle className="text-white text-lg flex items-center gap-2">
+   839→              <FileText className="w-5 h-5 text-emerald-400" />
+   840→              Polices actives
+   841→            </CardTitle>
+   842→          </CardHeader>
+   843→          <CardContent>
+   844→            <div className="space-y-3 max-h-96 overflow-y-auto">
+   845→              {policies.map((p) => (
+   846→                <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
+   847→                  <div className="min-w-0 flex-1">
+   848→                    <div className="flex items-center gap-2 mb-1">
+   849→                      <span className="text-white text-sm font-medium truncate">{p.policyNumber}</span>
+   850→                      {getStatusBadge(p.status)}
+   851→                    </div>
+   852→                    <div className="flex items-center gap-3 text-xs text-slate-400">
+   853→                      <span>{p.type}</span>
+   854→                      <span>•</span>
+   855→                      <span>{p.vehicleType}</span>
+   856→                    </div>
+   857→                  </div>
+   858→                  <div className="text-right ml-3 shrink-0">
+   859→                    <p className="text-white font-medium">{p.premium?.toLocaleString('fr-FR')} €</p>
+   860→                    <p className="text-slate-500 text-xs">/an</p>
+   861→                  </div>
+   862→                </div>
+   863→              ))}
+   864→            </div>
+   865→          </CardContent>
+   866→        </Card>
+   867→
+   868→        {/* Claims Overview */}
+   869→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+   870→          <CardHeader>
+   871→            <CardTitle className="text-white text-lg flex items-center gap-2">
+   872→              <BarChart3 className="w-5 h-5 text-emerald-400" />
+   873→              Aperçu des sinistres
+   874→            </CardTitle>
+   875→          </CardHeader>
+   876→          <CardContent className="space-y-4">
+   877→            <div className="grid grid-cols-2 gap-3">
+   878→              {claimsOverview.map((co) => (
+   879→                <div key={co.label} className="p-4 rounded-lg bg-slate-800/50 border border-slate-700/50">
+   880→                  <div className={`w-3 h-3 rounded-full ${co.color} mb-2`} />
+   881→                  <p className="text-2xl font-bold text-white">{co.count}</p>
+   882→                  <p className="text-slate-400 text-xs">{co.label}</p>
+   883→                </div>
+   884→              ))}
+   885→            </div>
+   886→            <Separator className="bg-slate-800" />
+   887→            <div>
+   888→              <h4 className="text-slate-300 text-sm font-medium mb-2">Derniers sinistres</h4>
+   889→              <div className="space-y-2 max-h-48 overflow-y-auto">
+   890→                {claims.slice(0, 4).map((c) => (
+   891→                  <div key={c.id} className="flex items-center justify-between py-2 border-b border-slate-800 last:border-0">
+   892→                    <div>
+   893→                      <p className="text-white text-sm">{getClaimTypeLabel(c.type)}</p>
+   894→                      <p className="text-slate-500 text-xs">{c.createdAt ? new Date(c.createdAt).toLocaleDateString('fr-FR') : ''}</p>
+   895→                    </div>
+   896→                    {getStatusBadge(c.status)}
+   897→                  </div>
+   898→                ))}
+   899→              </div>
+   900→            </div>
+   901→          </CardContent>
+   902→        </Card>
+   903→      </div>
+   904→    </motion.div>
+   905→  )
+   906→}
+   907→
+   908→// ═══════════════════════════════════════════════════════════════
+   909→// TAB 3: CLAIMS CENTER
+   910→// ═══════════════════════════════════════════════════════════════
+   911→function ClaimsCenterTab({
+   912→  claims,
+   913→  policies,
+   914→  pipeline,
+   915→  selectedClaim,
+   916→  onSelectClaim,
+   917→  newClaimOpen,
+   918→  setNewClaimOpen,
+   919→  claimForm,
+   920→  setClaimForm,
+   921→  onFileClaim,
+   922→}: {
+   923→  claims: Claim[]
+   924→  policies: Policy[]
+   925→  pipeline: { key: string; label: string; count: number; color: string }[]
+   926→  selectedClaim: Claim | null
+   927→  onSelectClaim: (c: Claim | null) => void
+   928→  newClaimOpen: boolean
+   929→  setNewClaimOpen: (v: boolean) => void
+   930→  claimForm: { type: string; description: string; date: string; location: string }
+   931→  setClaimForm: (f: { type: string; description: string; date: string; location: string }) => void
+   932→  onFileClaim: () => void
+   933→}) {
+   934→  const [viewMode, setViewMode] = useState<'pipeline' | 'list'>('pipeline')
+   935→
+   936→  return (
+   937→    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+   938→      {/* Header with actions */}
+   939→      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+   940→        <div>
+   941→          <h2 className="text-white text-lg font-semibold">Centre des Sinistres</h2>
+   942→          <p className="text-slate-400 text-sm">Gérez vos déclarations de sinistres</p>
+   943→        </div>
+   944→        <Dialog open={newClaimOpen} onOpenChange={setNewClaimOpen}>
+   945→          <DialogTrigger asChild>
+   946→            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
+   947→              <Plus className="w-4 h-4 mr-2" />Nouveau sinistre
+   948→            </Button>
+   949→          </DialogTrigger>
+   950→          <DialogContent className="bg-slate-900 border-slate-800 max-w-lg">
+   951→            <DialogHeader>
+   952→              <DialogTitle className="text-white">Déclarer un sinistre</DialogTitle>
+   953→              <DialogDescription className="text-slate-400">Remplissez les informations du sinistre</DialogDescription>
+   954→            </DialogHeader>
+   955→            <div className="space-y-4 pt-2">
+   956→              <div className="space-y-2">
+   957→                <Label className="text-slate-300">Type de sinistre</Label>
+   958→                <Select value={claimForm.type} onValueChange={(v) => setClaimForm({ ...claimForm, type: v })}>
+   959→                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+   960→                    <SelectValue />
+   961→                  </SelectTrigger>
+   962→                  <SelectContent className="bg-slate-800 border-slate-700">
+   963→                    <SelectItem value="collision">Collision</SelectItem>
+   964→                    <SelectItem value="theft">Vol</SelectItem>
+   965→                    <SelectItem value="vandalism">Vandalisme</SelectItem>
+   966→                    <SelectItem value="weather">Intempérie</SelectItem>
+   967→                    <SelectItem value="fire">Incendie</SelectItem>
+   968→                    <SelectItem value="flood">Inondation</SelectItem>
+   969→                    <SelectItem value="liability">Responsabilité civile</SelectItem>
+   970→                  </SelectContent>
+   971→                </Select>
+   972→              </div>
+   973→              <div className="space-y-2">
+   974→                <Label className="text-slate-300">Description</Label>
+   975→                <Textarea
+   976→                  value={claimForm.description}
+   977→                  onChange={(e) => setClaimForm({ ...claimForm, description: e.target.value })}
+   978→                  placeholder="Décrivez les circonstances du sinistre..."
+   979→                  className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 min-h-[80px]"
+   980→                />
+   981→              </div>
+   982→              <div className="grid grid-cols-2 gap-4">
+   983→                <div className="space-y-2">
+   984→                  <Label className="text-slate-300">Date</Label>
+   985→                  <Input
+   986→                    type="date"
+   987→                    value={claimForm.date}
+   988→                    onChange={(e) => setClaimForm({ ...claimForm, date: e.target.value })}
+   989→                    className="bg-slate-800 border-slate-700 text-white"
+   990→                  />
+   991→                </div>
+   992→                <div className="space-y-2">
+   993→                  <Label className="text-slate-300">Lieu</Label>
+   994→                  <Input
+   995→                    value={claimForm.location}
+   996→                    onChange={(e) => setClaimForm({ ...claimForm, location: e.target.value })}
+   997→                    placeholder="Adresse ou ville"
+   998→                    className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+   999→                  />
+  1000→                </div>
+  1001→              </div>
+  1002→              <div className="space-y-2">
+  1003→                <Label className="text-slate-300">Photos</Label>
+  1004→                <div className="border-2 border-dashed border-slate-700 rounded-lg p-6 text-center hover:border-emerald-500/50 transition-colors cursor-pointer">
+  1005→                  <Camera className="w-8 h-8 text-slate-500 mx-auto mb-2" />
+  1006→                  <p className="text-slate-400 text-sm">Cliquez ou glissez les photos</p>
+  1007→                  <p className="text-slate-500 text-xs mt-1">JPG, PNG — Max 10 Mo</p>
+  1008→                </div>
+  1009→              </div>
+  1010→              <Button onClick={onFileClaim} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
+  1011→                <Send className="w-4 h-4 mr-2" />Soumettre la déclaration
+  1012→              </Button>
+  1013→            </div>
+  1014→          </DialogContent>
+  1015→        </Dialog>
+  1016→      </div>
+  1017→
+  1018→      {/* Pipeline / List Toggle */}
+  1019→      <div className="flex gap-2">
+  1020→        <Button
+  1021→          variant={viewMode === 'pipeline' ? 'default' : 'outline'}
+  1022→          size="sm"
+  1023→          onClick={() => setViewMode('pipeline')}
+  1024→          className={viewMode === 'pipeline' ? 'bg-emerald-600 text-white' : 'border-slate-700 text-slate-300'}
+  1025→        >
+  1026→          Pipeline
+  1027→        </Button>
+  1028→        <Button
+  1029→          variant={viewMode === 'list' ? 'default' : 'outline'}
+  1030→          size="sm"
+  1031→          onClick={() => setViewMode('list')}
+  1032→          className={viewMode === 'list' ? 'bg-emerald-600 text-white' : 'border-slate-700 text-slate-300'}
+  1033→        >
+  1034→          Liste
+  1035→        </Button>
+  1036→      </div>
+  1037→
+  1038→      {viewMode === 'pipeline' ? (
+  1039→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1040→          <CardContent className="p-6">
+  1041→            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+  1042→              {pipeline.map((step) => (
+  1043→                <div
+  1044→                  key={step.key}
+  1045→                  className={`rounded-xl border-l-4 p-3 ${step.color}`}
+  1046→                >
+  1047→                  <p className="text-2xl font-bold text-white">{step.count}</p>
+  1048→                  <p className="text-slate-400 text-xs mt-1">{step.label}</p>
+  1049→                </div>
+  1050→              ))}
+  1051→            </div>
+  1052→          </CardContent>
+  1053→        </Card>
+  1054→      ) : (
+  1055→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1056→          <CardContent className="p-0">
+  1057→            <Table>
+  1058→              <TableHeader>
+  1059→                <TableRow className="border-slate-800 hover:bg-transparent">
+  1060→                  <TableHead className="text-slate-400">Type</TableHead>
+  1061→                  <TableHead className="text-slate-400">Statut</TableHead>
+  1062→                  <TableHead className="text-slate-400 hidden sm:table-cell">Date</TableHead>
+  1063→                  <TableHead className="text-slate-400 hidden md:table-cell">Coût estimé</TableHead>
+  1064→                  <TableHead className="text-slate-400">Actions</TableHead>
+  1065→                </TableRow>
+  1066→              </TableHeader>
+  1067→              <TableBody>
+  1068→                {claims.map((c) => (
+  1069→                  <TableRow key={c.id} className="border-slate-800 hover:bg-slate-800/50">
+  1070→                    <TableCell className="text-white text-sm">{getClaimTypeLabel(c.type)}</TableCell>
+  1071→                    <TableCell>{getStatusBadge(c.status)}</TableCell>
+  1072→                    <TableCell className="text-slate-300 text-sm hidden sm:table-cell">
+  1073→                      {c.incidentDate ? new Date(c.incidentDate).toLocaleDateString('fr-FR') : '-'}
+  1074→                    </TableCell>
+  1075→                    <TableCell className="text-slate-300 text-sm hidden md:table-cell">
+  1076→                      {c.estimatedCost ? `${c.estimatedCost.toLocaleString('fr-FR')} €` : '-'}
+  1077→                    </TableCell>
+  1078→                    <TableCell>
+  1079→                      <Button
+  1080→                        variant="ghost"
+  1081→                        size="sm"
+  1082→                        onClick={() => onSelectClaim(c)}
+  1083→                        className="text-emerald-400 hover:text-emerald-300"
+  1084→                      >
+  1085→                        <Eye className="w-4 h-4" />
+  1086→                      </Button>
+  1087→                    </TableCell>
+  1088→                  </TableRow>
+  1089→                ))}
+  1090→              </TableBody>
+  1091→            </Table>
+  1092→          </CardContent>
+  1093→        </Card>
+  1094→      )}
+  1095→
+  1096→      {/* Selected Claim Detail */}
+  1097→      {selectedClaim && (
+  1098→        <ClaimDetailDialog claim={selectedClaim} policies={policies} onClose={() => onSelectClaim(null)} />
+  1099→      )}
+  1100→    </motion.div>
+  1101→  )
+  1102→}
+  1103→
+  1104→// ─── Claim Detail Dialog ─────────────────────────────────────
+  1105→function ClaimDetailDialog({ claim, policies, onClose }: { claim: Claim; policies: Policy[]; onClose: () => void }) {
+  1106→  const policy = policies.find(p => p.id === claim.policyId)
+  1107→  let damage = null
+  1108→  try { damage = claim.damageAssessment ? JSON.parse(claim.damageAssessment) : null } catch { /* */ }
+  1109→
+  1110→  const timeline = [
+  1111→    { label: 'Sinistre déclaré', date: claim.incidentDate, icon: <AlertTriangle className="w-4 h-4" />, color: 'text-red-400' },
+  1112→    { label: 'Prise en charge', date: claim.createdAt, icon: <Clock className="w-4 h-4" />, color: 'text-blue-400' },
+  1113→    { label: 'Évaluation en cours', date: claim.status !== 'submitted' ? claim.createdAt : null, icon: <Search className="w-4 h-4" />, color: 'text-amber-400' },
+  1114→    { label: 'Décision', date: ['approved', 'denied', 'paid', 'closed'].includes(claim.status) ? claim.createdAt : null, icon: ['approved', 'paid'].includes(claim.status) ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />, color: ['approved', 'paid'].includes(claim.status) ? 'text-emerald-400' : 'text-red-400' },
+  1115→  ]
+  1116→
+  1117→  return (
+  1118→    <Dialog open={!!claim} onOpenChange={() => onClose()}>
+  1119→      <DialogContent className="bg-slate-900 border-slate-800 max-w-2xl max-h-[80vh] overflow-y-auto">
+  1120→        <DialogHeader>
+  1121→          <DialogTitle className="text-white flex items-center gap-2">
+  1122→            Détail du sinistre
+  1123→            {getStatusBadge(claim.status)}
+  1124→          </DialogTitle>
+  1125→          <DialogDescription className="text-slate-400">Référence : {claim.id}</DialogDescription>
+  1126→        </DialogHeader>
+  1127→        <div className="space-y-4 pt-2">
+  1128→          <div className="grid grid-cols-2 gap-4">
+  1129→            <div className="space-y-1">
+  1130→              <p className="text-slate-500 text-xs">Type</p>
+  1131→              <p className="text-white text-sm font-medium">{getClaimTypeLabel(claim.type)}</p>
+  1132→            </div>
+  1133→            <div className="space-y-1">
+  1134→              <p className="text-slate-500 text-xs">Police</p>
+  1135→              <p className="text-white text-sm font-medium">{policy?.policyNumber || '-'}</p>
+  1136→            </div>
+  1137→            <div className="space-y-1">
+  1138→              <p className="text-slate-500 text-xs">Date du sinistre</p>
+  1139→              <p className="text-white text-sm font-medium">{claim.incidentDate ? new Date(claim.incidentDate).toLocaleDateString('fr-FR') : '-'}</p>
+  1140→            </div>
+  1141→            <div className="space-y-1">
+  1142→              <p className="text-slate-500 text-xs">Lieu</p>
+  1143→              <p className="text-white text-sm font-medium">{claim.location || '-'}</p>
+  1144→            </div>
+  1145→          </div>
+  1146→
+  1147→          <Separator className="bg-slate-800" />
+  1148→
+  1149→          <div>
+  1150→            <p className="text-slate-500 text-xs mb-1">Description</p>
+  1151→            <p className="text-slate-300 text-sm">{claim.description}</p>
+  1152→          </div>
+  1153→
+  1154→          {damage && (
+  1155→            <>
+  1156→              <Separator className="bg-slate-800" />
+  1157→              <div>
+  1158→                <h4 className="text-white text-sm font-medium mb-3 flex items-center gap-2">
+  1159→                  <BrainCircuit className="w-4 h-4 text-emerald-400" />
+  1160→                  Évaluation des dommages (IA)
+  1161→                </h4>
+  1162→                <div className="grid grid-cols-2 gap-3">
+  1163→                  <div className="p-3 rounded-lg bg-slate-800/50">
+  1164→                    <p className="text-slate-500 text-xs">Sévérité</p>
+  1165→                    <p className={`text-sm font-medium capitalize ${damage.severity === 'léger' ? 'text-emerald-400' : damage.severity === 'modéré' ? 'text-amber-400' : 'text-red-400'}`}>{damage.severity}</p>
+  1166→                  </div>
+  1167→                  <div className="p-3 rounded-lg bg-slate-800/50">
+  1168→                    <p className="text-slate-500 text-xs">Délai de réparation</p>
+  1169→                    <p className="text-white text-sm font-medium">{damage.repairTime}</p>
+  1170→                  </div>
+  1171→                  <div className="p-3 rounded-lg bg-slate-800/50 col-span-2">
+  1172→                    <p className="text-slate-500 text-xs mb-1">Zones endommagées</p>
+  1173→                    <div className="flex flex-wrap gap-1">
+  1174→                      {damage.zones?.map((z: string, i: number) => (
+  1175→                        <Badge key={i} variant="outline" className="border-slate-600 text-slate-300 text-xs">{z}</Badge>
+  1176→                      ))}
+  1177→                    </div>
+  1178→                  </div>
+  1179→                  <div className="p-3 rounded-lg bg-slate-800/50 col-span-2">
+  1180→                    <p className="text-slate-500 text-xs mb-1">Pièces nécessaires</p>
+  1181→                    <div className="flex flex-wrap gap-1">
+  1182→                      {damage.parts?.map((p: string, i: number) => (
+  1183→                        <Badge key={i} variant="outline" className="border-emerald-500/30 text-emerald-400 text-xs">{p}</Badge>
+  1184→                      ))}
+  1185→                    </div>
+  1186→                  </div>
+  1187→                </div>
+  1188→              </div>
+  1189→            </>
+  1190→          )}
+  1191→
+  1192→          <div className="grid grid-cols-2 gap-3">
+  1193→            <div className="p-3 rounded-lg bg-slate-800/50">
+  1194→              <p className="text-slate-500 text-xs">Coût estimé</p>
+  1195→              <p className="text-white font-bold">{claim.estimatedCost ? `${claim.estimatedCost.toLocaleString('fr-FR')} €` : 'En attente'}</p>
+  1196→            </div>
+  1197→            <div className="p-3 rounded-lg bg-slate-800/50">
+  1198→              <p className="text-slate-500 text-xs">Montant approuvé</p>
+  1199→              <p className="text-emerald-400 font-bold">{claim.approvedAmount != null ? `${claim.approvedAmount.toLocaleString('fr-FR')} €` : 'En attente'}</p>
+  1200→            </div>
+  1201→          </div>
+  1202→
+  1203→          <Separator className="bg-slate-800" />
+  1204→
+  1205→          {/* Timeline */}
+  1206→          <div>
+  1207→            <h4 className="text-white text-sm font-medium mb-3">Chronologie</h4>
+  1208→            <div className="space-y-3">
+  1209→              {timeline.map((step, i) => (
+  1210→                <div key={i} className="flex items-start gap-3">
+  1211→                  <div className={`${step.color} mt-0.5`}>{step.icon}</div>
+  1212→                  <div>
+  1213→                    <p className="text-slate-300 text-sm">{step.label}</p>
+  1214→                    {step.date && <p className="text-slate-500 text-xs">{new Date(step.date).toLocaleDateString('fr-FR')}</p>}
+  1215→                  </div>
+  1216→                </div>
+  1217→              ))}
+  1218→            </div>
+  1219→          </div>
+  1220→        </div>
+  1221→      </DialogContent>
+  1222→    </Dialog>
+  1223→  )
+  1224→}
+  1225→
+  1226→// ═══════════════════════════════════════════════════════════════
+  1227→// TAB 4: FRAUD DETECTION CENTER
+  1228→// ═══════════════════════════════════════════════════════════════
+  1229→function FraudDetectionTab({ trustScore }: { trustScore: TrustScoreData }) {
+  1230→  const fraudRisk = trustScore.fraudRisk
+  1231→
+  1232→  const indicators = [
+  1233→    { name: 'Cohérence des déclarations', status: 'ok', detail: 'Aucune incohérence détectée' },
+  1234→    { name: 'Fréquence des sinistres', status: 'warning', detail: 'Légèrement au-dessus de la moyenne' },
+  1235→    { name: 'Patterns de conduite', status: 'ok', detail: 'Comportement normal' },
+  1236→    { name: 'Historique de localisation', status: 'ok', detail: 'Déplacements cohérents' },
+  1237→    { name: 'Données télématiques', status: 'ok', detail: 'Aucune anomalie détectée' },
+  1238→    { name: 'Vérification documentaire', status: 'ok', detail: 'Tous les documents validés' },
+  1239→  ]
+  1240→
+  1241→  const suspiciousActivities = [
+  1242→    { date: '15/06/2024', description: 'Déclaration tardive du sinistre CLM-001 (4h après)', level: 'low' },
+  1243→    { date: '02/08/2024', description: 'Deuxième sinistre vandalisme en 3 mois — surveillance active', level: 'medium' },
+  1244→  ]
+  1245→
+  1246→  const anomalies = [
+  1247→    { metric: 'Vitesse au moment de l\'impact', expected: '20-40 km/h', detected: '45 km/h', verdict: 'normal' },
+  1248→    { metric: 'Heure du sinistre', expected: 'Période de trafic', detected: '14h30', verdict: 'normal' },
+  1249→    { metric: 'Distance entre sinistres', expected: '> 50 km', detected: '12 km', verdict: 'attention' },
+  1250→  ]
+  1251→
+  1252→  const getRiskLevel = (r: number) => {
+  1253→    if (r <= 15) return { label: 'Très faible', color: 'text-emerald-400', bg: 'bg-emerald-600/10', border: 'border-emerald-500/30' }
+  1254→    if (r <= 30) return { label: 'Faible', color: 'text-emerald-400', bg: 'bg-emerald-600/10', border: 'border-emerald-500/30' }
+  1255→    if (r <= 50) return { label: 'Moyen', color: 'text-amber-400', bg: 'bg-amber-600/10', border: 'border-amber-500/30' }
+  1256→    if (r <= 75) return { label: 'Élevé', color: 'text-orange-400', bg: 'bg-orange-600/10', border: 'border-orange-500/30' }
+  1257→    return { label: 'Critique', color: 'text-red-400', bg: 'bg-red-600/10', border: 'border-red-500/30' }
+  1258→  }
+  1259→
+  1260→  const riskLevel = getRiskLevel(fraudRisk)
+  1261→
+  1262→  return (
+  1263→    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+  1264→      {/* Risk Assessment Header */}
+  1265→      <Card className={`border ${riskLevel.border} rounded-xl`}>
+  1266→        <CardContent className="p-6">
+  1267→          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+  1268→            <div className="flex items-center gap-4">
+  1269→              <div className={`w-16 h-16 rounded-xl ${riskLevel.bg} flex items-center justify-center`}>
+  1270→                <ShieldAlert className={`w-8 h-8 ${riskLevel.color}`} />
+  1271→              </div>
+  1272→              <div>
+  1273→                <h3 className="text-white text-lg font-semibold">Niveau de risque de fraude</h3>
+  1274→                <p className={`text-sm font-medium ${riskLevel.color}`}>{riskLevel.label}</p>
+  1275→              </div>
+  1276→            </div>
+  1277→            <div className="text-right">
+  1278→              <p className={`text-4xl font-bold ${riskLevel.color}`}>{fraudRisk}</p>
+  1279→              <p className="text-slate-500 text-xs">sur 100</p>
+  1280→            </div>
+  1281→          </div>
+  1282→        </CardContent>
+  1283→      </Card>
+  1284→
+  1285→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  1286→        {/* Fraud Indicators */}
+  1287→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1288→          <CardHeader>
+  1289→            <CardTitle className="text-white text-lg flex items-center gap-2">
+  1290→              <Search className="w-5 h-5 text-emerald-400" />
+  1291→              Indicateurs de fraude
+  1292→            </CardTitle>
+  1293→          </CardHeader>
+  1294→          <CardContent className="space-y-3">
+  1295→            {indicators.map((ind) => (
+  1296→              <div key={ind.name} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50">
+  1297→                <div className="flex items-center gap-3">
+  1298→                  {ind.status === 'ok' ? (
+  1299→                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+  1300→                  ) : (
+  1301→                    <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+  1302→                  )}
+  1303→                  <div>
+  1304→                    <p className="text-white text-sm font-medium">{ind.name}</p>
+  1305→                    <p className="text-slate-500 text-xs">{ind.detail}</p>
+  1306→                  </div>
+  1307→                </div>
+  1308→                <Badge
+  1309→                  variant="outline"
+  1310→                  className={ind.status === 'ok'
+  1311→                    ? 'border-emerald-500/30 text-emerald-400'
+  1312→                    : 'border-amber-500/30 text-amber-400'
+  1313→                  }
+  1314→                >
+  1315→                  {ind.status === 'ok' ? 'OK' : 'Attention'}
+  1316→                </Badge>
+  1317→              </div>
+  1318→            ))}
+  1319→          </CardContent>
+  1320→        </Card>
+  1321→
+  1322→        {/* Suspicious Activities & Anomalies */}
+  1323→        <div className="space-y-6">
+  1324→          <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1325→            <CardHeader>
+  1326→              <CardTitle className="text-white text-lg flex items-center gap-2">
+  1327→                <Bell className="w-5 h-5 text-amber-400" />
+  1328→                Activités suspectes
+  1329→              </CardTitle>
+  1330→            </CardHeader>
+  1331→            <CardContent className="space-y-3">
+  1332→              {suspiciousActivities.length === 0 ? (
+  1333→                <p className="text-slate-500 text-sm text-center py-4">Aucune activité suspecte détectée</p>
+  1334→              ) : (
+  1335→                suspiciousActivities.map((a, i) => (
+  1336→                  <div key={i} className={`p-3 rounded-lg border-l-4 ${a.level === 'high' ? 'border-red-500 bg-red-500/5' : 'border-amber-500 bg-amber-500/5'}`}>
+  1337→                    <div className="flex items-center justify-between mb-1">
+  1338→                      <p className="text-white text-sm font-medium">{a.description}</p>
+  1339→                    </div>
+  1340→                    <p className="text-slate-500 text-xs">{a.date}</p>
+  1341→                  </div>
+  1342→                ))
+  1343→              )}
+  1344→            </CardContent>
+  1345→          </Card>
+  1346→
+  1347→          <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1348→            <CardHeader>
+  1349→              <CardTitle className="text-white text-lg flex items-center gap-2">
+  1350→                <BrainCircuit className="w-5 h-5 text-emerald-400" />
+  1351→                Détection d'anomalies
+  1352→              </CardTitle>
+  1353→            </CardHeader>
+  1354→            <CardContent>
+  1355→              <div className="space-y-3">
+  1356→                {anomalies.map((a, i) => (
+  1357→                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50">
+  1358→                    <div>
+  1359→                      <p className="text-white text-sm font-medium">{a.metric}</p>
+  1360→                      <p className="text-slate-500 text-xs">Attendu : {a.expected} → Détecté : {a.detected}</p>
+  1361→                    </div>
+  1362→                    <Badge
+  1363→                      variant="outline"
+  1364→                      className={a.verdict === 'normal'
+  1365→                        ? 'border-emerald-500/30 text-emerald-400'
+  1366→                        : 'border-amber-500/30 text-amber-400'
+  1367→                      }
+  1368→                    >
+  1369→                      {a.verdict === 'normal' ? 'Normal' : 'Attention'}
+  1370→                    </Badge>
+  1371→                  </div>
+  1372→                ))}
+  1373→              </div>
+  1374→            </CardContent>
+  1375→          </Card>
+  1376→        </div>
+  1377→      </div>
+  1378→    </motion.div>
+  1379→  )
+  1380→}
+  1381→
+  1382→// ═══════════════════════════════════════════════════════════════
+  1383→// TAB 5: RISK ASSESSMENT
+  1384→// ═══════════════════════════════════════════════════════════════
+  1385→function RiskAssessmentTab({ riskData }: { riskData: RiskData | null }) {
+  1386→  if (!riskData) return null
+  1387→
+  1388→  const getRiskColor = (v: number) => {
+  1389→    if (v <= 25) return 'text-emerald-400'
+  1390→    if (v <= 50) return 'text-amber-400'
+  1391→    if (v <= 75) return 'text-orange-400'
+  1392→    return 'text-red-400'
+  1393→  }
+  1394→
+  1395→  return (
+  1396→    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+  1397→      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+  1398→        {/* Vehicle Risk */}
+  1399→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1400→          <CardContent className="p-6">
+  1401→            <div className="flex items-center gap-3 mb-4">
+  1402→              <div className="w-10 h-10 rounded-lg bg-emerald-600/10 flex items-center justify-center">
+  1403→                <AlertTriangle className="w-5 h-5 text-emerald-400" />
+  1404→              </div>
+  1405→              <div>
+  1406→                <p className="text-slate-400 text-xs">Score risque véhicule</p>
+  1407→                <p className={`text-3xl font-bold ${getRiskColor(riskData.vehicleRiskScore)}`}>{riskData.vehicleRiskScore}</p>
+  1408→              </div>
+  1409→            </div>
+  1410→            <Progress value={riskData.vehicleRiskScore} className={`h-2 ${getProgressColor(100 - riskData.vehicleRiskScore)}`} />
+  1411→          </CardContent>
+  1412→        </Card>
+  1413→
+  1414→        {/* Driver Risk */}
+  1415→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1416→          <CardContent className="p-6">
+  1417→            <div className="flex items-center gap-3 mb-4">
+  1418→              <div className="w-10 h-10 rounded-lg bg-emerald-600/10 flex items-center justify-center">
+  1419→                <Users className="w-5 h-5 text-emerald-400" />
+  1420→              </div>
+  1421→              <div>
+  1422→                <p className="text-slate-400 text-xs">Profil risque conducteur</p>
+  1423→                <p className="text-2xl font-bold text-white mt-1">{riskData.driverRiskLevel}</p>
+  1424→              </div>
+  1425→            </div>
+  1426→            <div className="flex gap-1 mt-2">
+  1427→              {['Faible', 'Moyen', 'Élevé', 'Très élevé'].map((level, i) => (
+  1428→                <div
+  1429→                  key={level}
+  1430→                  className={`h-2 flex-1 rounded-full ${
+  1431→                    riskData.driverRiskLevel === 'Faible' && i === 0 ? 'bg-emerald-500' :
+  1432→                    riskData.driverRiskLevel === 'Moyen' && i === 1 ? 'bg-amber-500' :
+  1433→                    riskData.driverRiskLevel === 'Élevé' && i === 2 ? 'bg-orange-500' :
+  1434→                    riskData.driverRiskLevel === 'Très élevé' && i === 3 ? 'bg-red-500' :
+  1435→                    'bg-slate-700'
+  1436→                  }`}
+  1437→                />
+  1438→              ))}
+  1439→            </div>
+  1440→          </CardContent>
+  1441→        </Card>
+  1442→
+  1443→        {/* Premium Recommendation */}
+  1444→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1445→          <CardContent className="p-6">
+  1446→            <div className="flex items-center gap-3 mb-4">
+  1447→              <div className="w-10 h-10 rounded-lg bg-emerald-600/10 flex items-center justify-center">
+  1448→                <CircleDollarSign className="w-5 h-5 text-emerald-400" />
+  1449→              </div>
+  1450→              <div>
+  1451→                <p className="text-slate-400 text-xs">Prime recommandée</p>
+  1452→                <p className="text-3xl font-bold text-white">{riskData.premiumRecommendation} €</p>
+  1453→                <p className="text-slate-500 text-xs">/an — basé sur votre profil</p>
+  1454→              </div>
+  1455→            </div>
+  1456→            <Button variant="outline" className="w-full border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 text-sm">
+  1457→              <ArrowRight className="w-4 h-4 mr-1" />Comparer les offres
+  1458→            </Button>
+  1459→          </CardContent>
+  1460→        </Card>
+  1461→      </div>
+  1462→
+  1463→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  1464→        {/* Risk Factors */}
+  1465→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1466→          <CardHeader>
+  1467→            <CardTitle className="text-white text-lg flex items-center gap-2">
+  1468→              <BarChart3 className="w-5 h-5 text-emerald-400" />
+  1469→              Facteurs de risque
+  1470→            </CardTitle>
+  1471→          </CardHeader>
+  1472→          <CardContent className="space-y-3 max-h-96 overflow-y-auto">
+  1473→            {riskData.riskFactors.map((f) => (
+  1474→              <div key={f.name} className="space-y-1">
+  1475→                <div className="flex items-center justify-between">
+  1476→                  <span className="text-slate-300 text-sm">{f.name}</span>
+  1477→                  <span className={`text-sm font-medium ${getRiskColor(f.value)}`}>{f.value}%</span>
+  1478→                </div>
+  1479→                <Progress value={f.value} className={`h-1.5 ${getProgressColor(100 - f.value)}`} />
+  1480→                <p className="text-slate-500 text-xs">{f.description}</p>
+  1481→              </div>
+  1482→            ))}
+  1483→          </CardContent>
+  1484→        </Card>
+  1485→
+  1486→        {/* Location Risk Map Placeholder */}
+  1487→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1488→          <CardHeader>
+  1489→            <CardTitle className="text-white text-lg flex items-center gap-2">
+  1490→              <MapPin className="w-5 h-5 text-emerald-400" />
+  1491→              Carte de risque par zone
+  1492→            </CardTitle>
+  1493→            <CardDescription className="text-slate-400">Risque basé sur la localisation géographique</CardDescription>
+  1494→          </CardHeader>
+  1495→          <CardContent>
+  1496→            <div className="relative rounded-xl overflow-hidden bg-slate-800 h-72 flex items-center justify-center">
+  1497→              <div className="absolute inset-0 opacity-20">
+  1498→                <div className="absolute top-4 left-4 w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
+  1499→                <div className="absolute top-12 left-16 w-3 h-3 rounded-full bg-amber-500 animate-pulse" />
+  1500→                <div className="absolute bottom-16 right-12 w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+  1501→                <div className="absolute bottom-8 left-1/3 w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
+  1502→                <div className="absolute top-1/3 right-1/4 w-3 h-3 rounded-full bg-amber-500 animate-pulse" />
+  1503→              </div>
+  1504→              <div className="text-center z-10">
+  1505→                <MapPin className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+  1506→                <p className="text-slate-400 text-sm">Carte interactive des zones à risque</p>
+  1507→                <p className="text-slate-500 text-xs mt-1">Votre zone : {riskData.locationRisk}% de risque</p>
+  1508→                <div className="flex items-center justify-center gap-4 mt-3">
+  1509→                  <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500" /><span className="text-slate-500 text-xs">Faible</span></div>
+  1510→                  <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-amber-500" /><span className="text-slate-500 text-xs">Moyen</span></div>
+  1511→                  <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-red-500" /><span className="text-slate-500 text-xs">Élevé</span></div>
+  1512→                </div>
+  1513→              </div>
+  1514→            </div>
+  1515→          </CardContent>
+  1516→        </Card>
+  1517→      </div>
+  1518→    </motion.div>
+  1519→  )
+  1520→}
+  1521→
+  1522→// ═══════════════════════════════════════════════════════════════
+  1523→// TAB 6: ACCIDENT CENTER
+  1524→// ═══════════════════════════════════════════════════════════════
+  1525→function AccidentCenterTab() {
+  1526→  const [autoDetect, setAutoDetect] = useState(false)
+  1527→
+  1528→  const emergencyContacts = [
+  1529→    { label: 'Police', number: '17', iconName: 'siren', color: 'text-blue-400', bg: 'bg-blue-600/10' },
+  1530→    { label: 'Ambulance', number: '15', iconName: 'heart', color: 'text-red-400', bg: 'bg-red-600/10' },
+  1531→    { label: 'Famille', number: '06 XX XX XX XX', iconName: 'phone', color: 'text-emerald-400', bg: 'bg-emerald-600/10' },
+  1532→    { label: 'Assureur', number: '01 XX XX XX XX', iconName: 'shield', color: 'text-amber-400', bg: 'bg-amber-600/10' },
+  1533→  ]
+  1534→
+  1535→  const getEmergencyIcon = (name: string) => {
+  1536→    switch (name) {
+  1537→      case 'siren': return <Siren className="w-5 h-5" />
+  1538→      case 'heart': return <Heart className="w-5 h-5" />
+  1539→      case 'phone': return <Phone className="w-5 h-5" />
+  1540→      case 'shield': return <Shield className="w-5 h-5" />
+  1541→      default: return <Phone className="w-5 h-5" />
+  1542→    }
+  1543→  }
+  1544→
+  1545→  const damageZones = [
+  1546→    { zone: 'Avant', severity: 'Aucun', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+  1547→    { zone: 'Arrière', severity: 'Léger', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
+  1548→    { zone: 'Côté gauche', severity: 'Aucun', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+  1549→    { zone: 'Côté droit', severity: 'Modéré', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
+  1550→    { zone: 'Toit', severity: 'Aucun', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+  1551→  ]
+  1552→
+  1553→  const repairEstimate = [
+  1554→    { item: 'Remplacement pare-chocs arrière', cost: 320 },
+  1555→    { item: 'Réparation aile droite', cost: 450 },
+  1556→    { item: 'Peinture et finition', cost: 180 },
+  1557→    { item: 'Main-d\'œuvre (3h)', cost: 210 },
+  1558→  ]
+  1559→
+  1560→  const totalEstimate = repairEstimate.reduce((s, r) => s + r.cost, 0)
+  1561→
+  1562→  return (
+  1563→    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+  1564→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  1565→        {/* AI Accident Detection */}
+  1566→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1567→          <CardHeader>
+  1568→            <CardTitle className="text-white text-lg flex items-center gap-2">
+  1569→              <BrainCircuit className="w-5 h-5 text-emerald-400" />
+  1570→              Détection d'accident IA
+  1571→            </CardTitle>
+  1572→            <CardDescription className="text-slate-400">Détection automatique en temps réel via capteurs et télématique</CardDescription>
+  1573→          </CardHeader>
+  1574→          <CardContent className="space-y-4">
+  1575→            <div className={`p-4 rounded-xl border-2 ${autoDetect ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-slate-700 bg-slate-800/50'}`}>
+  1576→              <div className="flex items-center justify-between mb-3">
+  1577→                <div className="flex items-center gap-3">
+  1578→                  <div className={`w-3 h-3 rounded-full ${autoDetect ? 'bg-emerald-500 animate-pulse' : 'bg-slate-500'}`} />
+  1579→                  <span className={`text-sm font-medium ${autoDetect ? 'text-emerald-400' : 'text-slate-400'}`}>
+  1580→                    {autoDetect ? 'Surveillance active' : 'Désactivé'}
+  1581→                  </span>
+  1582→                </div>
+  1583→                <Button
+  1584→                  size="sm"
+  1585→                  variant={autoDetect ? 'default' : 'outline'}
+  1586→                  onClick={() => setAutoDetect(!autoDetect)}
+  1587→                  className={autoDetect ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'border-slate-700 text-slate-300'}
+  1588→                >
+  1589→                  {autoDetect ? 'Désactiver' : 'Activer'}
+  1590→                </Button>
+  1591→              </div>
+  1592→              <div className="grid grid-cols-3 gap-3 text-center">
+  1593→                <div>
+  1594→                  <Gauge className="w-5 h-5 text-slate-500 mx-auto mb-1" />
+  1595→                  <p className="text-white text-xs font-medium">Accéléromètre</p>
+  1596→                  <p className="text-emerald-400 text-xs">OK</p>
+  1597→                </div>
+  1598→                <div>
+  1599→                  <Activity className="w-5 h-5 text-slate-500 mx-auto mb-1" />
+  1600→                  <p className="text-white text-xs font-medium">Gyroscope</p>
+  1601→                  <p className="text-emerald-400 text-xs">OK</p>
+  1602→                </div>
+  1603→                <div>
+  1604→                  <MapPin className="w-5 h-5 text-slate-500 mx-auto mb-1" />
+  1605→                  <p className="text-white text-xs font-medium">GPS</p>
+  1606→                  <p className="text-emerald-400 text-xs">OK</p>
+  1607→                </div>
+  1608→              </div>
+  1609→            </div>
+  1610→
+  1611→            {/* Crash Reconstruction */}
+  1612→            <div>
+  1613→              <h4 className="text-white text-sm font-medium mb-3 flex items-center gap-2">
+  1614→                <Route className="w-4 h-4 text-emerald-400" />
+  1615→                Reconstitution de crash
+  1616→              </h4>
+  1617→              <div className="rounded-xl bg-slate-800/50 border border-slate-700/50 p-4 h-40 flex items-center justify-center">
+  1618→                <div className="text-center">
+  1619→                  <AlertTriangle className="w-10 h-10 text-slate-600 mx-auto mb-2" />
+  1620→                  <p className="text-slate-400 text-sm">Visualisation 3D de la reconstitution</p>
+  1621→                  <p className="text-slate-500 text-xs mt-1">Disponible après détection d'un accident</p>
+  1622→                </div>
+  1623→              </div>
+  1624→            </div>
+  1625→          </CardContent>
+  1626→        </Card>
+  1627→
+  1628→        {/* AI Damage Detection & Repair Cost */}
+  1629→        <div className="space-y-6">
+  1630→          <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1631→            <CardHeader>
+  1632→              <CardTitle className="text-white text-lg flex items-center gap-2">
+  1633→                <Eye className="w-5 h-5 text-emerald-400" />
+  1634→                Détection de dommages IA
+  1635→              </CardTitle>
+  1636→            </CardHeader>
+  1637→            <CardContent>
+  1638→              <div className="space-y-2">
+  1639→                {damageZones.map((dz) => (
+  1640→                  <div key={dz.zone} className="flex items-center justify-between p-3 rounded-lg border border-slate-700/50">
+  1641→                    <span className="text-slate-300 text-sm">{dz.zone}</span>
+  1642→                    <Badge variant="outline" className={dz.color}>{dz.severity}</Badge>
+  1643→                  </div>
+  1644→                ))}
+  1645→              </div>
+  1646→            </CardContent>
+  1647→          </Card>
+  1648→
+  1649→          <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1650→            <CardHeader>
+  1651→              <CardTitle className="text-white text-lg flex items-center gap-2">
+  1652→                <Wrench className="w-5 h-5 text-emerald-400" />
+  1653→                Estimation du coût de réparation
+  1654→              </CardTitle>
+  1655→            </CardHeader>
+  1656→            <CardContent>
+  1657→              <div className="space-y-2">
+  1658→                {repairEstimate.map((r) => (
+  1659→                  <div key={r.item} className="flex items-center justify-between text-sm">
+  1660→                    <span className="text-slate-300">{r.item}</span>
+  1661→                    <span className="text-white font-medium">{r.cost} €</span>
+  1662→                  </div>
+  1663→                ))}
+  1664→                <Separator className="bg-slate-800" />
+  1665→                <div className="flex items-center justify-between pt-1">
+  1666→                  <span className="text-white font-semibold">Total estimé</span>
+  1667→                  <span className="text-emerald-400 font-bold text-lg">{totalEstimate.toLocaleString('fr-FR')} €</span>
+  1668→                </div>
+  1669→              </div>
+  1670→            </CardContent>
+  1671→          </Card>
+  1672→        </div>
+  1673→      </div>
+  1674→
+  1675→      {/* Emergency Dispatch */}
+  1676→      <Card className="bg-slate-900 border border-red-500/30 rounded-xl">
+  1677→        <CardHeader>
+  1678→          <CardTitle className="text-white text-lg flex items-center gap-2">
+  1679→            <Siren className="w-5 h-5 text-red-400" />
+  1680→            Alerte d'urgence
+  1681→          </CardTitle>
+  1682→          <CardDescription className="text-slate-400">Notification automatique des services d'urgence en cas d'accident</CardDescription>
+  1683→        </CardHeader>
+  1684→        <CardContent>
+  1685→          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+  1686→            {emergencyContacts.map((ec) => {
+  1687→              const bg = ec.bg
+  1688→              const clr = ec.color
+  1689→              return (
+  1690→              <div key={ec.label} className={"p-4 rounded-xl border border-slate-700/50 " + bg + " flex flex-col items-center text-center"}>
+  1691→                <div className={clr + " mb-2"}>{getEmergencyIcon(ec.iconName)}</div>
+  1692→                <p className="text-white text-sm font-medium">{ec.label}</p>
+  1693→                <p className={clr + " text-sm font-bold mt-1"}>{ec.number}</p>
+  1694→                <Button variant="outline" size="sm" className="mt-2 border-slate-600 text-slate-300 hover:bg-slate-800 text-xs w-full">
+  1695→                  <Phone className="w-3 h-3 mr-1" />Appeler
+  1696→                </Button>
+  1697→              </div>
+  1698→              )
+  1699→            })}
+  1700→          </div>
+  1701→          <div className="mt-4 p-3 rounded-lg bg-red-500/5 border border-red-500/20">
+  1702→            <div className="flex items-start gap-2">
+  1703→              <Info className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
+  1704→              <p className="text-slate-300 text-sm">En cas de détection d'accident grave, ADSO notifie automatiquement les secours avec votre position GPS et les données du véhicule.</p>
+  1705→            </div>
+  1706→          </div>
+  1707→        </CardContent>
+  1708→      </Card>
+  1709→    </motion.div>
+  1710→  )
+  1711→}
+  1712→
+  1713→// ═══════════════════════════════════════════════════════════════
+  1714→// TAB 7: TELEMATICS CENTER
+  1715→// ═══════════════════════════════════════════════════════════════
+  1716→function TelematicsCenterTab() {
+  1717→  const paydMetrics = {
+  1718→    kmParcourus: 1847,
+  1719→    kmPrevu: 2400,
+  1720→    primeEconomisee: 118,
+  1721→    joursRestants: 45,
+  1722→    scoreMoyen: 79,
+  1723→  }
+  1724→
+  1725→  const phydMetrics = [
+  1726→    { name: 'Freinage progressif', score: 85, icon: <Gauge className="w-4 h-4" /> },
+  1727→    { name: 'Accélération fluide', score: 78, icon: <Zap className="w-4 h-4" /> },
+  1728→    { name: 'Respect des limitations', score: 92, icon: <ShieldCheck className="w-4 h-4" /> },
+  1729→    { name: 'Anticipation virages', score: 72, icon: <Route className="w-4 h-4" /> },
+  1730→    { name: 'Distance de sécurité', score: 88, icon: <AlertTriangle className="w-4 h-4" /> },
+  1731→    { name: 'Conduite de nuit', score: 65, icon: <Star className="w-4 h-4" /> },
+  1732→  ]
+  1733→
+  1734→  return (
+  1735→    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+  1736→      {/* PAYD & PHYD Overview */}
+  1737→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  1738→        {/* PAYD Metrics */}
+  1739→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1740→          <CardHeader>
+  1741→            <CardTitle className="text-white text-lg flex items-center gap-2">
+  1742→              <Route className="w-5 h-5 text-emerald-400" />
+  1743→              Payez selon votre distance (PAYD)
+  1744→            </CardTitle>
+  1745→            <CardDescription className="text-slate-400">Prime proportionnelle au kilométrage parcouru</CardDescription>
+  1746→          </CardHeader>
+  1747→          <CardContent className="space-y-4">
+  1748→            <div className="grid grid-cols-2 gap-3">
+  1749→              <div className="p-3 rounded-lg bg-slate-800/50">
+  1750→                <p className="text-slate-500 text-xs">KM parcourus</p>
+  1751→                <p className="text-white text-xl font-bold">{paydMetrics.kmParcourus.toLocaleString('fr-FR')}</p>
+  1752→                <p className="text-slate-500 text-xs">sur {paydMetrics.kmPrevu.toLocaleString('fr-FR')} prévus</p>
+  1753→              </div>
+  1754→              <div className="p-3 rounded-lg bg-slate-800/50">
+  1755→                <p className="text-slate-500 text-xs">Économie réalisée</p>
+  1756→                <p className="text-emerald-400 text-xl font-bold">-{paydMetrics.primeEconomisee} €</p>
+  1757→                <p className="text-slate-500 text-xs">sur la prime annuelle</p>
+  1758→              </div>
+  1759→              <div className="p-3 rounded-lg bg-slate-800/50">
+  1760→                <p className="text-slate-500 text-xs">Score moyen</p>
+  1761→                <p className="text-white text-xl font-bold">{paydMetrics.scoreMoyen}/100</p>
+  1762→              </div>
+  1763→              <div className="p-3 rounded-lg bg-slate-800/50">
+  1764→                <p className="text-slate-500 text-xs">Jours restants</p>
+  1765→                <p className="text-white text-xl font-bold">{paydMetrics.joursRestants}</p>
+  1766→              </div>
+  1767→            </div>
+  1768→            <Progress
+  1769→              value={(paydMetrics.kmParcourus / paydMetrics.kmPrevu) * 100}
+  1770→              className="h-3 [&>div]:bg-emerald-500"
+  1771→            />
+  1772→            <p className="text-slate-500 text-xs text-center">{Math.round((paydMetrics.kmParcourus / paydMetrics.kmPrevu) * 100)}% du kilométrage prévu</p>
+  1773→          </CardContent>
+  1774→        </Card>
+  1775→
+  1776→        {/* PHYD Metrics */}
+  1777→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1778→          <CardHeader>
+  1779→            <CardTitle className="text-white text-lg flex items-center gap-2">
+  1780→              <Activity className="w-5 h-5 text-emerald-400" />
+  1781→              Payez selon votre conduite (PHYD)
+  1782→            </CardTitle>
+  1783→            <CardDescription className="text-slate-400">Prime ajustée selon votre comportement de conduite</CardDescription>
+  1784→          </CardHeader>
+  1785→          <CardContent className="space-y-3">
+  1786→            {phydMetrics.map((m) => (
+  1787→              <div key={m.name} className="space-y-1">
+  1788→                <div className="flex items-center justify-between">
+  1789→                  <div className="flex items-center gap-2">
+  1790→                    <span className="text-slate-500">{m.icon}</span>
+  1791→                    <span className="text-slate-300 text-sm">{m.name}</span>
+  1792→                  </div>
+  1793→                  <span className={`text-sm font-medium ${getScoreColor(m.score)}`}>{m.score}%</span>
+  1794→                </div>
+  1795→                <Progress value={m.score} className={`h-2 ${getProgressColor(m.score)}`} />
+  1796→              </div>
+  1797→            ))}
+  1798→          </CardContent>
+  1799→        </Card>
+  1800→      </div>
+  1801→
+  1802→      {/* Driving Behavior Analysis */}
+  1803→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  1804→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1805→          <CardHeader>
+  1806→            <CardTitle className="text-white text-lg flex items-center gap-2">
+  1807→              <BarChart3 className="w-5 h-5 text-emerald-400" />
+  1808→              Analyse comportementale hebdomadaire
+  1809→            </CardTitle>
+  1810→          </CardHeader>
+  1811→          <CardContent>
+  1812→            <div className="h-64">
+  1813→              <ResponsiveContainer width="100%" height="100%">
+  1814→                <BarChart data={telematicsWeekly}>
+  1815→                  <CartesianGrid strokeDasharray="3 3" stroke="rgb(51,65,85)" />
+  1816→                  <XAxis dataKey="jour" stroke="rgb(100,116,139)" fontSize={12} />
+  1817→                  <YAxis stroke="rgb(100,116,139)" fontSize={12} />
+  1818→                  <Tooltip
+  1819→                    contentStyle={{ backgroundColor: 'rgb(15,23,42)', border: '1px solid rgb(51,65,85)', borderRadius: '8px' }}
+  1820→                    labelStyle={{ color: 'rgb(148,163,184)' }}
+  1821→                  />
+  1822→                  <Bar dataKey="score" fill="rgb(16,185,129)" radius={[4, 4, 0, 0]} name="Score" />
+  1823→                </BarChart>
+  1824→              </ResponsiveContainer>
+  1825→            </div>
+  1826→          </CardContent>
+  1827→        </Card>
+  1828→
+  1829→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1830→          <CardHeader>
+  1831→            <CardTitle className="text-white text-lg flex items-center gap-2">
+  1832→              <Target className="w-5 h-5 text-emerald-400" />
+  1833→              Profil de conduite radar
+  1834→            </CardTitle>
+  1835→          </CardHeader>
+  1836→          <CardContent>
+  1837→            <div className="h-64">
+  1838→              <ResponsiveContainer width="100%" height="100%">
+  1839→                <RadarChart data={radarData}>
+  1840→                  <PolarGrid stroke="rgb(51,65,85)" />
+  1841→                  <PolarAngleAxis dataKey="subject" stroke="rgb(100,116,139)" fontSize={11} />
+  1842→                  <PolarRadiusAxis angle={30} domain={[0, 100]} stroke="rgb(71,85,105)" fontSize={10} />
+  1843→                  <Radar name="Score" dataKey="A" stroke="rgb(16,185,129)" fill="rgb(16,185,129)" fillOpacity={0.2} strokeWidth={2} />
+  1844→                  <Tooltip
+  1845→                    contentStyle={{ backgroundColor: 'rgb(15,23,42)', border: '1px solid rgb(51,65,85)', borderRadius: '8px' }}
+  1846→                  />
+  1847→                </RadarChart>
+  1848→              </ResponsiveContainer>
+  1849→            </div>
+  1850→          </CardContent>
+  1851→        </Card>
+  1852→      </div>
+  1853→
+  1854→      {/* Trip-Based Scoring */}
+  1855→      <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1856→        <CardHeader>
+  1857→          <CardTitle className="text-white text-lg flex items-center gap-2">
+  1858→            <Route className="w-5 h-5 text-emerald-400" />
+  1859→            Scoring par trajet
+  1860→          </CardTitle>
+  1861→        </CardHeader>
+  1862→        <CardContent className="p-0">
+  1863→          <Table>
+  1864→            <TableHeader>
+  1865→              <TableRow className="border-slate-800 hover:bg-transparent">
+  1866→                <TableHead className="text-slate-400">Date</TableHead>
+  1867→                <TableHead className="text-slate-400">Trajet</TableHead>
+  1868→                <TableHead className="text-slate-400 hidden sm:table-cell">Distance</TableHead>
+  1869→                <TableHead className="text-slate-400 hidden md:table-cell">Durée</TableHead>
+  1870→                <TableHead className="text-slate-400">Score</TableHead>
+  1871→              </TableRow>
+  1872→            </TableHeader>
+  1873→            <TableBody>
+  1874→              {tripScores.map((t) => (
+  1875→                <TableRow key={t.id} className="border-slate-800 hover:bg-slate-800/50">
+  1876→                  <TableCell className="text-slate-300 text-sm">{t.date}</TableCell>
+  1877→                  <TableCell className="text-white text-sm">{t.depart} → {t.arrivee}</TableCell>
+  1878→                  <TableCell className="text-slate-300 text-sm hidden sm:table-cell">{t.distance}</TableCell>
+  1879→                  <TableCell className="text-slate-300 text-sm hidden md:table-cell">{t.duree}</TableCell>
+  1880→                  <TableCell>
+  1881→                    <Badge
+  1882→                      variant="outline"
+  1883→                      className={t.score >= 80
+  1884→                        ? 'border-emerald-500/30 text-emerald-400'
+  1885→                        : t.score >= 65
+  1886→                          ? 'border-amber-500/30 text-amber-400'
+  1887→                          : 'border-red-500/30 text-red-400'
+  1888→                      }
+  1889→                    >
+  1890→                      {t.score}/100
+  1891→                    </Badge>
+  1892→                  </TableCell>
+  1893→                </TableRow>
+  1894→              ))}
+  1895→            </TableBody>
+  1896→          </Table>
+  1897→        </CardContent>
+  1898→      </Card>
+  1899→
+  1900→      {/* Safe Driver Rewards */}
+  1901→      <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1902→        <CardHeader>
+  1903→          <CardTitle className="text-white text-lg flex items-center gap-2">
+  1904→            <Award className="w-5 h-5 text-emerald-400" />
+  1905→            Récompenses conducteur prudent
+  1906→          </CardTitle>
+  1907→          <CardDescription className="text-slate-400">Économies mensuelles basées sur votre conduite sécuritaire</CardDescription>
+  1908→        </CardHeader>
+  1909→        <CardContent>
+  1910→          <div className="h-48">
+  1911→            <ResponsiveContainer width="100%" height="100%">
+  1912→              <BarChart data={safeDriverRewards}>
+  1913→                <CartesianGrid strokeDasharray="3 3" stroke="rgb(51,65,85)" />
+  1914→                <XAxis dataKey="mois" stroke="rgb(100,116,139)" fontSize={12} />
+  1915→                <YAxis stroke="rgb(100,116,139)" fontSize={12} />
+  1916→                <Tooltip
+  1917→                  contentStyle={{ backgroundColor: 'rgb(15,23,42)', border: '1px solid rgb(51,65,85)', borderRadius: '8px' }}
+  1918→                  labelStyle={{ color: 'rgb(148,163,184)' }}
+  1919→                />
+  1920→                <Bar dataKey="niveau" fill="rgb(16,185,129)" radius={[4, 4, 0, 0]} name="Niveau" />
+  1921→              </BarChart>
+  1922→            </ResponsiveContainer>
+  1923→          </div>
+  1924→          <div className="mt-4 grid grid-cols-3 gap-3">
+  1925→            {safeDriverRewards.slice(-3).map((r) => (
+  1926→              <div key={r.mois} className="p-3 rounded-lg bg-slate-800/50 text-center">
+  1927→                <p className="text-slate-500 text-xs">{r.mois}</p>
+  1928→                <p className="text-emerald-400 font-bold text-sm mt-1">{r.prime}</p>
+  1929→                <Badge variant="outline" className="border-amber-500/30 text-amber-400 text-xs mt-1">{r.niveau}</Badge>
+  1930→              </div>
+  1931→            ))}
+  1932→          </div>
+  1933→        </CardContent>
+  1934→      </Card>
+  1935→    </motion.div>
+  1936→  )
+  1937→}
+  1938→

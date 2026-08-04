@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import {
   Shield,
@@ -28,6 +28,8 @@ import {
   Search,
   ChevronRight,
   MessageSquare,
+  Plus,
+  RefreshCw,
 } from 'lucide-react'
 import {
   Card,
@@ -83,6 +85,7 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from 'recharts'
+import { Skeleton } from '@/components/ui/skeleton'
 
 // ─── Types ───────────────────────────────────────────────────
 interface Violation {
@@ -99,7 +102,17 @@ interface Violation {
   createdAt: string
 }
 
-// ─── Demo Data ───────────────────────────────────────────────
+interface Inspection {
+  id: string
+  make: string
+  model: string
+  licensePlate: string
+  lastInspection: string | null
+  status: string
+  fleet: { name: string } | null
+}
+
+// ─── Static lookups ───────────────────────────────────────────
 const violationTypes: Record<string, string> = {
   speeding: 'Excès de vitesse',
   parking: 'Stationnement irrégulier',
@@ -107,10 +120,12 @@ const violationTypes: Record<string, string> = {
   stop_sign: 'Stop non respecté',
   no_seatbelt: 'Ceinture non attachée',
   phone_use: 'Téléphone au volant',
-  drunk_driving: 'Conduite en état d\'ivresse',
-  no_insurance: 'Absence d\'assurance',
+  drunk_driving: "Conduite en état d'ivresse",
+  no_insurance: "Absence d'assurance",
   no_license: 'Conduite sans permis',
   lane_violation: 'Changement de voie irrégulier',
+  wrong_way: 'Sens interdit',
+  document_violation: "Infraction documentaire",
 }
 
 const severityLabels: Record<string, string> = {
@@ -143,67 +158,12 @@ const statusColors: Record<string, string> = {
   dismissed: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
 }
 
-const demoViolations: Violation[] = [
-  { id: 'vi1', violationType: 'speeding', description: 'Excès de vitesse de 25 km/h au-dessus de la limite', severity: 'moderate', points: 2, fineAmount: 135, status: 'confirmed', location: 'Avenue des Champs-Élysées, Paris', licensePlate: 'AB-123-CD', incidentDate: '2025-07-08', createdAt: '2025-07-08T14:30:00Z' },
-  { id: 'vi2', violationType: 'phone_use', description: 'Utilisation du téléphone portable en conduisant', severity: 'minor', points: 2, fineAmount: 135, status: 'pending', location: 'Boulevard de Sébastopol, Paris', licensePlate: 'EF-456-GH', incidentDate: '2025-07-07', createdAt: '2025-07-07T09:15:00Z' },
-  { id: 'vi3', violationType: 'red_light', description: 'Franchissement d\'un feu rouge', severity: 'serious', points: 4, fineAmount: 270, status: 'contested', location: 'Place de la République, Paris', licensePlate: 'IJ-789-KL', incidentDate: '2025-07-05', createdAt: '2025-07-05T16:45:00Z' },
-  { id: 'vi4', violationType: 'parking', description: 'Stationnement sur place réservée PMR', severity: 'minor', points: 0, fineAmount: 135, status: 'paid', location: 'Rue de Rivoli, Paris', licensePlate: 'MN-012-OP', incidentDate: '2025-07-03', createdAt: '2025-07-03T11:00:00Z' },
-  { id: 'vi5', violationType: 'drunk_driving', description: 'Conduite avec taux d\'alcoolémie 1.2 g/L', severity: 'criminal', points: 6, fineAmount: 4500, status: 'confirmed', location: 'Périphérique Nord, Paris', licensePlate: 'QR-345-ST', incidentDate: '2025-07-01', createdAt: '2025-07-01T02:30:00Z' },
-  { id: 'vi6', violationType: 'no_seatbelt', description: 'Conducteur et passager avant sans ceinture', severity: 'minor', points: 3, fineAmount: 135, status: 'paid', location: 'Route Nationale 7, Lyon', licensePlate: 'UV-678-WX', incidentDate: '2025-06-28', createdAt: '2025-06-28T10:20:00Z' },
-  { id: 'vi7', violationType: 'lane_violation', description: 'Changement de voie sans clignotant sur autoroute', severity: 'moderate', points: 2, fineAmount: 90, status: 'pending', location: 'A6, Direction Lyon', licensePlate: 'AB-123-CD', incidentDate: '2025-06-25', createdAt: '2025-06-25T15:10:00Z' },
-  { id: 'vi8', violationType: 'stop_sign', description: 'Non-respect du panneau stop', severity: 'moderate', points: 3, fineAmount: 135, status: 'dismissed', location: 'Carrefour Rue Monge, Paris', licensePlate: 'EF-456-GH', incidentDate: '2025-06-22', createdAt: '2025-06-22T08:45:00Z' },
-]
+const MOIS_ABREGE = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
 
-const demoInspections = [
-  { id: 'ins1', vehicle: 'Renault Kangoo', plate: 'AB-123-CD', date: '2025-06-15', result: 'pass', nextDue: '2026-06-15', status: 'active' },
-  { id: 'ins2', vehicle: 'Peugeot Expert', plate: 'EF-456-GH', date: '2025-05-20', result: 'pass', nextDue: '2026-05-20', status: 'active' },
-  { id: 'ins3', vehicle: 'Citroën ë-Jumpy', plate: 'IJ-789-KL', date: '2024-08-10', result: 'fail', nextDue: '2025-07-10', status: 'out_of_service' },
-  { id: 'ins4', vehicle: 'Dacia Spring', plate: 'MN-012-OP', date: '2024-09-01', result: 'pass', nextDue: '2025-09-01', status: 'active' },
-  { id: 'ins5', vehicle: 'Mercedes Sprinter', plate: 'QR-345-ST', date: '2024-07-15', result: 'fail', nextDue: '2025-07-15', status: 'out_of_service' },
-  { id: 'ins6', vehicle: 'Renault Master', plate: 'UV-678-WX', date: '2025-07-01', result: 'pass', nextDue: '2026-07-01', status: 'active' },
-]
-
-const violationTrendChart = [
-  { mois: 'Jan', infractions: 42, amendes: 5400 },
-  { mois: 'Fév', infractions: 38, amendes: 4900 },
-  { mois: 'Mar', infractions: 51, amendes: 7200 },
-  { mois: 'Avr', infractions: 45, amendes: 6100 },
-  { mois: 'Mai', infractions: 60, amendes: 8500 },
-  { mois: 'Jun', infractions: 55, amendes: 7800 },
-  { mois: 'Jul', infractions: 48, amendes: 6600 },
-]
-
-const violationDistChart = [
-  { type: 'Excès vitesse', count: 28 },
-  { type: 'Téléphone', count: 15 },
-  { type: 'Stationnement', count: 22 },
-  { type: 'Feu rouge', count: 8 },
-  { type: 'Alcool', count: 5 },
-  { type: 'Ceinture', count: 12 },
-  { type: 'Autre', count: 10 },
-]
-
-const monthlyTrendChart = [
-  { mois: 'Jan', gravite: 5, modere: 18, mineur: 19 },
-  { mois: 'Fév', gravite: 3, modere: 15, mineur: 20 },
-  { mois: 'Mar', gravite: 8, modere: 22, mineur: 21 },
-  { mois: 'Avr', gravite: 6, modere: 19, mineur: 20 },
-  { mois: 'Mai', gravite: 10, modere: 25, mineur: 25 },
-  { mois: 'Jun', gravite: 7, modere: 24, mineur: 24 },
-  { mois: 'Jul', gravite: 4, modere: 20, mineur: 24 },
-]
-
-const hotspots = [
-  { id: 1, location: 'Avenue des Champs-Élysées', violations: 34, type: 'Excès de vitesse' },
-  { id: 2, location: 'Périphérique Sud', violations: 28, type: 'Vitesse / Alcool' },
-  { id: 3, location: 'Boulevard Haussmann', violations: 22, type: 'Stationnement' },
-  { id: 4, location: 'Place de la Concorde', violations: 18, type: 'Feu rouge' },
-  { id: 5, location: 'Rue de Rivoli', violations: 15, type: 'Téléphone' },
-]
-
+// Static data that doesn't come from the API
 const nationalApis = [
   { id: 1, name: 'Fichier National des Permis (FNPC)', status: 'connected', lastSync: '2025-07-10 14:30', endpoint: '/api/v1/permis', description: 'Vérification des permis de conduire en temps réel' },
-  { id: 2, name: 'Système National d\'Immatriculation (SNI)', status: 'connected', lastSync: '2025-07-10 14:25', endpoint: '/api/v1/immatriculation', description: 'Consultation du registre national des véhicules' },
+  { id: 2, name: "Système National d'Immatriculation (SNI)", status: 'connected', lastSync: '2025-07-10 14:25', endpoint: '/api/v1/immatriculation', description: 'Consultation du registre national des véhicules' },
   { id: 3, name: 'Centre National de Contrôle Technique', status: 'degraded', lastSync: '2025-07-09 08:00', endpoint: '/api/v1/controle-technique', description: 'Récupération des résultats de contrôle technique' },
   { id: 4, name: 'Fichier Central des Contraventions (FCC)', status: 'connected', lastSync: '2025-07-10 14:32', endpoint: '/api/v1/contraventions', description: 'Synchronisation des infractions et amendes' },
   { id: 5, name: 'Base de Données des Assurances (BDA)', status: 'disconnected', lastSync: '2025-07-05 16:00', endpoint: '/api/v1/assurances', description: 'Vérification de la couverture d\'assurance' },
@@ -237,6 +197,10 @@ const monthlyConfig: ChartConfig = {
 
 // ─── Component ───────────────────────────────────────────────
 export default function GovernmentModule() {
+  const [violations, setViolations] = useState<Violation[]>([])
+  const [inspections, setInspections] = useState<Inspection[]>([])
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
   const [typeFilter, setTypeFilter] = useState('all')
   const [severityFilter, setSeverityFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -244,8 +208,30 @@ export default function GovernmentModule() {
   const [contestDialogOpen, setContestDialogOpen] = useState(false)
   const [selectedViolation, setSelectedViolation] = useState<Violation | null>(null)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
+  const [violationDialogOpen, setViolationDialogOpen] = useState(false)
 
-  const filteredViolations = demoViolations.filter((v) => {
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [vRes, iRes] = await Promise.all([
+        fetch('/api/government/violations'),
+        fetch('/api/government/inspections'),
+      ])
+      const vData = await vRes.json()
+      const iData = await iRes.json()
+      if (vData.success) setViolations(vData.data)
+      if (iData.success) setInspections(iData.data)
+    } catch (e) {
+      console.error('Erreur chargement données gouvernement:', e)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { loadData() }, [loadData])
+
+  // ─── Computed data ─────────────────────────────────────────
+  const filteredViolations = violations.filter((v) => {
     if (typeFilter !== 'all' && v.violationType !== typeFilter) return false
     if (severityFilter !== 'all' && v.severity !== severityFilter) return false
     if (statusFilter !== 'all' && v.status !== statusFilter) return false
@@ -253,15 +239,144 @@ export default function GovernmentModule() {
     return true
   })
 
-  const totalViolations = demoViolations.length
-  const activeInspections = demoInspections.filter(i => i.result === 'fail').length
-  const totalRevenue = demoViolations.filter(v => v.status === 'paid').reduce((s, v) => s + (v.fineAmount ?? 0), 0)
-  const complianceRate = Math.round((demoInspections.filter(i => i.result === 'pass').length / demoInspections.length) * 100)
+  const totalViolations = violations.length
+  const activeInspections = inspections.filter(i => i.status === 'out_of_service').length
+  const totalRevenue = violations.filter(v => v.status === 'paid').reduce((s, v) => s + (v.fineAmount ?? 0), 0)
+  const complianceRate = inspections.length > 0
+    ? Math.round((inspections.filter(i => i.status !== 'out_of_service').length / inspections.length) * 100)
+    : 0
 
-  const overdueInspections = demoInspections.filter(i => {
-    const due = new Date(i.nextDue)
-    return due <= new Date() && i.result === 'fail'
+  const overdueInspections = inspections.filter(i => {
+    if (!i.lastInspection) return false
+    const nextDue = new Date(i.lastInspection)
+    nextDue.setFullYear(nextDue.getFullYear() + 1)
+    return nextDue <= new Date() && i.status === 'out_of_service'
   })
+
+  // Charts computed from real data
+  const violationTrendChart = (() => {
+    const byMonth: Record<string, { infractions: number; amendes: number }> = {}
+    violations.forEach(v => {
+      const d = new Date(v.createdAt)
+      const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`
+      if (!byMonth[key]) byMonth[key] = { infractions: 0, amendes: 0 }
+      byMonth[key].infractions += 1
+      byMonth[key].amendes += v.fineAmount ?? 0
+    })
+    return Object.entries(byMonth)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-7)
+      .map(([, v], i) => ({
+        mois: MOIS_ABREGE[(new Date().getMonth() - 6 + i + 12) % 12],
+        infractions: v.infractions,
+        amendes: Math.round(v.amendes),
+      }))
+  })()
+
+  const violationDistChart = (() => {
+    const byType: Record<string, number> = {}
+    violations.forEach(v => {
+      const label = violationTypes[v.violationType] ?? 'Autre'
+      byType[label] = (byType[label] ?? 0) + 1
+    })
+    return Object.entries(byType)
+      .sort((a, b) => b[1] - a[1])
+      .map(([type, count]) => ({ type, count }))
+  })()
+
+  const monthlyTrendChart = (() => {
+    const byMonth: Record<string, { gravite: number; modere: number; mineur: number }> = {}
+    violations.forEach(v => {
+      const d = new Date(v.createdAt)
+      const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`
+      if (!byMonth[key]) byMonth[key] = { gravite: 0, modere: 0, mineur: 0 }
+      if (v.severity === 'serious' || v.severity === 'criminal') byMonth[key].gravite += 1
+      else if (v.severity === 'moderate') byMonth[key].modere += 1
+      else byMonth[key].mineur += 1
+    })
+    return Object.entries(byMonth)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-7)
+      .map(([, v], i) => ({
+        mois: MOIS_ABREGE[(new Date().getMonth() - 6 + i + 12) % 12],
+        ...v,
+      }))
+  })()
+
+  const hotspots = (() => {
+    const byLoc: Record<string, { location: string; violations: number; types: Set<string> }> = {}
+    violations.forEach(v => {
+      if (!v.location) return
+      if (!byLoc[v.location]) byLoc[v.location] = { location: v.location, violations: 0, types: new Set() }
+      byLoc[v.location].violations += 1
+      byLoc[v.location].types.add(violationTypes[v.violationType] ?? v.violationType)
+    })
+    return Object.values(byLoc)
+      .sort((a, b) => b.violations - a.violations)
+      .slice(0, 5)
+      .map((h, i) => ({ id: i + 1, location: h.location, violations: h.violations, type: Array.from(h.types).slice(0, 2).join(' / ') }))
+  })()
+
+  // ─── Form handlers ─────────────────────────────────────────
+  const handleCreateViolation = async () => {
+    const typeEl = document.querySelector('[data-v-type]') as HTMLSelectElement
+    const descEl = (document.getElementById('v-desc') as HTMLInputElement)?.value
+    const severityEl = document.querySelector('[data-v-severity]') as HTMLSelectElement
+    const pointsEl = (document.getElementById('v-points') as HTMLInputElement)?.value
+    const fineEl = (document.getElementById('v-fine') as HTMLInputElement)?.value
+    const plateEl = (document.getElementById('v-plate') as HTMLInputElement)?.value
+    const locEl = (document.getElementById('v-location') as HTMLInputElement)?.value
+    if (!typeEl?.value || !descEl) return
+    setSubmitting(true)
+    try {
+      await fetch('/api/government/violations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: 'system',
+          violationType: typeEl.value,
+          description: descEl,
+          severity: severityEl?.value ?? 'minor',
+          points: pointsEl ? parseInt(pointsEl) : 0,
+          fineAmount: fineEl ? parseFloat(fineEl) : null,
+          licensePlate: plateEl || null,
+          location: locEl || null,
+        }),
+      })
+      setViolationDialogOpen(false)
+      loadData()
+    } catch (e) {
+      console.error('Erreur création infraction:', e)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleContest = async () => {
+    if (!selectedViolation) return
+    try {
+      await fetch(`/api/government/violations/${selectedViolation.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'contested' }),
+      })
+      setContestDialogOpen(false)
+      setDetailDialogOpen(false)
+      loadData()
+    } catch (e) {
+      console.error('Erreur contestation:', e)
+    }
+  }
+
+  // ─── Skeleton helper ───────────────────────────────────────
+  const SkeletonCard = () => (
+    <Card className="bg-slate-900 border-slate-800">
+      <CardContent className="p-4">
+        <Skeleton className="h-4 w-24 mb-2 bg-slate-800" />
+        <Skeleton className="h-8 w-16 bg-slate-800" />
+      </CardContent>
+    </Card>
+  )
 
   return (
     <div className="pt-20 pb-8 min-h-screen bg-slate-950">
@@ -284,109 +399,128 @@ export default function GovernmentModule() {
         </motion.div>
 
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="bg-slate-900 border border-slate-800">
-            <TabsTrigger value="dashboard" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-              <BarChart3 className="h-4 w-4 mr-2" />Tableau de bord
-            </TabsTrigger>
-            <TabsTrigger value="violations" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-              <Gavel className="h-4 w-4 mr-2" />Infractions
-            </TabsTrigger>
-            <TabsTrigger value="inspections" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-              <ClipboardCheck className="h-4 w-4 mr-2" />Contrôles
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-              <BarChart3 className="h-4 w-4 mr-2" />Analytique
-            </TabsTrigger>
-            <TabsTrigger value="apis" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-              <Globe className="h-4 w-4 mr-2" />APIs Nationales
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex items-center justify-between">
+            <TabsList className="bg-slate-900 border border-slate-800">
+              <TabsTrigger value="dashboard" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                <BarChart3 className="h-4 w-4 mr-2" />Tableau de bord
+              </TabsTrigger>
+              <TabsTrigger value="violations" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                <Gavel className="h-4 w-4 mr-2" />Infractions
+              </TabsTrigger>
+              <TabsTrigger value="inspections" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                <ClipboardCheck className="h-4 w-4 mr-2" />Contrôles
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                <BarChart3 className="h-4 w-4 mr-2" />Analytique
+              </TabsTrigger>
+              <TabsTrigger value="apis" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                <Globe className="h-4 w-4 mr-2" />APIs Nationales
+              </TabsTrigger>
+            </TabsList>
+            <Button variant="outline" className="border-slate-700 text-slate-300" onClick={loadData} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />Actualiser
+            </Button>
+          </div>
 
           {/* ═══ TAB 1: Dashboard ═══ */}
           <TabsContent value="dashboard" className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[
-                { label: 'Total Infractions', value: totalViolations, icon: <FileWarning className="h-5 w-5" />, color: 'text-red-400', bg: 'bg-red-500/10' },
-                { label: 'Contrôles Actifs', value: activeInspections, icon: <ClipboardCheck className="h-5 w-5" />, color: 'text-amber-400', bg: 'bg-amber-500/10' },
-                { label: 'Revenus Amendes', value: `${totalRevenue.toLocaleString('fr-FR')} €`, icon: <Euro className="h-5 w-5" />, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-                { label: 'Taux Conformité', value: `${complianceRate}%`, icon: <BadgeCheck className="h-5 w-5" />, color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
-              ].map((card) => (
-                <Card key={card.label} className="bg-slate-900 border-slate-800">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-slate-400">{card.label}</p>
-                        <p className="text-2xl font-bold text-white mt-1">{card.value}</p>
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {[
+                    { label: 'Total Infractions', value: totalViolations, icon: <FileWarning className="h-5 w-5" />, color: 'text-red-400', bg: 'bg-red-500/10' },
+                    { label: 'Contrôles Défavorables', value: activeInspections, icon: <ClipboardCheck className="h-5 w-5" />, color: 'text-amber-400', bg: 'bg-amber-500/10' },
+                    { label: 'Revenus Amendes', value: `${totalRevenue.toLocaleString('fr-FR')} €`, icon: <Euro className="h-5 w-5" />, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+                    { label: 'Taux Conformité', value: `${complianceRate}%`, icon: <BadgeCheck className="h-5 w-5" />, color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
+                  ].map((card) => (
+                    <Card key={card.label} className="bg-slate-900 border-slate-800">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-slate-400">{card.label}</p>
+                            <p className="text-2xl font-bold text-white mt-1">{card.value}</p>
+                          </div>
+                          <div className={`p-3 rounded-lg ${card.bg}`}>
+                            <span className={card.color}>{card.icon}</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Violation Trend */}
+                  <Card className="bg-slate-900 border-slate-800 lg:col-span-2">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-white text-base">Tendance des Infractions</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {violationTrendChart.length > 0 ? (
+                        <ChartContainer config={violationChartConfig} className="h-[250px] w-full">
+                          <LineChart data={violationTrendChart}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                            <XAxis dataKey="mois" stroke="#94a3b8" fontSize={12} />
+                            <YAxis stroke="#94a3b8" fontSize={12} />
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                            <Line type="monotone" dataKey="infractions" stroke="#ef4444" strokeWidth={2} dot={false} />
+                            <Line type="monotone" dataKey="amendes" stroke="#f59e0b" strokeWidth={2} dot={false} />
+                          </LineChart>
+                        </ChartContainer>
+                      ) : (
+                        <div className="h-[250px] flex items-center justify-center text-slate-500 text-sm">Aucune donnée d'infraction</div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Recent Violations */}
+                  <Card className="bg-slate-900 border-slate-800">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-white text-base">Infractions Récentes</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3 max-h-[240px] overflow-y-auto pr-1">
+                        {violations.length > 0 ? violations.slice(0, 5).map((v) => (
+                          <div key={v.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-slate-800/50 transition-colors">
+                            <div className={`mt-0.5 ${v.severity === 'criminal' || v.severity === 'serious' ? 'text-red-400' : 'text-amber-400'}`}>
+                              <FileWarning className="h-4 w-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-slate-300 truncate">{violationTypes[v.violationType] ?? v.violationType}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-xs text-slate-500">{v.licensePlate ?? '—'}</span>
+                                <Badge variant="outline" className={`text-[10px] px-1 py-0 ${severityColors[v.severity] ?? ''}`}>
+                                  {severityLabels[v.severity] ?? v.severity}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        )) : (
+                          <p className="text-sm text-slate-500 text-center py-8">Aucune infraction enregistrée</p>
+                        )}
                       </div>
-                      <div className={`p-3 rounded-lg ${card.bg}`}>
-                        <span className={card.color}>{card.icon}</span>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Map Placeholder */}
+                <Card className="bg-slate-900 border-slate-800">
+                  <CardContent className="p-8">
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <div className="p-4 rounded-full bg-slate-800 mb-4">
+                        <MapPin className="h-10 w-10 text-slate-500" />
                       </div>
+                      <h3 className="text-white font-medium mb-1">Carte de Couverture</h3>
+                      <p className="text-sm text-slate-500 max-w-md">Carte interactive des zones de contrôle et des points chauds d'infractions. Intégration MapBox en cours.</p>
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Violation Trend */}
-              <Card className="bg-slate-900 border-slate-800 lg:col-span-2">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-white text-base">Tendance des Infractions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer config={violationChartConfig} className="h-[250px] w-full">
-                    <LineChart data={violationTrendChart}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                      <XAxis dataKey="mois" stroke="#94a3b8" fontSize={12} />
-                      <YAxis stroke="#94a3b8" fontSize={12} />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Line type="monotone" dataKey="infractions" stroke="#ef4444" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="amendes" stroke="#f59e0b" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
-
-              {/* Recent Violations */}
-              <Card className="bg-slate-900 border-slate-800">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-white text-base">Infractions Récentes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 max-h-[240px] overflow-y-auto pr-1">
-                    {demoViolations.slice(0, 5).map((v) => (
-                      <div key={v.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-slate-800/50 transition-colors">
-                        <div className={`mt-0.5 ${v.severity === 'criminal' || v.severity === 'serious' ? 'text-red-400' : 'text-amber-400'}`}>
-                          <FileWarning className="h-4 w-4" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-slate-300 truncate">{violationTypes[v.violationType]}</p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-xs text-slate-500">{v.licensePlate}</span>
-                            <Badge variant="outline" className={`text-[10px] px-1 py-0 ${severityColors[v.severity]}`}>
-                              {severityLabels[v.severity]}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Map Placeholder */}
-            <Card className="bg-slate-900 border-slate-800">
-              <CardContent className="p-8">
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="p-4 rounded-full bg-slate-800 mb-4">
-                    <MapPin className="h-10 w-10 text-slate-500" />
-                  </div>
-                  <h3 className="text-white font-medium mb-1">Carte de Couverture</h3>
-                  <p className="text-sm text-slate-500 max-w-md">Carte interactive des zones de contrôle et des points chauds d\'infractions. Intégration MapBox en cours.</p>
-                </div>
-              </CardContent>
-            </Card>
+              </>
+            )}
           </TabsContent>
 
           {/* ═══ TAB 2: Violations ═══ */}
@@ -430,6 +564,73 @@ export default function GovernmentModule() {
                   </SelectContent>
                 </Select>
               </div>
+              <Dialog open={violationDialogOpen} onOpenChange={setViolationDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                    <Plus className="h-4 w-4 mr-2" />Nouvelle infraction
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-slate-900 border-slate-800 text-white">
+                  <DialogHeader>
+                    <DialogTitle>Enregistrer une infraction</DialogTitle>
+                    <DialogDescription className="text-slate-400">Saisissez les détails de l'infraction</DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Type</Label>
+                        <Select>
+                          <SelectTrigger data-v-type className="bg-slate-800 border-slate-700"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(violationTypes).map(([k, v]) => (
+                              <SelectItem key={k} value={k}>{v}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Sévérité</Label>
+                        <Select>
+                          <SelectTrigger data-v-severity className="bg-slate-800 border-slate-700"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(severityLabels).map(([k, v]) => (
+                              <SelectItem key={k} value={k}>{v}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Description</Label>
+                      <Input id="v-desc" placeholder="Description de l'infraction" className="bg-slate-800 border-slate-700" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Points</Label>
+                        <Input id="v-points" type="number" placeholder="0" className="bg-slate-800 border-slate-700" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Amende (€)</Label>
+                        <Input id="v-fine" type="number" placeholder="0" className="bg-slate-800 border-slate-700" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Immatriculation</Label>
+                        <Input id="v-plate" placeholder="AB-123-CD" className="bg-slate-800 border-slate-700" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Lieu</Label>
+                        <Input id="v-location" placeholder="Ex: Avenue des Champs-Élysées" className="bg-slate-800 border-slate-700" />
+                      </div>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" className="border-slate-700 text-slate-300" onClick={() => setViolationDialogOpen(false)}>Annuler</Button>
+                    <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleCreateViolation} disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
 
             <Card className="bg-slate-900 border-slate-800">
@@ -448,17 +649,31 @@ export default function GovernmentModule() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredViolations.map((v) => (
+                      {loading ? Array.from({ length: 4 }).map((_, i) => (
+                        <TableRow key={i} className="border-slate-800">
+                          <TableCell><Skeleton className="h-4 w-24 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-40 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-5 w-16 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-8 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-16 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-5 w-20 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-20 bg-slate-800" /></TableCell>
+                        </TableRow>
+                      )) : filteredViolations.length > 0 ? filteredViolations.map((v) => (
                         <TableRow key={v.id} className="border-slate-800 hover:bg-slate-800/50 cursor-pointer" onClick={() => { setSelectedViolation(v); setDetailDialogOpen(true) }}>
-                          <TableCell className="text-white text-sm font-medium">{violationTypes[v.violationType]}</TableCell>
+                          <TableCell className="text-white text-sm font-medium">{violationTypes[v.violationType] ?? v.violationType}</TableCell>
                           <TableCell className="text-slate-300 text-sm max-w-[200px] truncate">{v.description}</TableCell>
-                          <TableCell><Badge variant="outline" className={severityColors[v.severity]}>{severityLabels[v.severity]}</Badge></TableCell>
+                          <TableCell><Badge variant="outline" className={severityColors[v.severity] ?? ''}>{severityLabels[v.severity] ?? v.severity}</Badge></TableCell>
                           <TableCell className="text-slate-300">{v.points}</TableCell>
                           <TableCell className="text-slate-300">{v.fineAmount ? `${v.fineAmount} €` : '—'}</TableCell>
-                          <TableCell><Badge variant="outline" className={statusColors[v.status]}>{statusLabels[v.status]}</Badge></TableCell>
+                          <TableCell><Badge variant="outline" className={statusColors[v.status] ?? ''}>{statusLabels[v.status] ?? v.status}</Badge></TableCell>
                           <TableCell className="text-slate-400 text-sm">{v.incidentDate ? new Date(v.incidentDate).toLocaleDateString('fr-FR') : '—'}</TableCell>
                         </TableRow>
-                      ))}
+                      )) : (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center text-slate-500 py-8">Aucune infraction trouvée</TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -469,7 +684,7 @@ export default function GovernmentModule() {
             <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
               <DialogContent className="bg-slate-900 border-slate-800 text-white max-w-lg">
                 <DialogHeader>
-                  <DialogTitle>Détails de l\'infraction</DialogTitle>
+                  <DialogTitle>Détails de l'infraction</DialogTitle>
                   <DialogDescription className="text-slate-400">Informations complètes</DialogDescription>
                 </DialogHeader>
                 {selectedViolation && (
@@ -477,11 +692,11 @@ export default function GovernmentModule() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <p className="text-xs text-slate-500">Type</p>
-                        <p className="text-sm text-white">{violationTypes[selectedViolation.violationType]}</p>
+                        <p className="text-sm text-white">{violationTypes[selectedViolation.violationType] ?? selectedViolation.violationType}</p>
                       </div>
                       <div className="space-y-1">
                         <p className="text-xs text-slate-500">Sévérité</p>
-                        <Badge variant="outline" className={severityColors[selectedViolation.severity]}>{severityLabels[selectedViolation.severity]}</Badge>
+                        <Badge variant="outline" className={severityColors[selectedViolation.severity] ?? ''}>{severityLabels[selectedViolation.severity] ?? selectedViolation.severity}</Badge>
                       </div>
                       <div className="space-y-1">
                         <p className="text-xs text-slate-500">Points</p>
@@ -509,7 +724,7 @@ export default function GovernmentModule() {
                       </div>
                       <div className="space-y-1">
                         <p className="text-xs text-slate-500">Statut</p>
-                        <Badge variant="outline" className={statusColors[selectedViolation.status]}>{statusLabels[selectedViolation.status]}</Badge>
+                        <Badge variant="outline" className={statusColors[selectedViolation.status] ?? ''}>{statusLabels[selectedViolation.status] ?? selectedViolation.status}</Badge>
                       </div>
                     </div>
                   </div>
@@ -524,13 +739,13 @@ export default function GovernmentModule() {
                       </DialogTrigger>
                       <DialogContent className="bg-slate-900 border-slate-800 text-white">
                         <DialogHeader>
-                          <DialogTitle>Contester l\'infraction</DialogTitle>
+                          <DialogTitle>Contester l'infraction</DialogTitle>
                           <DialogDescription className="text-slate-400">Décrivez les motifs de votre contestation</DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 py-4">
                           <div className="space-y-2">
                             <Label>Motif de contestation</Label>
-                            <Input placeholder="Ex: Erreur d\'identification du véhicule" className="bg-slate-800 border-slate-700" />
+                            <Input placeholder="Ex: Erreur d'identification du véhicule" className="bg-slate-800 border-slate-700" />
                           </div>
                           <div className="space-y-2">
                             <Label>Preuves (description)</Label>
@@ -539,7 +754,7 @@ export default function GovernmentModule() {
                         </div>
                         <DialogFooter>
                           <Button variant="outline" className="border-slate-700 text-slate-300" onClick={() => setContestDialogOpen(false)}>Annuler</Button>
-                          <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => { setContestDialogOpen(false); setDetailDialogOpen(false) }}>Soumettre</Button>
+                          <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleContest}>Soumettre</Button>
                         </DialogFooter>
                       </DialogContent>
                     </Dialog>
@@ -581,27 +796,41 @@ export default function GovernmentModule() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {demoInspections.map((i) => {
-                        const isOverdue = i.result === 'fail' && new Date(i.nextDue) <= new Date()
+                      {loading ? Array.from({ length: 3 }).map((_, i) => (
+                        <TableRow key={i} className="border-slate-800">
+                          <TableCell><Skeleton className="h-4 w-28 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-20 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-20 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-5 w-20 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-20 bg-slate-800" /></TableCell>
+                        </TableRow>
+                      )) : inspections.length > 0 ? inspections.map((i) => {
+                        const result = i.status === 'out_of_service' ? 'fail' : 'pass'
+                        const nextDue = i.lastInspection ? new Date(new Date(i.lastInspection).getTime() + 365 * 24 * 60 * 60 * 1000) : null
+                        const isOverdue = nextDue ? nextDue <= new Date() && result === 'fail' : false
                         return (
                           <TableRow key={i.id} className={`border-slate-800 hover:bg-slate-800/50 ${isOverdue ? 'bg-red-500/5' : ''}`}>
-                            <TableCell className="text-white text-sm font-medium">{i.vehicle}</TableCell>
-                            <TableCell className="text-slate-300 font-mono text-sm">{i.plate}</TableCell>
-                            <TableCell className="text-slate-300 text-sm">{new Date(i.date).toLocaleDateString('fr-FR')}</TableCell>
+                            <TableCell className="text-white text-sm font-medium">{i.make} {i.model}</TableCell>
+                            <TableCell className="text-slate-300 font-mono text-sm">{i.licensePlate}</TableCell>
+                            <TableCell className="text-slate-300 text-sm">{i.lastInspection ? new Date(i.lastInspection).toLocaleDateString('fr-FR') : '—'}</TableCell>
                             <TableCell>
-                              <Badge variant="outline" className={i.result === 'pass' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}>
-                                {i.result === 'pass' ? <><CheckCircle2 className="h-3 w-3 mr-1" />Favorable</> : <><XCircle className="h-3 w-3 mr-1" />Défavorable</>}
+                              <Badge variant="outline" className={result === 'pass' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}>
+                                {result === 'pass' ? <><CheckCircle2 className="h-3 w-3 mr-1" />Favorable</> : <><XCircle className="h-3 w-3 mr-1" />Défavorable</>}
                               </Badge>
                             </TableCell>
                             <TableCell>
                               <span className={`text-sm ${isOverdue ? 'text-red-400 font-medium' : 'text-slate-300'}`}>
                                 {isOverdue && <AlertTriangle className="h-3 w-3 inline mr-1" />}
-                                {new Date(i.nextDue).toLocaleDateString('fr-FR')}
+                                {nextDue ? nextDue.toLocaleDateString('fr-FR') : '—'}
                               </span>
                             </TableCell>
                           </TableRow>
                         )
-                      })}
+                      }) : (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center text-slate-500 py-8">Aucun contrôle technique enregistré</TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -617,15 +846,19 @@ export default function GovernmentModule() {
                   <CardTitle className="text-white text-base">Distribution par Type</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ChartContainer config={distChartConfig} className="h-[280px] w-full">
-                    <BarChart data={violationDistChart} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
-                      <XAxis type="number" stroke="#94a3b8" fontSize={12} />
-                      <YAxis type="category" dataKey="type" stroke="#94a3b8" fontSize={11} width={100} />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="count" fill="#06b6d4" radius={[0, 4, 4, 0]} />
-                    </BarChart>
-                  </ChartContainer>
+                  {violationDistChart.length > 0 ? (
+                    <ChartContainer config={distChartConfig} className="h-[280px] w-full">
+                      <BarChart data={violationDistChart} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
+                        <XAxis type="number" stroke="#94a3b8" fontSize={12} />
+                        <YAxis type="category" dataKey="type" stroke="#94a3b8" fontSize={11} width={100} />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="count" fill="#06b6d4" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ChartContainer>
+                  ) : (
+                    <div className="h-[280px] flex items-center justify-center text-slate-500 text-sm">Aucune donnée</div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -634,17 +867,21 @@ export default function GovernmentModule() {
                   <CardTitle className="text-white text-base">Tendances Mensuelles par Sévérité</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ChartContainer config={monthlyConfig} className="h-[280px] w-full">
-                    <BarChart data={monthlyTrendChart}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                      <XAxis dataKey="mois" stroke="#94a3b8" fontSize={12} />
-                      <YAxis stroke="#94a3b8" fontSize={12} />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="gravite" stackId="a" fill="#ef4444" />
-                      <Bar dataKey="modere" stackId="a" fill="#f59e0b" />
-                      <Bar dataKey="mineur" stackId="a" fill="#10b981" />
-                    </BarChart>
-                  </ChartContainer>
+                  {monthlyTrendChart.length > 0 ? (
+                    <ChartContainer config={monthlyConfig} className="h-[280px] w-full">
+                      <BarChart data={monthlyTrendChart}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                        <XAxis dataKey="mois" stroke="#94a3b8" fontSize={12} />
+                        <YAxis stroke="#94a3b8" fontSize={12} />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="gravite" stackId="a" fill="#ef4444" />
+                        <Bar dataKey="modere" stackId="a" fill="#f59e0b" />
+                        <Bar dataKey="mineur" stackId="a" fill="#10b981" />
+                      </BarChart>
+                    </ChartContainer>
+                  ) : (
+                    <div className="h-[280px] flex items-center justify-center text-slate-500 text-sm">Aucune donnée</div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -652,24 +889,28 @@ export default function GovernmentModule() {
             {/* Geographic Distribution / Hotspots */}
             <Card className="bg-slate-900 border-slate-800">
               <CardHeader className="pb-3">
-                <CardTitle className="text-white text-base">Points Chauds d\'Infractions</CardTitle>
+                <CardTitle className="text-white text-base">Points Chauds d'Infractions</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                  {hotspots.map((h, i) => (
-                    <div key={h.id} className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-red-500' : i < 3 ? 'bg-amber-500' : 'bg-slate-500'}`} />
-                        <span className="text-xs text-slate-500">#{i + 1}</span>
+                {hotspots.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    {hotspots.map((h, i) => (
+                      <div key={h.id} className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-red-500' : i < 3 ? 'bg-amber-500' : 'bg-slate-500'}`} />
+                          <span className="text-xs text-slate-500">#{i + 1}</span>
+                        </div>
+                        <p className="text-sm text-white font-medium mb-1">{h.location}</p>
+                        <p className="text-xs text-slate-400 mb-2">{h.type}</p>
+                        <Badge variant="outline" className="bg-red-500/10 text-red-400 border-red-500/30">
+                          {h.violations} infractions
+                        </Badge>
                       </div>
-                      <p className="text-sm text-white font-medium mb-1">{h.location}</p>
-                      <p className="text-xs text-slate-400 mb-2">{h.type}</p>
-                      <Badge variant="outline" className="bg-red-500/10 text-red-400 border-red-500/30">
-                        {h.violations} infractions
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-slate-500 text-sm">Aucun point chaud identifié</div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -746,7 +987,7 @@ export default function GovernmentModule() {
             {/* Data Exchange Logs */}
             <Card className="bg-slate-900 border-slate-800">
               <CardHeader className="pb-3">
-                <CardTitle className="text-white text-base">Journal d\'Échange de Données</CardTitle>
+                <CardTitle className="text-white text-base">Journal d'Échange de Données</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 max-h-64 overflow-y-auto pr-1">

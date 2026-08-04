@@ -207,21 +207,23 @@ const fadeUp = {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 export default function TelematicsModule() {
   const [vehicleId, setVehicleId] = useState('v1')
-  const [trips, setTrips] = useState<Trip[]>(MOCK_TRIPS)
-  const [stats, setStats] = useState<DrivingStats>(MOCK_STATS)
+  const [trips, setTrips] = useState<Trip[]>([])
+  const [stats, setStats] = useState<DrivingStats | null>(null)
+  const [loading, setLoading] = useState(true)
   const [vehicleStatus, setVehicleStatus] = useState<'moving' | 'stopped' | 'offline'>('moving')
   const [alerts, setAlerts] = useState<AlertItem[]>(ALERTS)
 
-  // Fetch from API on mount (optional, fallback to mock)
+  // Fetch from API on mount
   useEffect(() => {
-    fetch('/api/telematics?type=trips')
-      .then(r => r.json())
-      .then(res => { if (res.success) setTrips(res.data) })
-      .catch(() => { /* use mock */ })
-    fetch('/api/telematics?type=stats')
-      .then(r => r.json())
-      .then(res => { if (res.success) setStats(res.data) })
-      .catch(() => { /* use mock */ })
+    Promise.all([
+      fetch('/api/telematics?type=trips').then(r => r.json()).then(res => res.success ? res.data : []).catch(() => []),
+      fetch('/api/telematics?type=stats').then(r => r.json()).then(res => res.success ? res.data : null).catch(() => null),
+    ]).then(([tripsData, statsData]) => {
+      if (tripsData.length > 0) setTrips(tripsData)
+      else setTrips(MOCK_TRIPS)
+      if (statsData) setStats(statsData)
+      else setStats(MOCK_STATS)
+    }).finally(() => setLoading(false))
   }, [])
 
   const markAsRead = (id: number) => {
@@ -229,6 +231,14 @@ export default function TelematicsModule() {
   }
 
   const unreadCount = alerts.filter(a => !a.lu).length
+
+  if (loading || !stats) {
+    return (
+      <div className="pt-16 min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="text-slate-500 text-sm">Chargement des données télématiques...</div>
+      </div>
+    )
+  }
 
   return (
     <div className="pt-16 min-h-screen bg-slate-950">

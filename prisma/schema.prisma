@@ -49,6 +49,12 @@ model User {
   fuelRecords          FuelRecord[]
   trafficViolations    TrafficViolation[]
   auditLogEntries      AuditLogEntry[]
+  telematicsTrips      TelematicsTrip[]
+  vehicleTwinsOwner    VehicleTwin[]        @relation("VehicleTwinOwner")
+  accidentIncidents    AccidentIncident[]
+  fraudAlerts          FraudAlert[]
+  collaborationEvents  CollaborationEvent[]
+  apiKeys              ApiKey[]
 }
 
 // ─── Countries & Regulations ───
@@ -336,6 +342,8 @@ model VehicleProfile {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   drivingSessions DrivingSession[]
   diagnosticRecords DiagnosticRecord[]
+  telematicsTrips  TelematicsTrip[]
+  vehicleTwin      VehicleTwin?
 }
 
 model DrivingSession {
@@ -481,6 +489,7 @@ model InsurancePolicy {
   updatedAt       DateTime @updatedAt
 
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  premiumCalculations PremiumCalculation[]
 }
 
 model InsuranceClaim {
@@ -592,6 +601,7 @@ model FleetOrganization {
 
   vehicles        FleetVehicle[]
   drivers         FleetDriver[]
+  assignments     FleetAssignment[]
 }
 
 model FleetVehicle {
@@ -618,6 +628,7 @@ model FleetVehicle {
   fleet           FleetOrganization @relation(fields: [fleetId], references: [id], onDelete: Cascade)
   maintenanceRecords MaintenanceRecord[]
   fuelRecords     FuelRecord[]
+  assignments     FleetAssignment[]
 }
 
 model FleetDriver {
@@ -636,6 +647,7 @@ model FleetDriver {
 
   user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   fleet           FleetOrganization @relation(fields: [fleetId], references: [id], onDelete: Cascade)
+  assignments     FleetAssignment[]
 }
 
 model MaintenanceRecord {
@@ -721,4 +733,224 @@ model AuditLogEntry {
   createdAt     DateTime @default(now())
 
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ═══════════════════════════════════════════════════════════
+// V4.2 — Telematics & Vehicle Twin
+// ═══════════════════════════════════════════════════════════
+
+model TelematicsTrip {
+  id              String   @id @default(cuid())
+  userId          String
+  vehicleId       String?
+  startAddress    String?
+  endAddress      String?
+  startLatitude   Float?
+  startLongitude  Float?
+  endLatitude     Float?
+  endLongitude    Float?
+  distance        Float    @default(0)
+  duration        Int      @default(0)
+  avgSpeed        Float?
+  maxSpeed        Float?
+  fuelConsumption Float?
+  fuelCost        Float?
+  harshBrakes     Int      @default(0)
+  harshAccel      Int      @default(0)
+  speedViolations Int      @default(0)
+  nightDriving    Float    @default(0)
+  cityDriving     Float    @default(0)
+  highwayDriving  Float    @default(0)
+  drivingScore    Float?
+  ecoScore        Float?
+  weather         String?
+  roadType        String?
+  startTime       DateTime @default(now())
+  endTime         DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle         VehicleProfile? @relation(fields: [vehicleId], references: [id])
+}
+
+model VehicleTwin {
+  id                String   @id @default(cuid())
+  vehicleProfileId  String   @unique
+  vin               String?
+  registration      String?
+  ownerUserId       String
+  currentMileage    Int      @default(0)
+  totalTrips        Int      @default(0)
+  totalDistance     Float    @default(0)
+  avgFuelConsumption Float   @default(0)
+  aiHealthScore     Float    @default(50)
+  nextServiceDate   DateTime?
+  nextServiceMileage Int     @default(0)
+  lastAccidentDate  DateTime?
+  insuranceStatus   String   @default("unknown")
+  recallCount       Int      @default(0)
+  ownershipHistory   String?
+  aiPredictions     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  vehicleProfile    VehicleProfile @relation(fields: [vehicleProfileId], references: [id])
+  owner             User           @relation("VehicleTwinOwner", fields: [ownerUserId], references: [id])
+}
+
+// ═══════════════════════════════════════════════════════════
+// V4.2 — Insurance Intelligence Extensions
+// ═══════════════════════════════════════════════════════════
+
+model InsurancePartner {
+  id              String   @id @default(cuid())
+  name            String
+  code            String   @unique
+  country         String   @default("FR")
+  contactEmail    String?
+  contactPhone    String?
+  contractStart   DateTime?
+  contractEnd     DateTime?
+  commissionRate  Float    @default(0)
+  status          String   @default("active")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model PremiumCalculation {
+  id              String   @id @default(cuid())
+  policyId        String
+  basePremium     Float
+  riskAdjustment  Float
+  behaviourAdjustment Float
+  finalPremium    Float
+  factors         String
+  calculatedAt    DateTime @default(now())
+
+  policy          InsurancePolicy @relation(fields: [policyId], references: [id])
+}
+
+model AccidentIncident {
+  id              String   @id @default(cuid())
+  userId          String
+  vehicleId       String?
+  policyId        String?
+  type            String
+  severity        String   @default("medium")
+  latitude        Float?
+  longitude       Float?
+  speed           Float?
+  deceleration    Float?
+  timestamp       DateTime @default(now())
+  resolved        Boolean  @default(false)
+  claimId         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model DamageAssessment {
+  id              String   @id @default(cuid())
+  claimId         String
+  bumperScore     Float?
+  doorsScore      Float?
+  hoodScore       Float?
+  windshieldScore Float?
+  lightsScore     Float?
+  wheelsScore     Float?
+  chassisScore    Float?
+  overallSeverity String   @default("minor")
+  estimatedRepairCost Float?
+  estimatedRepairDuration String?
+  replacementParts String?
+  photos          String?
+  assessedAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+}
+
+model FraudAlert {
+  id              String   @id @default(cuid())
+  claimId         String?
+  userId          String
+  type            String
+  probability     Float    @default(0)
+  description     String
+  evidence        String?
+  status          String   @default("pending")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ═══════════════════════════════════════════════════════════
+// V4.2 — Fleet Extensions
+// ═══════════════════════════════════════════════════════════
+
+model FleetAssignment {
+  id              String   @id @default(cuid())
+  fleetId         String
+  vehicleId       String
+  driverId        String
+  startDate       DateTime @default(now())
+  endDate         DateTime?
+  status          String   @default("active")
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  fleet           FleetOrganization @relation(fields: [fleetId], references: [id], onDelete: Cascade)
+  vehicle         FleetVehicle       @relation(fields: [vehicleId], references: [id])
+  driver          FleetDriver        @relation(fields: [driverId], references: [id])
+}
+
+// ═══════════════════════════════════════════════════════════
+// V4.2 — Enterprise Extensions
+// ═══════════════════════════════════════════════════════════
+
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  enabled     Boolean  @default(false)
+  targetRoles String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ApiKey {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  key         String   @unique
+  permissions String?
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ═══════════════════════════════════════════════════════════
+// V4.2 — AI Collaboration Events
+// ═══════════════════════════════════════════════════════════
+
+model CollaborationEvent {
+  id              String   @id @default(cuid())
+  userId          String
+  triggerModule   String
+  eventType       String
+  severity        String   @default("info")
+  description     String
+  affectedModules String
+  actions         String?
+  resolved        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

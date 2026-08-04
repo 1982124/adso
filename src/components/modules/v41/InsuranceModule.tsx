@@ -42,6 +42,10 @@ import {
   AlertOctagon,
   Info,
   ArrowRight,
+  Calculator,
+  Building2,
+  RefreshCw,
+  FilePlus,
 } from 'lucide-react'
 import {
   Card,
@@ -99,6 +103,9 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
   Radar,
+  PieChart,
+  Pie,
+  Cell,
 } from 'recharts'
 
 // ─── Types ───────────────────────────────────────────────────
@@ -151,10 +158,101 @@ interface RiskData {
   driverRiskLevel: string
   locationRisk: number
   riskFactors: { name: string; value: number; description: string }[]
- premiumRecommendation: number
+  premiumRecommendation: number
 }
 
-// ─── Mock Data ───────────────────────────────────────────────
+interface DashboardKpis {
+  policesActives: number
+  totalReclamations: number
+  coutTotalReclamations: number
+  alertesFraudeEnAttente: number
+  primeMoyenne: number
+  risqueMoyen: number
+}
+
+interface FraudAlertItem {
+  id: string
+  claimId: string | null
+  type: string
+  probability: number
+  description: string
+  evidence: string | null
+  status: string
+  createdAt: string
+}
+
+interface AccidentIncidentItem {
+  id: string
+  vehicleId: string | null
+  type: string
+  severity: string
+  latitude: number | null
+  longitude: number | null
+  speed: number | null
+  deceleration: number | null
+  timestamp: string
+  resolved: boolean
+  claimId: string | null
+}
+
+interface PhydData {
+  totalKm: number
+  dureeTotale: number
+  dureeTotaleFormatee?: string
+  pourcentageConduiteNuit: number
+  pourcentageVille: number
+  pourcentageAutoroute: number
+  scoreConduiteMoyen: number
+  scoreEcoMoyen: number
+  nombreTrajets: number
+  ventilationMensuelle: {
+    mois: string
+    nombreTrajets: number
+    kilometrageTotal: number
+    dureeTotaleSecondes: number
+    scoreConduiteMoyen: number
+    scoreEcoMoyen: number
+    freinagesBrusques: number
+    accelerationsBrusques: number
+  }[]
+}
+
+interface PremiumResult {
+  policyId: string
+  policyNumber: string
+  type: string
+  basePremium: number
+  trustScore: number
+  trustAdjustment: number
+  behaviorPenalty: number
+  riskFactor: number
+  calculatedPremium: number
+  currentPremium: number | null
+  factors: {
+    avgVehicleAge: number
+    avgMileage: number
+    claimsCount: number
+    maintenanceQuality: number
+    totalHarshBrakes: number
+    totalSpeedViolations: number
+    totalFatigueEvents: number
+    totalSessions: number
+  }
+}
+
+interface PartnerItem {
+  id: string
+  name: string
+  code: string
+  country: string
+  contactEmail: string | null
+  contactPhone: string | null
+  commissionRate: number
+  status: string
+  createdAt: string
+}
+
+// ─── Score History (for Trust Score tab chart) ───────────
 const scoreHistory = [
   { mois: 'Jan', score: 62 },
   { mois: 'Fév', score: 65 },
@@ -163,194 +261,7 @@ const scoreHistory = [
   { mois: 'Mai', score: 73 },
   { mois: 'Jun', score: 76 },
   { mois: 'Jul', score: 78 },
-  { mois: 'Aoû', score: 82 },
-]
-
-const mockPolicies: Policy[] = [
-  {
-    id: 'pol-1',
-    policyNumber: 'ADS-2024-001478',
-    type: 'Tous risques',
-    provider: 'ADSO Assurances',
-    vehicleType: 'Renault Clio V',
-    premium: 890,
-    deductible: 150,
-    status: 'active',
-    startDate: '2024-01-15',
-    endDate: '2025-01-15',
-    paydEnabled: true,
-    phydEnabled: true,
-  },
-  {
-    id: 'pol-2',
-    policyNumber: 'ADS-2024-001902',
-    type: 'Responsabilité civile',
-    provider: 'ADSO Assurances',
-    vehicleType: 'Peugeot 208',
-    premium: 420,
-    deductible: 0,
-    status: 'active',
-    startDate: '2024-03-01',
-    endDate: '2025-03-01',
-    paydEnabled: false,
-    phydEnabled: false,
-  },
-  {
-    id: 'pol-3',
-    policyNumber: 'ADS-2024-002356',
-    type: 'Collision',
-    provider: 'Mutuelle Mobilité',
-    vehicleType: 'Citroën C3',
-    premium: 650,
-    deductible: 200,
-    status: 'pending',
-    startDate: '2024-09-01',
-    endDate: '2025-09-01',
-    paydEnabled: true,
-    phydEnabled: false,
-  },
-]
-
-const mockClaims: Claim[] = [
-  {
-    id: 'clm-1',
-    policyId: 'pol-1',
-    type: 'collision',
-    status: 'approved',
-    description: 'Accrochage à un carrefour lors d\'un tour à droite. Autre véhicule endommagé au niveau du pare-chocs avant.',
-    damageAssessment: JSON.stringify({
-      severity: 'modéré',
-      zones: ['pare-chocs avant', 'phaire gauche'],
-      repairTime: '3 jours',
-      parts: ['pare-chocs', 'phaire', 'support phare'],
-    }),
-    estimatedCost: 1850,
-    approvedAmount: 1650,
-    location: 'Paris 11ème, Bd Voltaire',
-    incidentDate: '2024-06-15T14:30:00',
-    createdAt: '2024-06-15T15:00:00',
-  },
-  {
-    id: 'clm-2',
-    policyId: 'pol-1',
-    type: 'vandalisme',
-    status: 'reviewing',
-    description: 'Rayures profondes sur le côté gauche du véhicule, probablement causées par une clé.',
-    damageAssessment: JSON.stringify({
-      severity: 'léger',
-      zones: ['porte conducteur', 'aile arrière gauche'],
-      repairTime: '2 jours',
-      parts: ['repeinture porte', 'repeinture aile'],
-    }),
-    estimatedCost: 620,
-    approvedAmount: null,
-    location: 'Lyon 3ème, Rue de la Part-Dieu',
-    incidentDate: '2024-08-02T08:00:00',
-    createdAt: '2024-08-02T09:30:00',
-  },
-  {
-    id: 'clm-3',
-    policyId: 'pol-1',
-    type: 'intempérie',
-    status: 'paid',
-    description: 'Dégâts causés par la grêle sur le toit et le capot du véhicule.',
-    damageAssessment: JSON.stringify({
-      severity: 'modéré',
-      zones: ['toit', 'capot'],
-      repairTime: '4 jours',
-      parts: ['débosselage toit', 'débosselage capot', 'peinture'],
-    }),
-    estimatedCost: 2100,
-    approvedAmount: 1890,
-    location: 'Marseille, Vieux Port',
-    incidentDate: '2024-05-20T16:00:00',
-    createdAt: '2024-05-20T17:00:00',
-  },
-  {
-    id: 'clm-4',
-    policyId: 'pol-2',
-    type: 'vol',
-    status: 'submitted',
-    description: 'Tentative de vol du véhicule. Vitre brisée et colonne de direction endommagée.',
-    damageAssessment: null,
-    estimatedCost: null,
-    approvedAmount: null,
-    location: 'Toulouse, Place du Capitole',
-    incidentDate: '2024-08-10T22:00:00',
-    createdAt: '2024-08-11T08:00:00',
-  },
-  {
-    id: 'clm-5',
-    policyId: 'pol-1',
-    type: 'collision',
-    status: 'denied',
-    description: 'Collision avec un poteau en marchant arrière dans un parking.',
-    damageAssessment: JSON.stringify({
-      severity: 'léger',
-      zones: ['pare-chocs arrière'],
-      repairTime: '1 jour',
-      parts: ['pare-chocs arrière'],
-    }),
-    estimatedCost: 450,
-    approvedAmount: 0,
-    location: 'Bordeaux, Parking Sainte-Catherine',
-    incidentDate: '2024-04-05T10:00:00',
-    createdAt: '2024-04-05T11:00:00',
-  },
-]
-
-const mockRiskData: RiskData = {
-  vehicleRiskScore: 35,
-  driverRiskLevel: 'Faible',
-  locationRisk: 42,
-  riskFactors: [
-    { name: 'Âge du conducteur', value: 15, description: 'Conducteur expérimenté (30-45 ans)' },
-    { name: 'Historique accidents', value: 25, description: '2 sinistres en 3 ans' },
-    { name: 'Kilométrage annuel', value: 40, description: 'Environ 12 000 km/an' },
-    { name: 'Zone géographique', value: 42, description: 'Zone urbaine moyenne' },
-    { name: 'Type de véhicule', value: 20, description: 'Berline compacte, catégorie standard' },
-    { name: 'Score de conduite', value: 18, description: 'Excellent comportement de conduite' },
-    { name: 'Fréquence d\'utilisation', value: 30, description: 'Usage quotidien modéré' },
-    { name: 'Stationnement', value: 50, description: 'Stationnement principalement en rue' },
-  ],
-  premiumRecommendation: 780,
-}
-
-const telematicsWeekly = [
-  { jour: 'Lun', score: 78, km: 32 },
-  { jour: 'Mar', score: 82, km: 28 },
-  { jour: 'Mer', score: 75, km: 45 },
-  { jour: 'Jeu', score: 88, km: 22 },
-  { jour: 'Ven', score: 71, km: 51 },
-  { jour: 'Sam', score: 65, km: 68 },
-  { jour: 'Dim', score: 60, km: 15 },
-]
-
-const radarData = [
-  { subject: 'Freinage', A: 85, fullMark: 100 },
-  { subject: 'Accélération', A: 78, fullMark: 100 },
-  { subject: 'Vitesse', A: 90, fullMark: 100 },
-  { subject: 'Virages', A: 72, fullMark: 100 },
-  { subject: 'Distance', A: 88, fullMark: 100 },
-  { subject: 'Anticipation', A: 80, fullMark: 100 },
-]
-
-const tripScores = [
-  { id: 1, date: '08/08/2024', depart: 'Domicile', arrivee: 'Bureau', distance: '12 km', duree: '25 min', score: 85 },
-  { id: 2, date: '08/08/2024', depart: 'Bureau', arrivee: 'Domicile', distance: '14 km', duree: '32 min', score: 72 },
-  { id: 3, date: '07/08/2024', depart: 'Domicile', arrivee: 'Centre commercial', distance: '8 km', duree: '18 min', score: 91 },
-  { id: 4, date: '07/08/2024', depart: 'Centre commercial', arrivee: 'Domicile', distance: '9 km', duree: '20 min', score: 88 },
-  { id: 5, date: '06/08/2024', depart: 'Domicile', arrivee: 'Gare', distance: '18 km', duree: '35 min', score: 65 },
-]
-
-const safeDriverRewards = [
-  { mois: 'Février', prime: '-45 €', niveau: 'Bronze' },
-  { mois: 'Mars', prime: '-62 €', niveau: 'Bronze' },
-  { mois: 'Avril', prime: '-78 €', niveau: 'Argent' },
-  { mois: 'Mai', prime: '-85 €', niveau: 'Argent' },
-  { mois: 'Juin', prime: '-95 €', niveau: 'Or' },
-  { mois: 'Juillet', prime: '-110 €', niveau: 'Or' },
-  { mois: 'Août', prime: '-118 €', niveau: 'Or' },
+  { mois: 'Août', score: 82 },
 ]
 
 // ─── Helpers ─────────────────────────────────────────────────
@@ -422,6 +333,7 @@ function AnimatedNumber({ value, className = '' }: { value: number; className?: 
 }
 
 // ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════
 export default function InsuranceModule() {
@@ -430,6 +342,7 @@ export default function InsuranceModule() {
   const [policies, setPolicies] = useState<Policy[]>([])
   const [claims, setClaims] = useState<Claim[]>([])
   const [riskData, setRiskData] = useState<RiskData | null>(null)
+  const [dashboardKpis, setDashboardKpis] = useState<DashboardKpis | null>(null)
   const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null)
   const [newClaimOpen, setNewClaimOpen] = useState(false)
   const [claimForm, setClaimForm] = useState({
@@ -442,11 +355,12 @@ export default function InsuranceModule() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const [tsRes, polRes, clRes, riskRes] = await Promise.all([
+      const [tsRes, polRes, clRes, riskRes, dashRes] = await Promise.all([
         fetch('/api/insurance/trust-score').then(r => r.json()),
         fetch('/api/insurance/policies').then(r => r.json()),
         fetch('/api/insurance/claims').then(r => r.json()),
         fetch('/api/insurance/risk').then(r => r.json()),
+        fetch('/api/insurance/dashboard').then(r => r.json()).catch(() => null),
       ])
       if (tsRes.trustScore) setTrustScore(tsRes.trustScore)
       else setTrustScore({
@@ -456,11 +370,12 @@ export default function InsuranceModule() {
         lastCalculated: new Date().toISOString(),
       })
       if (polRes.policies?.length) setPolicies(polRes.policies)
-      else setPolicies(mockPolicies)
+      else setPolicies([])
       if (clRes.claims?.length) setClaims(clRes.claims)
-      else setClaims(mockClaims)
-      if (riskData) setRiskData(riskData)
-      else setRiskData(mockRiskData)
+      else setClaims([])
+      if (riskRes.riskData) setRiskData(riskRes.riskData)
+      else if (riskRes.vehicleRiskScore !== undefined) setRiskData(riskRes)
+      if (dashRes?.kpis) setDashboardKpis(dashRes.kpis)
     } catch {
       setTrustScore({
         id: 'ts-mock', overallScore: 78, drivingQuality: 82, mechanicalHealth: 71,
@@ -468,14 +383,11 @@ export default function InsuranceModule() {
         telematicsScore: 80, accidentHistory: 55, fraudRisk: 8, compliance: 90,
         lastCalculated: new Date().toISOString(),
       })
-      setPolicies(mockPolicies)
-      setClaims(mockClaims)
-      setRiskData(mockRiskData)
     }
     setLoading(false)
-  }, [riskData])
+  }, [])
 
-  useEffect(() => { fetchData() }, []) // eslint-disable-line react-hooks/set-state-in-effect
+  useEffect(() => { void fetchData() }, []) // eslint-disable-line react-hooks/set-state-in-effect
 
   const handleShareScore = async () => {
     try {
@@ -520,7 +432,7 @@ export default function InsuranceModule() {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-white">Assurance IA</h1>
-              <p className="text-slate-400 text-sm">Plateforme d'intelligence assurance ADSO v4.1</p>
+              <p className="text-slate-400 text-sm">Plateforme d'intelligence assurance ADSO v4.2</p>
             </div>
           </div>
         </motion.div>
@@ -548,19 +460,25 @@ export default function InsuranceModule() {
             <TabsTrigger value="telematics" className="data-[state=active]:bg-emerald-600/20 data-[state=active]:text-emerald-400 text-slate-300">
               <Activity className="w-4 h-4 mr-1.5" /><span className="hidden sm:inline">Télématique</span><span className="sm:hidden">Télém.</span>
             </TabsTrigger>
+            <TabsTrigger value="premium" className="data-[state=active]:bg-emerald-600/20 data-[state=active]:text-emerald-400 text-slate-300">
+              <Calculator className="w-4 h-4 mr-1.5" /><span className="hidden sm:inline">Tarification</span><span className="sm:hidden">Tarif.</span>
+            </TabsTrigger>
+            <TabsTrigger value="partners" className="data-[state=active]:bg-emerald-600/20 data-[state=active]:text-emerald-400 text-slate-300">
+              <Building2 className="w-4 h-4 mr-1.5" /><span className="hidden sm:inline">Partenaires</span><span className="sm:hidden">Parts.</span>
+            </TabsTrigger>
           </TabsList>
 
-          {/* ═══════ TAB 1: TRUST SCORE ═══════ */}
+          {/* TAB 1: TRUST SCORE */}
           <TabsContent value="trust">
             <TrustScoreTab trustScore={trustScore} scoreHistory={scoreHistory} onShare={handleShareScore} />
           </TabsContent>
 
-          {/* ═══════ TAB 2: INSURANCE DASHBOARD ═══════ */}
+          {/* TAB 2: INSURANCE DASHBOARD */}
           <TabsContent value="dashboard">
-            <InsuranceDashboardTab policies={policies} claims={claims} />
+            <InsuranceDashboardTab policies={policies} claims={claims} dashboardKpis={dashboardKpis} />
           </TabsContent>
 
-          {/* ═══════ TAB 3: CLAIMS CENTER ═══════ */}
+          {/* TAB 3: CLAIMS CENTER */}
           <TabsContent value="claims">
             <ClaimsCenterTab
               claims={claims}
@@ -576,24 +494,34 @@ export default function InsuranceModule() {
             />
           </TabsContent>
 
-          {/* ═══════ TAB 4: FRAUD DETECTION ═══════ */}
+          {/* TAB 4: FRAUD DETECTION */}
           <TabsContent value="fraud">
             <FraudDetectionTab trustScore={trustScore} />
           </TabsContent>
 
-          {/* ═══════ TAB 5: RISK ASSESSMENT ═══════ */}
+          {/* TAB 5: RISK ASSESSMENT */}
           <TabsContent value="risk">
             <RiskAssessmentTab riskData={riskData} />
           </TabsContent>
 
-          {/* ═══════ TAB 6: ACCIDENT CENTER ═══════ */}
+          {/* TAB 6: ACCIDENT CENTER */}
           <TabsContent value="accident">
             <AccidentCenterTab />
           </TabsContent>
 
-          {/* ═══════ TAB 7: TELEMATICS CENTER ═══════ */}
+          {/* TAB 7: TELEMATICS CENTER */}
           <TabsContent value="telematics">
             <TelematicsCenterTab />
+          </TabsContent>
+
+          {/* TAB 8: PREMIUM ENGINE */}
+          <TabsContent value="premium">
+            <PremiumEngineTab />
+          </TabsContent>
+
+          {/* TAB 9: PARTNERS */}
+          <TabsContent value="partners">
+            <PartnersTab />
           </TabsContent>
         </Tabs>
       </div>
@@ -794,17 +722,20 @@ function TrustScoreTab({
 // ═══════════════════════════════════════════════════════════════
 // TAB 2: INSURANCE DASHBOARD
 // ═══════════════════════════════════════════════════════════════
-function InsuranceDashboardTab({ policies, claims }: { policies: Policy[]; claims: Claim[] }) {
+function InsuranceDashboardTab({ policies, claims, dashboardKpis }: { policies: Policy[]; claims: Claim[]; dashboardKpis: DashboardKpis | null }) {
   const activePolicies = policies.filter(p => p.status === 'active')
   const pendingClaims = claims.filter(c => ['submitted', 'reviewing'].includes(c.status))
   const totalPremium = activePolicies.reduce((s, p) => s + (p.premium || 0), 0)
-  const avgRisk = 35
+  const avgRisk = dashboardKpis?.risqueMoyen ?? 50
+  const avgPremium = dashboardKpis?.primeMoyenne ?? 0
+  const fraudAlertsCount = dashboardKpis?.alertesFraudeEnAttente ?? 0
+  const totalClaimsCount = dashboardKpis?.totalReclamations ?? claims.length
 
   const summary = [
-    { label: 'Polices actives', value: activePolicies.length, icon: <FileCheck className="w-5 h-5" />, color: 'text-emerald-400', bg: 'bg-emerald-600/10' },
-    { label: 'Sinistres en cours', value: pendingClaims.length, icon: <Clock className="w-5 h-5" />, color: 'text-amber-400', bg: 'bg-amber-600/10' },
-    { label: 'Prime totale/an', value: `${totalPremium.toLocaleString('fr-FR')} €`, icon: <CircleDollarSign className="w-5 h-5" />, color: 'text-blue-400', bg: 'bg-blue-600/10' },
-    { label: 'Niveau de risque', value: avgRisk <= 30 ? 'Faible' : avgRisk <= 60 ? 'Moyen' : 'Élevé', icon: <Target className="w-5 h-5" />, color: avgRisk <= 30 ? 'text-emerald-400' : avgRisk <= 60 ? 'text-amber-400' : 'text-red-400', bg: avgRisk <= 30 ? 'bg-emerald-600/10' : avgRisk <= 60 ? 'bg-amber-600/10' : 'bg-red-600/10' },
+    { label: 'Polices actives', value: dashboardKpis?.policesActives ?? activePolicies.length, icon: <FileCheck className="w-5 h-5" />, color: 'text-emerald-400', bg: 'bg-emerald-600/10' },
+    { label: 'Total sinistres', value: totalClaimsCount, icon: <BarChart3 className="w-5 h-5" />, color: 'text-amber-400', bg: 'bg-amber-600/10' },
+    { label: 'Alertes fraude', value: fraudAlertsCount, icon: <ShieldAlert className="w-5 h-5" />, color: fraudAlertsCount > 0 ? 'text-red-400' : 'text-emerald-400', bg: fraudAlertsCount > 0 ? 'bg-red-600/10' : 'bg-emerald-600/10' },
+    { label: 'Prime moyenne', value: `${avgPremium.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} €`, icon: <CircleDollarSign className="w-5 h-5" />, color: 'text-blue-400', bg: 'bg-blue-600/10' },
   ]
 
   const claimsOverview = [
@@ -1224,162 +1155,7 @@ function ClaimDetailDialog({ claim, policies, onClose }: { claim: Claim; policie
 }
 
 // ═══════════════════════════════════════════════════════════════
-// TAB 4: FRAUD DETECTION CENTER
-// ═══════════════════════════════════════════════════════════════
-function FraudDetectionTab({ trustScore }: { trustScore: TrustScoreData }) {
-  const fraudRisk = trustScore.fraudRisk
 
-  const indicators = [
-    { name: 'Cohérence des déclarations', status: 'ok', detail: 'Aucune incohérence détectée' },
-    { name: 'Fréquence des sinistres', status: 'warning', detail: 'Légèrement au-dessus de la moyenne' },
-    { name: 'Patterns de conduite', status: 'ok', detail: 'Comportement normal' },
-    { name: 'Historique de localisation', status: 'ok', detail: 'Déplacements cohérents' },
-    { name: 'Données télématiques', status: 'ok', detail: 'Aucune anomalie détectée' },
-    { name: 'Vérification documentaire', status: 'ok', detail: 'Tous les documents validés' },
-  ]
-
-  const suspiciousActivities = [
-    { date: '15/06/2024', description: 'Déclaration tardive du sinistre CLM-001 (4h après)', level: 'low' },
-    { date: '02/08/2024', description: 'Deuxième sinistre vandalisme en 3 mois — surveillance active', level: 'medium' },
-  ]
-
-  const anomalies = [
-    { metric: 'Vitesse au moment de l\'impact', expected: '20-40 km/h', detected: '45 km/h', verdict: 'normal' },
-    { metric: 'Heure du sinistre', expected: 'Période de trafic', detected: '14h30', verdict: 'normal' },
-    { metric: 'Distance entre sinistres', expected: '> 50 km', detected: '12 km', verdict: 'attention' },
-  ]
-
-  const getRiskLevel = (r: number) => {
-    if (r <= 15) return { label: 'Très faible', color: 'text-emerald-400', bg: 'bg-emerald-600/10', border: 'border-emerald-500/30' }
-    if (r <= 30) return { label: 'Faible', color: 'text-emerald-400', bg: 'bg-emerald-600/10', border: 'border-emerald-500/30' }
-    if (r <= 50) return { label: 'Moyen', color: 'text-amber-400', bg: 'bg-amber-600/10', border: 'border-amber-500/30' }
-    if (r <= 75) return { label: 'Élevé', color: 'text-orange-400', bg: 'bg-orange-600/10', border: 'border-orange-500/30' }
-    return { label: 'Critique', color: 'text-red-400', bg: 'bg-red-600/10', border: 'border-red-500/30' }
-  }
-
-  const riskLevel = getRiskLevel(fraudRisk)
-
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-      {/* Risk Assessment Header */}
-      <Card className={`border ${riskLevel.border} rounded-xl`}>
-        <CardContent className="p-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className={`w-16 h-16 rounded-xl ${riskLevel.bg} flex items-center justify-center`}>
-                <ShieldAlert className={`w-8 h-8 ${riskLevel.color}`} />
-              </div>
-              <div>
-                <h3 className="text-white text-lg font-semibold">Niveau de risque de fraude</h3>
-                <p className={`text-sm font-medium ${riskLevel.color}`}>{riskLevel.label}</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className={`text-4xl font-bold ${riskLevel.color}`}>{fraudRisk}</p>
-              <p className="text-slate-500 text-xs">sur 100</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Fraud Indicators */}
-        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
-          <CardHeader>
-            <CardTitle className="text-white text-lg flex items-center gap-2">
-              <Search className="w-5 h-5 text-emerald-400" />
-              Indicateurs de fraude
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {indicators.map((ind) => (
-              <div key={ind.name} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50">
-                <div className="flex items-center gap-3">
-                  {ind.status === 'ok' ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  ) : (
-                    <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-                  )}
-                  <div>
-                    <p className="text-white text-sm font-medium">{ind.name}</p>
-                    <p className="text-slate-500 text-xs">{ind.detail}</p>
-                  </div>
-                </div>
-                <Badge
-                  variant="outline"
-                  className={ind.status === 'ok'
-                    ? 'border-emerald-500/30 text-emerald-400'
-                    : 'border-amber-500/30 text-amber-400'
-                  }
-                >
-                  {ind.status === 'ok' ? 'OK' : 'Attention'}
-                </Badge>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Suspicious Activities & Anomalies */}
-        <div className="space-y-6">
-          <Card className="bg-slate-900 border border-slate-800 rounded-xl">
-            <CardHeader>
-              <CardTitle className="text-white text-lg flex items-center gap-2">
-                <Bell className="w-5 h-5 text-amber-400" />
-                Activités suspectes
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {suspiciousActivities.length === 0 ? (
-                <p className="text-slate-500 text-sm text-center py-4">Aucune activité suspecte détectée</p>
-              ) : (
-                suspiciousActivities.map((a, i) => (
-                  <div key={i} className={`p-3 rounded-lg border-l-4 ${a.level === 'high' ? 'border-red-500 bg-red-500/5' : 'border-amber-500 bg-amber-500/5'}`}>
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-white text-sm font-medium">{a.description}</p>
-                    </div>
-                    <p className="text-slate-500 text-xs">{a.date}</p>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="bg-slate-900 border border-slate-800 rounded-xl">
-            <CardHeader>
-              <CardTitle className="text-white text-lg flex items-center gap-2">
-                <BrainCircuit className="w-5 h-5 text-emerald-400" />
-                Détection d'anomalies
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {anomalies.map((a, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50">
-                    <div>
-                      <p className="text-white text-sm font-medium">{a.metric}</p>
-                      <p className="text-slate-500 text-xs">Attendu : {a.expected} → Détecté : {a.detected}</p>
-                    </div>
-                    <Badge
-                      variant="outline"
-                      className={a.verdict === 'normal'
-                        ? 'border-emerald-500/30 text-emerald-400'
-                        : 'border-amber-500/30 text-amber-400'
-                      }
-                    >
-                      {a.verdict === 'normal' ? 'Normal' : 'Attention'}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
-// ═══════════════════════════════════════════════════════════════
 // TAB 5: RISK ASSESSMENT
 // ═══════════════════════════════════════════════════════════════
 function RiskAssessmentTab({ riskData }: { riskData: RiskData | null }) {
@@ -1520,189 +1296,426 @@ function RiskAssessmentTab({ riskData }: { riskData: RiskData | null }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// TAB 6: ACCIDENT CENTER
+
+// TAB 4: FRAUD DETECTION CENTER
 // ═══════════════════════════════════════════════════════════════
-function AccidentCenterTab() {
-  const [autoDetect, setAutoDetect] = useState(false)
+function FraudDetectionTab({ trustScore }: { trustScore: TrustScoreData }) {
+  const [alerts, setAlerts] = useState<FraudAlertItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [message, setMessage] = useState('')
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [form, setForm] = useState({ type: 'doublon', description: '', claimId: '' })
+  const [submitting, setSubmitting] = useState(false)
 
-  const emergencyContacts = [
-    { label: 'Police', number: '17', iconName: 'siren', color: 'text-blue-400', bg: 'bg-blue-600/10' },
-    { label: 'Ambulance', number: '15', iconName: 'heart', color: 'text-red-400', bg: 'bg-red-600/10' },
-    { label: 'Famille', number: '06 XX XX XX XX', iconName: 'phone', color: 'text-emerald-400', bg: 'bg-emerald-600/10' },
-    { label: 'Assureur', number: '01 XX XX XX XX', iconName: 'shield', color: 'text-amber-400', bg: 'bg-amber-600/10' },
-  ]
+  useEffect(() => {
+    fetch('/api/insurance/fraud')
+      .then(r => r.json())
+      .then(data => {
+        setAlerts(data.alertes || [])
+        setMessage(data.message || '')
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [])
 
-  const getEmergencyIcon = (name: string) => {
-    switch (name) {
-      case 'siren': return <Siren className="w-5 h-5" />
-      case 'heart': return <Heart className="w-5 h-5" />
-      case 'phone': return <Phone className="w-5 h-5" />
-      case 'shield': return <Shield className="w-5 h-5" />
-      default: return <Phone className="w-5 h-5" />
-    }
+  const handleCreateAlert = async () => {
+    if (!form.description) return
+    setSubmitting(true)
+    try {
+      const res = await fetch('/api/insurance/fraud', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: form.type, description: form.description, claimId: form.claimId || null }),
+      })
+      const data = await res.json()
+      if (data.alerte) {
+        setAlerts(prev => [data.alerte, ...prev])
+        setDialogOpen(false)
+        setForm({ type: 'doublon', description: '', claimId: '' })
+      }
+    } catch { /* error */ }
+    setSubmitting(false)
   }
 
-  const damageZones = [
-    { zone: 'Avant', severity: 'Aucun', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
-    { zone: 'Arrière', severity: 'Léger', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
-    { zone: 'Côté gauche', severity: 'Aucun', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
-    { zone: 'Côté droit', severity: 'Modéré', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
-    { zone: 'Toit', severity: 'Aucun', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
-  ]
+  const fraudRisk = trustScore.fraudRisk
+  const getRiskLevel = (r: number) => {
+    if (r <= 15) return { label: 'Très faible', color: 'text-emerald-400', bg: 'bg-emerald-600/10', border: 'border-emerald-500/30' }
+    if (r <= 30) return { label: 'Faible', color: 'text-emerald-400', bg: 'bg-emerald-600/10', border: 'border-emerald-500/30' }
+    if (r <= 50) return { label: 'Moyen', color: 'text-amber-400', bg: 'bg-amber-600/10', border: 'border-amber-500/30' }
+    if (r <= 75) return { label: 'Élevé', color: 'text-orange-400', bg: 'bg-orange-600/10', border: 'border-orange-500/30' }
+    return { label: 'Critique', color: 'text-red-400', bg: 'bg-red-600/10', border: 'border-red-500/30' }
+  }
+  const riskLevel = getRiskLevel(fraudRisk)
 
-  const repairEstimate = [
-    { item: 'Remplacement pare-chocs arrière', cost: 320 },
-    { item: 'Réparation aile droite', cost: 450 },
-    { item: 'Peinture et finition', cost: 180 },
-    { item: 'Main-d\'œuvre (3h)', cost: 210 },
-  ]
+  const getSeverityBadge = (status: string) => {
+    const map: Record<string, { label: string; variant: string }> = {
+      pending: { label: 'En attente', variant: 'bg-amber-600/20 text-amber-400 border-amber-500/30' },
+      investigating: { label: 'En investigation', variant: 'bg-blue-600/20 text-blue-400 border-blue-500/30' },
+      confirmed: { label: 'Confirmé', variant: 'bg-red-600/20 text-red-400 border-red-500/30' },
+      dismissed: { label: 'Écarté', variant: 'bg-slate-600/20 text-slate-400 border-slate-500/30' },
+    }
+    const s = map[status] || { label: status, variant: 'bg-slate-600/20 text-slate-400 border-slate-500/30' }
+    return <Badge variant="outline" className={s.variant}>{s.label}</Badge>
+  }
 
-  const totalEstimate = repairEstimate.reduce((s, r) => s + r.cost, 0)
+  const getProbColor = (p: number) => {
+    if (p >= 80) return 'text-red-400'
+    if (p >= 60) return 'text-orange-400'
+    if (p >= 40) return 'text-amber-400'
+    return 'text-emerald-400'
+  }
+  const getProbBar = (p: number) => {
+    if (p >= 80) return '[&>div]:bg-red-500'
+    if (p >= 60) return '[&>div]:bg-orange-500'
+    if (p >= 40) return '[&>div]:bg-amber-500'
+    return '[&>div]:bg-emerald-500'
+  }
+
+  const getTypeLabel = (t: string) => {
+    const map: Record<string, string> = {
+      doublon: 'Doublon', repetition: 'Répétition', montant_anormal: 'Montant anormal', manual: 'Alerte manuelle',
+    }
+    return map[t] || t
+  }
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* AI Accident Detection */}
+      <Card className={`border ${riskLevel.border} rounded-xl`}>
+        <CardContent className="p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className={`w-16 h-16 rounded-xl ${riskLevel.bg} flex items-center justify-center`}>
+                <ShieldAlert className={`w-8 h-8 ${riskLevel.color}`} />
+              </div>
+              <div>
+                <h3 className="text-white text-lg font-semibold">Niveau de risque de fraude</h3>
+                <p className={`text-sm font-medium ${riskLevel.color}`}>{riskLevel.label}</p>
+                <p className="text-slate-500 text-xs mt-1">{alerts.length} alerte(s) au total</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <p className={`text-4xl font-bold ${riskLevel.color}`}>{fraudRisk}</p>
+                <p className="text-slate-500 text-xs">sur 100</p>
+              </div>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                    <FilePlus className="w-4 h-4 mr-1.5" />Créer une alerte
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-slate-900 border-slate-800 max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle className="text-white">Créer une alerte manuelle</DialogTitle>
+                    <DialogDescription className="text-slate-400">Signalez une activité suspecte</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 pt-2">
+                    <div className="space-y-2">
+                      <Label className="text-slate-300">Type</Label>
+                      <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
+                        <SelectTrigger className="bg-slate-800 border-slate-700 text-white"><SelectValue /></SelectTrigger>
+                        <SelectContent className="bg-slate-800 border-slate-700">
+                          <SelectItem value="doublon">Doublon</SelectItem>
+                          <SelectItem value="repetition">Répétition</SelectItem>
+                          <SelectItem value="montant_anormal">Montant anormal</SelectItem>
+                          <SelectItem value="manual">Autre</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-slate-300">Description</Label>
+                      <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Décrivez lactivité suspecte..." className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 min-h-[80px]" />
+                    </div>
+                    <Button onClick={handleCreateAlert} disabled={submitting || !form.description} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
+                      <Send className="w-4 h-4 mr-2" />{submitting ? 'Création...' : 'Créer lalerte'}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+        <CardHeader>
+          <CardTitle className="text-white text-lg flex items-center gap-2">
+            <Search className="w-5 h-5 text-emerald-400" />
+            Alertes de fraude ({alerts.length})
+          </CardTitle>
+          {message && <CardDescription className="text-slate-400">{message}</CardDescription>}
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20 bg-slate-800 rounded-lg" />)}
+            </div>
+          ) : alerts.length === 0 ? (
+            <div className="text-center py-8">
+              <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
+              <p className="text-slate-300 font-medium">Aucune alerte de fraude</p>
+              <p className="text-slate-500 text-sm mt-1">Aucun pattern suspect détecté</p>
+            </div>
+          ) : (
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {alerts.map((alert) => {
+                let evidence: unknown = null
+                try { evidence = alert.evidence ? JSON.parse(alert.evidence) : null } catch { /* */ }
+                return (
+                  <div key={alert.id} className="p-4 rounded-lg bg-slate-800/50 border border-slate-700/50">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="border-slate-600 text-slate-300 text-xs">{getTypeLabel(alert.type)}</Badge>
+                        {getSeverityBadge(alert.status)}
+                      </div>
+                      <span className="text-slate-500 text-xs">{new Date(alert.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    <p className="text-slate-300 text-sm mb-3">{alert.description}</p>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-slate-500 text-xs mb-1">Probabilité</p>
+                        <div className="flex items-center gap-2">
+                          <Progress value={alert.probability} className={`h-2 flex-1 ${getProbBar(alert.probability)}`} />
+                          <span className={`text-sm font-medium ${getProbColor(alert.probability)}`}>{Math.round(alert.probability)}%</span>
+                        </div>
+                      </div>
+                      {evidence && (
+                        <div className="flex-1 min-w-0">
+                          <p className="text-slate-500 text-xs mb-1">Preuve</p>
+                          <p className="text-slate-400 text-xs truncate">{JSON.stringify(evidence).slice(0, 80)}...</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TAB 6: ACCIDENT CENTER
+// ═══════════════════════════════════════════════════════════════
+function AccidentCenterTab() {
+  const [incidents, setIncidents] = useState<AccidentIncidentItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [form, setForm] = useState({ type: 'collision', severity: 'medium', speed: '', deceleration: '' })
+  const [lastResult, setLastResult] = useState('')
+
+  const fetchIncidents = useCallback(() => {
+    fetch('/api/insurance/accident')
+      .then(r => r.json())
+      .then(data => { setIncidents(data.incidents || []); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
+
+  useEffect(() => { fetchIncidents() }, [fetchIncidents])
+
+  const handleReport = async () => {
+    setSubmitting(true)
+    setLastResult('')
+    try {
+      const res = await fetch('/api/insurance/accident', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: form.type,
+          severity: form.severity,
+          speed: form.speed ? parseFloat(form.speed) : undefined,
+          deceleration: form.deceleration ? parseFloat(form.deceleration) : undefined,
+        }),
+      })
+      const data = await res.json()
+      setLastResult(data.message || 'Incident signalé')
+      if (res.ok) {
+        setDialogOpen(false)
+        setForm({ type: 'collision', severity: 'medium', speed: '', deceleration: '' })
+        fetchIncidents()
+      }
+    } catch { setLastResult('Erreur lors du signalement') }
+    setSubmitting(false)
+  }
+
+  const getSeverityBadge = (s: string) => {
+    const map: Record<string, { label: string; variant: string }> = {
+      low: { label: 'Mineur', variant: 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30' },
+      medium: { label: 'Moyen', variant: 'bg-amber-600/20 text-amber-400 border-amber-500/30' },
+      high: { label: 'Élevé', variant: 'bg-orange-600/20 text-orange-400 border-orange-500/30' },
+      critical: { label: 'Critique', variant: 'bg-red-600/20 text-red-400 border-red-500/30' },
+    }
+    const sv = map[s] || { label: s, variant: 'bg-slate-600/20 text-slate-400 border-slate-500/30' }
+    return <Badge variant="outline" className={sv.variant}>{sv.label}</Badge>
+  }
+
+  const draftClaims = incidents.filter(i => i.claimId)
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-white text-lg font-semibold">Centre des Accidents</h2>
+          <p className="text-slate-400 text-sm">Détection et signalement d'incidents</p>
+        </div>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              <FilePlus className="w-4 h-4 mr-2" />Signaler un accident
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="bg-slate-900 border-slate-800 max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="text-white">Signaler un accident</DialogTitle>
+              <DialogDescription className="text-slate-400">Enregistrez un incident</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 pt-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Type</Label>
+                  <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
+                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      <SelectItem value="collision">Collision</SelectItem>
+                      <SelectItem value="single_vehicle">Véhicule seul</SelectItem>
+                      <SelectItem value="pedestrian">Piéton</SelectItem>
+                      <SelectItem value="animal">Animal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Sévérité</Label>
+                  <Select value={form.severity} onValueChange={(v) => setForm({ ...form, severity: v })}>
+                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      <SelectItem value="low">Mineur</SelectItem>
+                      <SelectItem value="medium">Moyen</SelectItem>
+                      <SelectItem value="high">Élevé</SelectItem>
+                      <SelectItem value="critical">Critique</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Vitesse (km/h)</Label>
+                  <Input type="number" value={form.speed} onChange={(e) => setForm({ ...form, speed: e.target.value })} placeholder="50" className="bg-slate-800 border-slate-700 text-white" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Décélération (m/s²)</Label>
+                  <Input type="number" value={form.deceleration} onChange={(e) => setForm({ ...form, deceleration: e.target.value })} placeholder="8.5" className="bg-slate-800 border-slate-700 text-white" />
+                </div>
+              </div>
+              {lastResult && <p className="text-sm text-slate-300">{lastResult}</p>}
+              <Button onClick={handleReport} disabled={submitting} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
+                <Send className="w-4 h-4 mr-2" />{submitting ? 'Envoi...' : 'Signaler'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Incidents Table */}
+      <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+        <CardHeader>
+          <CardTitle className="text-white text-lg flex items-center gap-2">
+            <Siren className="w-5 h-5 text-emerald-400" />
+            Incidents détectés
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="p-6 space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-12 bg-slate-800 rounded-lg" />)}</div>
+          ) : incidents.length === 0 ? (
+            <div className="text-center py-8">
+              <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
+              <p className="text-slate-300 font-medium">Aucun incident enregistré</p>
+              <p className="text-slate-500 text-sm mt-1">Les incidents détectés par télématique apparaîtront ici</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="border-slate-800 hover:bg-transparent">
+                  <TableHead className="text-slate-400">Type</TableHead>
+                  <TableHead className="text-slate-400">Sévérité</TableHead>
+                  <TableHead className="text-slate-400 hidden sm:table-cell">Date</TableHead>
+                  <TableHead className="text-slate-400 hidden md:table-cell">Vitesse</TableHead>
+                  <TableHead className="text-slate-400">Statut</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {incidents.map((inc) => (
+                  <TableRow key={inc.id} className="border-slate-800 hover:bg-slate-800/50">
+                    <TableCell className="text-white text-sm">{inc.type}</TableCell>
+                    <TableCell>{getSeverityBadge(inc.severity)}</TableCell>
+                    <TableCell className="text-slate-300 text-sm hidden sm:table-cell">
+                      {new Date(inc.timestamp).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </TableCell>
+                    <TableCell className="text-slate-300 text-sm hidden md:table-cell">
+                      {inc.speed ? `${inc.speed} km/h` : '-'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={inc.resolved ? 'border-emerald-500/30 text-emerald-400' : 'border-amber-500/30 text-amber-400'}>
+                        {inc.resolved ? 'Résolu' : 'En cours'}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Auto-generated claim drafts */}
+      {draftClaims.length > 0 && (
         <Card className="bg-slate-900 border border-slate-800 rounded-xl">
           <CardHeader>
             <CardTitle className="text-white text-lg flex items-center gap-2">
-              <BrainCircuit className="w-5 h-5 text-emerald-400" />
-              Détection d'accident IA
+              <FileText className="w-5 h-5 text-amber-400" />
+              Brouillons de réclamations auto-génés ({draftClaims.length})
             </CardTitle>
-            <CardDescription className="text-slate-400">Détection automatique en temps réel via capteurs et télématique</CardDescription>
+            <CardDescription className="text-slate-400">Générés automatiquement pour les incidents élevés/critiques</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className={`p-4 rounded-xl border-2 ${autoDetect ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-slate-700 bg-slate-800/50'}`}>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full ${autoDetect ? 'bg-emerald-500 animate-pulse' : 'bg-slate-500'}`} />
-                  <span className={`text-sm font-medium ${autoDetect ? 'text-emerald-400' : 'text-slate-400'}`}>
-                    {autoDetect ? 'Surveillance active' : 'Désactivé'}
-                  </span>
-                </div>
-                <Button
-                  size="sm"
-                  variant={autoDetect ? 'default' : 'outline'}
-                  onClick={() => setAutoDetect(!autoDetect)}
-                  className={autoDetect ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'border-slate-700 text-slate-300'}
-                >
-                  {autoDetect ? 'Désactiver' : 'Activer'}
-                </Button>
-              </div>
-              <div className="grid grid-cols-3 gap-3 text-center">
+          <CardContent className="space-y-2">
+            {draftClaims.map((inc) => (
+              <div key={inc.id} className="flex items-center justify-between p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
                 <div>
-                  <Gauge className="w-5 h-5 text-slate-500 mx-auto mb-1" />
-                  <p className="text-white text-xs font-medium">Accéléromètre</p>
-                  <p className="text-emerald-400 text-xs">OK</p>
+                  <p className="text-white text-sm font-medium">Incident {inc.severity === 'critical' ? 'critique' : 'élevé'}</p>
+                  <p className="text-slate-500 text-xs">Référence: {inc.claimId?.slice(0, 12)}...</p>
                 </div>
-                <div>
-                  <Activity className="w-5 h-5 text-slate-500 mx-auto mb-1" />
-                  <p className="text-white text-xs font-medium">Gyroscope</p>
-                  <p className="text-emerald-400 text-xs">OK</p>
-                </div>
-                <div>
-                  <MapPin className="w-5 h-5 text-slate-500 mx-auto mb-1" />
-                  <p className="text-white text-xs font-medium">GPS</p>
-                  <p className="text-emerald-400 text-xs">OK</p>
-                </div>
+                <Badge variant="outline" className="bg-amber-600/20 text-amber-400 border-amber-500/30">Brouillon</Badge>
               </div>
-            </div>
-
-            {/* Crash Reconstruction */}
-            <div>
-              <h4 className="text-white text-sm font-medium mb-3 flex items-center gap-2">
-                <Route className="w-4 h-4 text-emerald-400" />
-                Reconstitution de crash
-              </h4>
-              <div className="rounded-xl bg-slate-800/50 border border-slate-700/50 p-4 h-40 flex items-center justify-center">
-                <div className="text-center">
-                  <AlertTriangle className="w-10 h-10 text-slate-600 mx-auto mb-2" />
-                  <p className="text-slate-400 text-sm">Visualisation 3D de la reconstitution</p>
-                  <p className="text-slate-500 text-xs mt-1">Disponible après détection d'un accident</p>
-                </div>
-              </div>
-            </div>
+            ))}
           </CardContent>
         </Card>
+      )}
 
-        {/* AI Damage Detection & Repair Cost */}
-        <div className="space-y-6">
-          <Card className="bg-slate-900 border border-slate-800 rounded-xl">
-            <CardHeader>
-              <CardTitle className="text-white text-lg flex items-center gap-2">
-                <Eye className="w-5 h-5 text-emerald-400" />
-                Détection de dommages IA
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {damageZones.map((dz) => (
-                  <div key={dz.zone} className="flex items-center justify-between p-3 rounded-lg border border-slate-700/50">
-                    <span className="text-slate-300 text-sm">{dz.zone}</span>
-                    <Badge variant="outline" className={dz.color}>{dz.severity}</Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-slate-900 border border-slate-800 rounded-xl">
-            <CardHeader>
-              <CardTitle className="text-white text-lg flex items-center gap-2">
-                <Wrench className="w-5 h-5 text-emerald-400" />
-                Estimation du coût de réparation
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {repairEstimate.map((r) => (
-                  <div key={r.item} className="flex items-center justify-between text-sm">
-                    <span className="text-slate-300">{r.item}</span>
-                    <span className="text-white font-medium">{r.cost} €</span>
-                  </div>
-                ))}
-                <Separator className="bg-slate-800" />
-                <div className="flex items-center justify-between pt-1">
-                  <span className="text-white font-semibold">Total estimé</span>
-                  <span className="text-emerald-400 font-bold text-lg">{totalEstimate.toLocaleString('fr-FR')} €</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Emergency Dispatch */}
+      {/* Emergency contacts */}
       <Card className="bg-slate-900 border border-red-500/30 rounded-xl">
         <CardHeader>
           <CardTitle className="text-white text-lg flex items-center gap-2">
-            <Siren className="w-5 h-5 text-red-400" />
-            Alerte d'urgence
+            <Phone className="w-5 h-5 text-red-400" />
+            Contacts d'urgence
           </CardTitle>
-          <CardDescription className="text-slate-400">Notification automatique des services d'urgence en cas d'accident</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {emergencyContacts.map((ec) => {
-              const bg = ec.bg
-              const clr = ec.color
-              return (
-              <div key={ec.label} className={"p-4 rounded-xl border border-slate-700/50 " + bg + " flex flex-col items-center text-center"}>
-                <div className={clr + " mb-2"}>{getEmergencyIcon(ec.iconName)}</div>
+            {[{ label: 'Police', number: '17', icon: <Siren className="w-5 h-5" />, color: 'text-blue-400', bg: 'bg-blue-600/10' },
+              { label: 'Ambulance', number: '15', icon: <Heart className="w-5 h-5" />, color: 'text-red-400', bg: 'bg-red-600/10' },
+              { label: 'Famille', number: '06 XX XX XX XX', icon: <Phone className="w-5 h-5" />, color: 'text-emerald-400', bg: 'bg-emerald-600/10' },
+              { label: 'Assureur', number: '01 XX XX XX XX', icon: <Shield className="w-5 h-5" />, color: 'text-amber-400', bg: 'bg-amber-600/10' },
+            ].map((ec) => (
+              <div key={ec.label} className={`p-4 rounded-xl border border-slate-700/50 ${ec.bg} flex flex-col items-center text-center`}>
+                <div className={`${ec.color} mb-2`}>{ec.icon}</div>
                 <p className="text-white text-sm font-medium">{ec.label}</p>
-                <p className={clr + " text-sm font-bold mt-1"}>{ec.number}</p>
-                <Button variant="outline" size="sm" className="mt-2 border-slate-600 text-slate-300 hover:bg-slate-800 text-xs w-full">
-                  <Phone className="w-3 h-3 mr-1" />Appeler
-                </Button>
+                <p className={`${ec.color} text-sm font-bold mt-1`}>{ec.number}</p>
               </div>
-              )
-            })}
-          </div>
-          <div className="mt-4 p-3 rounded-lg bg-red-500/5 border border-red-500/20">
-            <div className="flex items-start gap-2">
-              <Info className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
-              <p className="text-slate-300 text-sm">En cas de détection d'accident grave, ADSO notifie automatiquement les secours avec votre position GPS et les données du véhicule.</p>
-            </div>
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -1714,222 +1727,474 @@ function AccidentCenterTab() {
 // TAB 7: TELEMATICS CENTER
 // ═══════════════════════════════════════════════════════════════
 function TelematicsCenterTab() {
-  const paydMetrics = {
-    kmParcourus: 1847,
-    kmPrevu: 2400,
-    primeEconomisee: 118,
-    joursRestants: 45,
-    scoreMoyen: 79,
+  const [phyd, setPhyd] = useState<PhydData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [reportOpen, setReportOpen] = useState(false)
+  const [reportMonth, setReportMonth] = useState(new Date().getMonth() + 1)
+  const [reportYear, setReportYear] = useState(new Date().getFullYear())
+  const [report, setReport] = useState<unknown>(null)
+  const [generating, setGenerating] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/insurance/phyd')
+      .then(r => r.json())
+      .then(data => { setPhyd(data); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
+
+  const handleGenerateReport = async () => {
+    setGenerating(true)
+    try {
+      const res = await fetch('/api/insurance/phyd', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mois: reportMonth, annee: reportYear }),
+      })
+      const data = await res.json()
+      setReport(data.rapport)
+    } catch { /* */ }
+    setGenerating(false)
   }
 
-  const phydMetrics = [
-    { name: 'Freinage progressif', score: 85, icon: <Gauge className="w-4 h-4" /> },
-    { name: 'Accélération fluide', score: 78, icon: <Zap className="w-4 h-4" /> },
-    { name: 'Respect des limitations', score: 92, icon: <ShieldCheck className="w-4 h-4" /> },
-    { name: 'Anticipation virages', score: 72, icon: <Route className="w-4 h-4" /> },
-    { name: 'Distance de sécurité', score: 88, icon: <AlertTriangle className="w-4 h-4" /> },
-    { name: 'Conduite de nuit', score: 65, icon: <Star className="w-4 h-4" /> },
-  ]
+  const months = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
+  const pieData = phyd ? [
+    { name: 'Ville', value: phyd.pourcentageVille, color: 'rgb(16,185,129)' },
+    { name: 'Autoroute', value: phyd.pourcentageAutoroute, color: 'rgb(59,130,246)' },
+    { name: 'Nuit', value: phyd.pourcentageConduiteNuit, color: 'rgb(139,92,246)' },
+  ] : []
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-      {/* PAYD & PHYD Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* PAYD Metrics */}
-        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
-          <CardHeader>
-            <CardTitle className="text-white text-lg flex items-center gap-2">
-              <Route className="w-5 h-5 text-emerald-400" />
-              Payez selon votre distance (PAYD)
-            </CardTitle>
-            <CardDescription className="text-slate-400">Prime proportionnelle au kilométrage parcouru</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-lg bg-slate-800/50">
-                <p className="text-slate-500 text-xs">KM parcourus</p>
-                <p className="text-white text-xl font-bold">{paydMetrics.kmParcourus.toLocaleString('fr-FR')}</p>
-                <p className="text-slate-500 text-xs">sur {paydMetrics.kmPrevu.toLocaleString('fr-FR')} prévus</p>
-              </div>
-              <div className="p-3 rounded-lg bg-slate-800/50">
-                <p className="text-slate-500 text-xs">Économie réalisée</p>
-                <p className="text-emerald-400 text-xl font-bold">-{paydMetrics.primeEconomisee} €</p>
-                <p className="text-slate-500 text-xs">sur la prime annuelle</p>
-              </div>
-              <div className="p-3 rounded-lg bg-slate-800/50">
-                <p className="text-slate-500 text-xs">Score moyen</p>
-                <p className="text-white text-xl font-bold">{paydMetrics.scoreMoyen}/100</p>
-              </div>
-              <div className="p-3 rounded-lg bg-slate-800/50">
-                <p className="text-slate-500 text-xs">Jours restants</p>
-                <p className="text-white text-xl font-bold">{paydMetrics.joursRestants}</p>
-              </div>
-            </div>
-            <Progress
-              value={(paydMetrics.kmParcourus / paydMetrics.kmPrevu) * 100}
-              className="h-3 [&>div]:bg-emerald-500"
-            />
-            <p className="text-slate-500 text-xs text-center">{Math.round((paydMetrics.kmParcourus / paydMetrics.kmPrevu) * 100)}% du kilométrage prévu</p>
-          </CardContent>
-        </Card>
+      {loading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-64 bg-slate-900 rounded-xl" />)}
+        </div>
+      ) : !phyd || phyd.nombreTrajets === 0 ? (
+        <div className="text-center py-16">
+          <Activity className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+          <h3 className="text-white text-xl font-semibold mb-2">Aucune donnée télématique</h3>
+          <p className="text-slate-500 text-sm">Les données de conduite apparaîtront une fois les trajets enregistrés</p>
+        </div>
+      ) : (
+        <>
+          {/* KPI Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { label: 'Kilométrage total', value: `${phyd.totalKm.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} km`, icon: <Route className="w-5 h-5" />, color: 'text-emerald-400', bg: 'bg-emerald-600/10' },
+              { label: 'Durée totale', value: phyd.dureeTotaleFormatee || `${Math.floor(phyd.dureeTotale / 3600)}h ${Math.floor((phyd.dureeTotale % 3600) / 60)}min`, icon: <Clock className="w-5 h-5" />, color: 'text-blue-400', bg: 'bg-blue-600/10' },
+              { label: 'Score conduite', value: `${phyd.scoreConduiteMoyen.toFixed(0)}/100`, icon: <Star className="w-5 h-5" />, color: getScoreColor(phyd.scoreConduiteMoyen), bg: 'bg-emerald-600/10' },
+              { label: 'Score éco', value: `${phyd.scoreEcoMoyen.toFixed(0)}/100`, icon: <Zap className="w-5 h-5" />, color: getScoreColor(phyd.scoreEcoMoyen), bg: 'bg-emerald-600/10' },
+            ].map((k) => (
+              <Card key={k.label} className="bg-slate-900 border border-slate-800 rounded-xl">
+                <CardContent className="p-4">
+                  <div className={`w-10 h-10 rounded-lg ${k.bg} flex items-center justify-center mb-3 ${k.color}`}>{k.icon}</div>
+                  <p className="text-slate-400 text-xs">{k.label}</p>
+                  <p className={`text-xl font-bold ${k.color} mt-1`}>{k.value}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-        {/* PHYD Metrics */}
-        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
-          <CardHeader>
-            <CardTitle className="text-white text-lg flex items-center gap-2">
-              <Activity className="w-5 h-5 text-emerald-400" />
-              Payez selon votre conduite (PHYD)
-            </CardTitle>
-            <CardDescription className="text-slate-400">Prime ajustée selon votre comportement de conduite</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {phydMetrics.map((m) => (
-              <div key={m.name} className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-500">{m.icon}</span>
-                    <span className="text-slate-300 text-sm">{m.name}</span>
-                  </div>
-                  <span className={`text-sm font-medium ${getScoreColor(m.score)}`}>{m.score}%</span>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Driving composition pie */}
+            <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+              <CardHeader>
+                <CardTitle className="text-white text-lg flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-emerald-400" />
+                  Répartition conduite
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-56">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" nameKey="name" label={({ name, value }) => `${name}: ${value.toFixed(0)}%`}>
+                        {pieData.map((entry, idx) => <Cell key={idx} fill={entry.color} />)}
+                      </Pie>
+                      <Tooltip contentStyle={{ backgroundColor: 'rgb(15,23,42)', border: '1px solid rgb(51,65,85)', borderRadius: '8px' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
-                <Progress value={m.score} className={`h-2 ${getProgressColor(m.score)}`} />
+              </CardContent>
+            </Card>
+
+            {/* Monthly breakdown chart */}
+            <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+              <CardHeader>
+                <CardTitle className="text-white text-lg flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-emerald-400" />
+                  Kilométrage mensuel
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {phyd.ventilationMensuelle.length > 0 ? (
+                  <div className="h-56">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={phyd.ventilationMensuelle.map(m => ({ mois: m.mois.slice(5), km: m.kilometrageTotal }))}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgb(51,65,85)" />
+                        <XAxis dataKey="mois" stroke="rgb(100,116,139)" fontSize={12} />
+                        <YAxis stroke="rgb(100,116,139)" fontSize={12} />
+                        <Tooltip contentStyle={{ backgroundColor: 'rgb(15,23,42)', border: '1px solid rgb(51,65,85)', borderRadius: '8px' }} labelStyle={{ color: 'rgb(148,163,184)' }} />
+                        <Bar dataKey="km" fill="rgb(16,185,129)" radius={[4, 4, 0, 0]} name="km" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-56 flex items-center justify-center"><p className="text-slate-500 text-sm">Aucune donnée mensuelle</p></div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Monthly driving detail table */}
+          {phyd.ventilationMensuelle.length > 0 && (
+            <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+              <CardHeader>
+                <CardTitle className="text-white text-lg flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-emerald-400" />
+                  Détail mensuel
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="max-h-64 overflow-y-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-slate-800 hover:bg-transparent">
+                        <TableHead className="text-slate-400">Mois</TableHead>
+                        <TableHead className="text-slate-400">Trajets</TableHead>
+                        <TableHead className="text-slate-400 hidden sm:table-cell">KM</TableHead>
+                        <TableHead className="text-slate-400 hidden md:table-cell">Score</TableHead>
+                        <TableHead className="text-slate-400 hidden lg:table-cell">Freinages</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {phyd.ventilationMensuelle.map((m) => (
+                        <TableRow key={m.mois} className="border-slate-800 hover:bg-slate-800/50">
+                          <TableCell className="text-white text-sm">{m.mois}</TableCell>
+                          <TableCell className="text-slate-300 text-sm">{m.nombreTrajets}</TableCell>
+                          <TableCell className="text-slate-300 text-sm hidden sm:table-cell">{m.kilometrageTotal.toFixed(0)} km</TableCell>
+                          <TableCell className="text-slate-300 text-sm hidden md:table-cell"><Badge variant="outline" className={m.scoreConduiteMoyen >= 75 ? 'border-emerald-500/30 text-emerald-400' : 'border-amber-500/30 text-amber-400'}>{m.scoreConduiteMoyen.toFixed(0)}</Badge></TableCell>
+                          <TableCell className="text-slate-300 text-sm hidden lg:table-cell">{m.freinagesBrusques}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Generate Report */}
+          <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+            <CardHeader>
+              <CardTitle className="text-white text-lg flex items-center gap-2">
+                <Award className="w-5 h-5 text-emerald-400" />
+                Rapport mensuel PHYD
+              </CardTitle>
+              <CardDescription className="text-slate-400">Générez un rapport détaillé de conduite pour un mois donné</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row items-end gap-3">
+                <div className="space-y-1">
+                  <Label className="text-slate-400 text-xs">Mois</Label>
+                  <Select value={String(reportMonth)} onValueChange={(v) => setReportMonth(parseInt(v))}>
+                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white w-40"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      {months.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-slate-400 text-xs">Année</Label>
+                  <Input type="number" value={reportYear} onChange={(e) => setReportYear(parseInt(e.target.value) || new Date().getFullYear())} className="bg-slate-800 border-slate-700 text-white w-28" />
+                </div>
+                <Button onClick={handleGenerateReport} disabled={generating} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                  <RefreshCw className={`w-4 h-4 mr-2 ${generating ? 'animate-spin' : ''}`} />{generating ? 'Génération...' : 'Générer' }
+                </Button>
               </div>
-            ))}
-          </CardContent>
-        </Card>
+              {report && (
+                <div className="mt-4 p-4 rounded-lg bg-slate-800/50 border border-slate-700/50">
+                  <h4 className="text-white text-sm font-medium mb-2">Rapport {String((report as Record<string, unknown>).periode)}</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {Object.entries((report as Record<string, Record<string, unknown>>).resume || {}).map(([k, v]) => (
+                      <div key={k} className="p-2 rounded bg-slate-900/50">
+                        <p className="text-slate-500 text-xs capitalize">{k}</p>
+                        <p className="text-white text-sm font-medium">{typeof v === 'number' ? v.toLocaleString('fr-FR') : String(v)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </motion.div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TAB 8: PREMIUM ENGINE
+// ═══════════════════════════════════════════════════════════════
+function PremiumEngineTab() {
+  const [premiums, setPremiums] = useState<PremiumResult[]>([])
+  const [loading, setLoading] = useState(true)
+  const [formula, setFormula] = useState('')
+  const [recalculating, setRecalculating] = useState<string | null>(null)
+
+  const fetchPremiums = useCallback(() => {
+    fetch('/api/insurance/premium')
+      .then(r => r.json())
+      .then(data => {
+        setPremiums(data.primes || [])
+        setFormula(data.formule || '')
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [])
+
+  useEffect(() => { fetchPremiums() }, [fetchPremiums])
+
+  const handleRecalculate = async (policyId: string) => {
+    setRecalculating(policyId)
+    try {
+      await fetch('/api/insurance/premium', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ policyId }),
+      })
+      fetchPremiums()
+    } catch { /* */ }
+    setRecalculating(null)
+  }
+
+  const getTypeLabel = (t: string) => {
+    const map: Record<string, string> = { third_party: 'Tiers', comprehensive: 'Tous risques', collision: 'Collision', theft: 'Vol', gap: 'DAP' }
+    return map[t] || t
+  }
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-white text-lg font-semibold">Tarification Dynamique</h2>
+          <p className="text-slate-400 text-sm">Moteur de calcul de primes basé sur le comportement</p>
+        </div>
+        {formula && (
+          <div className="p-3 rounded-lg bg-slate-800/50 border border-slate-700/50 max-w-md">
+            <p className="text-slate-500 text-xs mb-1">Formule</p>
+            <p className="text-slate-300 text-xs font-mono">{formula}</p>
+          </div>
+        )}
       </div>
 
-      {/* Driving Behavior Analysis */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
-          <CardHeader>
-            <CardTitle className="text-white text-lg flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-emerald-400" />
-              Analyse comportementale hebdomadaire
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={telematicsWeekly}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgb(51,65,85)" />
-                  <XAxis dataKey="jour" stroke="rgb(100,116,139)" fontSize={12} />
-                  <YAxis stroke="rgb(100,116,139)" fontSize={12} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: 'rgb(15,23,42)', border: '1px solid rgb(51,65,85)', borderRadius: '8px' }}
-                    labelStyle={{ color: 'rgb(148,163,184)' }}
-                  />
-                  <Bar dataKey="score" fill="rgb(16,185,129)" radius={[4, 4, 0, 0]} name="Score" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+      {loading ? (
+        <div className="space-y-4">{[...Array(2)].map((_, i) => <Skeleton key={i} className="h-72 bg-slate-900 rounded-xl" />)}</div>
+      ) : premiums.length === 0 ? (
+        <div className="text-center py-16">
+          <Calculator className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+          <h3 className="text-white text-xl font-semibold mb-2">Aucune police trouvée</h3>
+          <p className="text-slate-500 text-sm">Créez une police d'assurance pour voir le calcul de prime</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {premiums.map((p) => (
+            <Card key={p.policyId} className="bg-slate-900 border border-slate-800 rounded-xl">
+              <CardHeader className="pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <CardTitle className="text-white text-base flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-emerald-400" />
+                      {p.policyNumber}
+                    </CardTitle>
+                    <p className="text-slate-500 text-xs mt-1">{getTypeLabel(p.type)}</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                    disabled={recalculating === p.policyId}
+                    onClick={() => handleRecalculate(p.policyId)}
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-1.5 ${recalculating === p.policyId ? 'animate-spin' : ''}`} />
+                    {recalculating === p.policyId ? 'Calcul...' : 'Recalculer'}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <div className="p-3 rounded-lg bg-slate-800/50">
+                    <p className="text-slate-500 text-xs">Prime de base</p>
+                    <p className="text-white font-bold">{p.basePremium.toFixed(0)} €</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-slate-800/50">
+                    <p className="text-slate-500 text-xs">Ajustement confiance</p>
+                    <p className="text-slate-300 font-medium">{((1 - p.trustAdjustment) * 100).toFixed(1)}%</p>
+                    <p className="text-slate-500 text-xs">Score: {p.trustScore}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-slate-800/50">
+                    <p className="text-slate-500 text-xs">Pénalité comportement</p>
+                    <p className={p.behaviorPenalty > 0.1 ? 'text-amber-400 font-medium' : 'text-emerald-400 font-medium'}>
+                      +{(p.behaviorPenalty * 100).toFixed(1)}%
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-slate-800/50">
+                    <p className="text-slate-500 text-xs">Facteur risque</p>
+                    <p className={p.riskFactor > 0.3 ? 'text-amber-400 font-medium' : 'text-emerald-400 font-medium'}>
+                      +{(p.riskFactor * 100).toFixed(1)}%
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                    <p className="text-slate-500 text-xs">Prime calculée</p>
+                    <p className="text-emerald-400 text-xl font-bold">{p.calculatedPremium.toFixed(0)} €</p>
+                    {p.currentPremium && p.currentPremium !== p.calculatedPremium && (
+                      <p className="text-slate-500 text-xs">Actuelle: {p.currentPremium.toFixed(0)} €</p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </motion.div>
+  )
+}
 
-        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
-          <CardHeader>
-            <CardTitle className="text-white text-lg flex items-center gap-2">
-              <Target className="w-5 h-5 text-emerald-400" />
-              Profil de conduite radar
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={radarData}>
-                  <PolarGrid stroke="rgb(51,65,85)" />
-                  <PolarAngleAxis dataKey="subject" stroke="rgb(100,116,139)" fontSize={11} />
-                  <PolarRadiusAxis angle={30} domain={[0, 100]} stroke="rgb(71,85,105)" fontSize={10} />
-                  <Radar name="Score" dataKey="A" stroke="rgb(16,185,129)" fill="rgb(16,185,129)" fillOpacity={0.2} strokeWidth={2} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: 'rgb(15,23,42)', border: '1px solid rgb(51,65,85)', borderRadius: '8px' }}
-                  />
-                </RadarChart>
-              </ResponsiveContainer>
+// ═══════════════════════════════════════════════════════════════
+// TAB 9: PARTNERS
+// ═══════════════════════════════════════════════════════════════
+function PartnersTab() {
+  const [partners, setPartners] = useState<PartnerItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [form, setForm] = useState({ name: '', code: '', country: 'FR', contactEmail: '', contactPhone: '', commissionRate: '0' })
+
+  const fetchPartners = useCallback(() => {
+    fetch('/api/insurance/partners')
+      .then(r => r.json())
+      .then(data => { setPartners(data.partenaires || []); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
+
+  useEffect(() => { fetchPartners() }, [fetchPartners])
+
+  const handleAdd = async () => {
+    if (!form.name || !form.code) return
+    setSubmitting(true)
+    try {
+      const res = await fetch('/api/insurance/partners', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name, code: form.code, country: form.country,
+          contactEmail: form.contactEmail || undefined, contactPhone: form.contactPhone || undefined,
+          commissionRate: parseFloat(form.commissionRate) || 0,
+        }),
+      })
+      if (res.ok) {
+        setDialogOpen(false)
+        setForm({ name: '', code: '', country: 'FR', contactEmail: '', contactPhone: '', commissionRate: '0' })
+        fetchPartners()
+      }
+    } catch { /* */ }
+    setSubmitting(false)
+  }
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-white text-lg font-semibold">Partenaires Assureurs</h2>
+          <p className="text-slate-400 text-sm">Gérez vos partenariats d'assurance</p>
+        </div>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              <Plus className="w-4 h-4 mr-2" />Ajouter un partenaire
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="bg-slate-900 border-slate-800 max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="text-white">Ajouter un partenaire</DialogTitle>
+              <DialogDescription className="text-slate-400">Enregistrez un nouvel assureur partenaire</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 pt-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Nom</Label>
+                  <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="AXA France" className="bg-slate-800 border-slate-700 text-white" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Code</Label>
+                  <Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} placeholder="AXA-FR" className="bg-slate-800 border-slate-700 text-white" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Pays</Label>
+                  <Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value.toUpperCase() })} placeholder="FR" className="bg-slate-800 border-slate-700 text-white" maxLength={2} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Commission (%)</Label>
+                  <Input type="number" step="0.1" value={form.commissionRate} onChange={(e) => setForm({ ...form, commissionRate: e.target.value })} className="bg-slate-800 border-slate-700 text-white" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-slate-300">Email de contact</Label>
+                <Input type="email" value={form.contactEmail} onChange={(e) => setForm({ ...form, contactEmail: e.target.value })} placeholder="contact@assureur.fr" className="bg-slate-800 border-slate-700 text-white" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-slate-300">Téléphone</Label>
+                <Input value={form.contactPhone} onChange={(e) => setForm({ ...form, contactPhone: e.target.value })} placeholder="01 XX XX XX XX" className="bg-slate-800 border-slate-700 text-white" />
+              </div>
+              <Button onClick={handleAdd} disabled={submitting || !form.name || !form.code} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
+                <Send className="w-4 h-4 mr-2" />{submitting ? 'Ajout...' : 'Ajouter le partenaire'}
+              </Button>
             </div>
-          </CardContent>
-        </Card>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {/* Trip-Based Scoring */}
       <Card className="bg-slate-900 border border-slate-800 rounded-xl">
-        <CardHeader>
-          <CardTitle className="text-white text-lg flex items-center gap-2">
-            <Route className="w-5 h-5 text-emerald-400" />
-            Scoring par trajet
-          </CardTitle>
-        </CardHeader>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-slate-800 hover:bg-transparent">
-                <TableHead className="text-slate-400">Date</TableHead>
-                <TableHead className="text-slate-400">Trajet</TableHead>
-                <TableHead className="text-slate-400 hidden sm:table-cell">Distance</TableHead>
-                <TableHead className="text-slate-400 hidden md:table-cell">Durée</TableHead>
-                <TableHead className="text-slate-400">Score</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tripScores.map((t) => (
-                <TableRow key={t.id} className="border-slate-800 hover:bg-slate-800/50">
-                  <TableCell className="text-slate-300 text-sm">{t.date}</TableCell>
-                  <TableCell className="text-white text-sm">{t.depart} → {t.arrivee}</TableCell>
-                  <TableCell className="text-slate-300 text-sm hidden sm:table-cell">{t.distance}</TableCell>
-                  <TableCell className="text-slate-300 text-sm hidden md:table-cell">{t.duree}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={t.score >= 80
-                        ? 'border-emerald-500/30 text-emerald-400'
-                        : t.score >= 65
-                          ? 'border-amber-500/30 text-amber-400'
-                          : 'border-red-500/30 text-red-400'
-                      }
-                    >
-                      {t.score}/100
-                    </Badge>
-                  </TableCell>
+          {loading ? (
+            <div className="p-6 space-y-3">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-16 bg-slate-800 rounded-lg" />)}</div>
+          ) : partners.length === 0 ? (
+            <div className="text-center py-8">
+              <Building2 className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+              <p className="text-slate-300 font-medium">Aucun partenaire</p>
+              <p className="text-slate-500 text-sm mt-1">Ajoutez votre premier assureur partenaire</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="border-slate-800 hover:bg-transparent">
+                  <TableHead className="text-slate-400">Nom</TableHead>
+                  <TableHead className="text-slate-400">Code</TableHead>
+                  <TableHead className="text-slate-400 hidden sm:table-cell">Pays</TableHead>
+                  <TableHead className="text-slate-400 hidden md:table-cell">Commission</TableHead>
+                  <TableHead className="text-slate-400">Statut</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {/* Safe Driver Rewards */}
-      <Card className="bg-slate-900 border border-slate-800 rounded-xl">
-        <CardHeader>
-          <CardTitle className="text-white text-lg flex items-center gap-2">
-            <Award className="w-5 h-5 text-emerald-400" />
-            Récompenses conducteur prudent
-          </CardTitle>
-          <CardDescription className="text-slate-400">Économies mensuelles basées sur votre conduite sécuritaire</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={safeDriverRewards}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgb(51,65,85)" />
-                <XAxis dataKey="mois" stroke="rgb(100,116,139)" fontSize={12} />
-                <YAxis stroke="rgb(100,116,139)" fontSize={12} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: 'rgb(15,23,42)', border: '1px solid rgb(51,65,85)', borderRadius: '8px' }}
-                  labelStyle={{ color: 'rgb(148,163,184)' }}
-                />
-                <Bar dataKey="niveau" fill="rgb(16,185,129)" radius={[4, 4, 0, 0]} name="Niveau" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-4 grid grid-cols-3 gap-3">
-            {safeDriverRewards.slice(-3).map((r) => (
-              <div key={r.mois} className="p-3 rounded-lg bg-slate-800/50 text-center">
-                <p className="text-slate-500 text-xs">{r.mois}</p>
-                <p className="text-emerald-400 font-bold text-sm mt-1">{r.prime}</p>
-                <Badge variant="outline" className="border-amber-500/30 text-amber-400 text-xs mt-1">{r.niveau}</Badge>
-              </div>
-            ))}
-          </div>
+              </TableHeader>
+              <TableBody>
+                {partners.map((p) => (
+                  <TableRow key={p.id} className="border-slate-800 hover:bg-slate-800/50">
+                    <TableCell className="text-white text-sm font-medium">{p.name}</TableCell>
+                    <TableCell className="text-slate-300 text-sm font-mono">{p.code}</TableCell>
+                    <TableCell className="text-slate-300 text-sm hidden sm:table-cell">{p.country}</TableCell>
+                    <TableCell className="text-slate-300 text-sm hidden md:table-cell">{p.commissionRate}%</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={p.status === 'active' ? 'border-emerald-500/30 text-emerald-400' : 'border-slate-500/30 text-slate-400'}>
+                        {p.status === 'active' ? 'Actif' : p.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </motion.div>

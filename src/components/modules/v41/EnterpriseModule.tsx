@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import {
   Building2,
@@ -29,6 +29,7 @@ import {
   ClipboardList,
   Server,
   Database,
+  RefreshCw,
 } from 'lucide-react'
 import {
   Card,
@@ -69,6 +70,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
 
 // ─── Types ───────────────────────────────────────────────────
 interface OrgMember {
@@ -104,17 +106,18 @@ interface FeatureFlag {
   createdAt: string
 }
 
-// ─── Demo Data ───────────────────────────────────────────────
-const orgInfo = {
-  name: 'ADSO Corporation',
-  plan: 'enterprise',
-  country: 'FR',
-  members: 24,
-  maxMembers: 50,
-  status: 'active',
-  createdAt: '2024-06-15',
+interface OrgInfo {
+  id: string
+  name: string
+  plan: string
+  country: string
+  maxVehicles: number
+  maxDrivers: number
+  createdAt: string
+  _count: { vehicles: number; drivers: number }
 }
 
+// ─── Static lookups ──────────────────────────────────────────
 const roleLabels: Record<string, string> = {
   super_admin: 'Super Admin',
   enterprise_admin: 'Admin Entreprise',
@@ -130,42 +133,6 @@ const roleColors: Record<string, string> = {
   instructor: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   student: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
 }
-
-const demoMembers: OrgMember[] = [
-  { id: 'u1', name: 'Alexandre Dubois', email: 'alexandre@adso.fr', role: 'super_admin', status: 'active', joinedAt: '2024-06-15', lastActive: '2025-07-10' },
-  { id: 'u2', name: 'Marie Lefèvre', email: 'marie@adso.fr', role: 'enterprise_admin', status: 'active', joinedAt: '2024-07-01', lastActive: '2025-07-10' },
-  { id: 'u3', name: 'Thomas Bernard', email: 'thomas@adso.fr', role: 'enterprise_admin', status: 'active', joinedAt: '2024-08-15', lastActive: '2025-07-09' },
-  { id: 'u4', name: 'Sophie Martin', email: 'sophie@adso.fr', role: 'school_admin', status: 'active', joinedAt: '2024-09-01', lastActive: '2025-07-08' },
-  { id: 'u5', name: 'Jean-Pierre Moreau', email: 'jp.moreau@adso.fr', role: 'school_admin', status: 'active', joinedAt: '2024-09-15', lastActive: '2025-07-10' },
-  { id: 'u6', name: 'Claire Petit', email: 'claire@adso.fr', role: 'instructor', status: 'active', joinedAt: '2024-10-01', lastActive: '2025-07-07' },
-  { id: 'u7', name: 'Lucas Robert', email: 'lucas@adso.fr', role: 'instructor', status: 'active', joinedAt: '2024-10-15', lastActive: '2025-07-09' },
-  { id: 'u8', name: 'Emma Durand', email: 'emma@adso.fr', role: 'student', status: 'active', joinedAt: '2025-01-10', lastActive: '2025-07-10' },
-  { id: 'u9', name: 'Hugo Simon', email: 'hugo@adso.fr', role: 'student', status: 'inactive', joinedAt: '2025-02-01', lastActive: '2025-05-15' },
-]
-
-const demoAuditLogs: AuditLog[] = [
-  { id: 'al1', timestamp: '2025-07-10T14:32:15Z', userName: 'Alexandre Dubois', action: 'update', resource: 'organization', resourceId: 'org-1', status: 'success', details: '{"field": "plan", "old": "pro", "new": "enterprise"}', ipAddress: '192.168.1.100' },
-  { id: 'al2', timestamp: '2025-07-10T14:15:00Z', userName: 'Marie Lefèvre', action: 'create', resource: 'user', resourceId: 'u9', status: 'success', details: '{"name": "Hugo Simon", "role": "student"}', ipAddress: '192.168.1.45' },
-  { id: 'al3', timestamp: '2025-07-10T13:45:22Z', userName: 'Thomas Bernard', action: 'configure', resource: 'feature_flag', resourceId: 'ff-1', status: 'success', details: '{"key": "ai_driving_coach", "enabled": true}', ipAddress: '192.168.1.78' },
-  { id: 'al4', timestamp: '2025-07-10T12:30:00Z', userName: 'Jean-Pierre Moreau', action: 'export', resource: 'course', resourceId: null, status: 'success', details: '{"format": "csv", "count": 45}', ipAddress: '192.168.1.92' },
-  { id: 'al5', timestamp: '2025-07-10T11:20:10Z', userName: 'Sophie Martin', action: 'delete', resource: 'vehicle', resourceId: 'v-old', status: 'success', details: '{"vehicle": "Renault Clio 2019"}', ipAddress: '192.168.1.33' },
-  { id: 'al6', timestamp: '2025-07-10T10:15:45Z', userName: 'Alexandre Dubois', action: 'approve', resource: 'policy', resourceId: 'pol-3', status: 'success', details: '{"policy": "Assurance flotte"}', ipAddress: '192.168.1.100' },
-  { id: 'al7', timestamp: '2025-07-09T16:45:00Z', userName: 'Marie Lefèvre', action: 'update', resource: 'user', resourceId: 'u3', status: 'denied', details: '{"attempted_role": "super_admin"}', ipAddress: '192.168.1.45' },
-  { id: 'al8', timestamp: '2025-07-09T15:30:22Z', userName: 'Claire Petit', action: 'create', resource: 'exam', resourceId: 'ex-42', status: 'success', details: '{"type": "mock", "student": "Emma Durand"}', ipAddress: '192.168.1.67' },
-  { id: 'al9', timestamp: '2025-07-09T14:10:00Z', userName: 'Lucas Robert', action: 'read', resource: 'fleet', resourceId: null, status: 'success', details: '{"action": "view_dashboard"}', ipAddress: '192.168.1.89' },
-  { id: 'al10', timestamp: '2025-07-09T09:00:00Z', userName: 'Alexandre Dubois', action: 'login', resource: 'user', resourceId: 'u1', status: 'success', details: null, ipAddress: '192.168.1.100' },
-]
-
-const demoFeatureFlags: FeatureFlag[] = [
-  { id: 'ff-1', name: 'IA Coach de Conduite', description: 'Active le coach IA en temps réel pendant les sessions de conduite', key: 'ai_driving_coach', enabled: true, targetAudience: ['pro', 'premium'], category: 'IA', createdAt: '2025-01-15T10:00:00Z' },
-  { id: 'ff-2', name: 'Diagnostic Mécanique IA', description: 'Permet l\'analyse des symptômes mécaniques par IA multimodale', key: 'ai_mechanic_diagnostic', enabled: true, targetAudience: ['starter', 'pro', 'premium'], category: 'IA', createdAt: '2025-02-01T10:00:00Z' },
-  { id: 'ff-3', name: 'Tableau de Bord Flotte', description: 'Accès au module complet de gestion de flotte', key: 'fleet_dashboard', enabled: true, targetAudience: ['enterprise'], category: 'Flotte', createdAt: '2025-03-01T10:00:00Z' },
-  { id: 'ff-4', name: 'Plateforme Gouvernementale', description: 'Module de gestion des infractions et inspections', key: 'government_platform', enabled: false, targetAudience: ['enterprise'], category: 'Gouvernement', createdAt: '2025-03-15T10:00:00Z' },
-  { id: 'ff-5', name: 'Alertes Sécurité Avancées', description: 'Géorepérage, détection de collision et alertes anti-vol', key: 'advanced_security_alerts', enabled: true, targetAudience: ['pro', 'premium'], category: 'Sécurité', createdAt: '2025-04-01T10:00:00Z' },
-  { id: 'ff-6', name: 'Marché Intégré', description: 'Accès au marché de services automobiles', key: 'marketplace_access', enabled: true, targetAudience: ['starter', 'pro', 'premium'], category: 'Marketplace', createdAt: '2025-04-15T10:00:00Z' },
-  { id: 'ff-7', name: 'Télémétrie Avancée', description: 'Données télémétriques détaillées et analyses prédictives', key: 'advanced_telematics', enabled: false, targetAudience: ['premium'], category: 'Télémétrie', createdAt: '2025-05-01T10:00:00Z' },
-  { id: 'ff-8', name: 'Examens Adaptatifs IA', description: 'Examens de conduite adaptatifs basés sur le niveau de l\'élève', key: 'adaptive_exams', enabled: true, targetAudience: ['pro', 'premium'], category: 'Formation', createdAt: '2025-05-15T10:00:00Z' },
-]
 
 const actionLabels: Record<string, string> = {
   login: 'Connexion', logout: 'Déconnexion', create: 'Création', read: 'Lecture',
@@ -183,10 +150,10 @@ const gdprChecklist = [
   { id: 1, item: 'Registre des traitements de données', completed: true },
   { id: 2, item: 'Politique de confidentialité mise à jour', completed: true },
   { id: 3, item: 'Consentement explicite des utilisateurs', completed: true },
-  { id: 4, item: 'Droit à l\'oubli implémenté', completed: true },
+  { id: 4, item: "Droit à l'oubli implémenté", completed: true },
   { id: 5, item: 'Portabilité des données', completed: true },
   { id: 6, item: 'Délégué à la protection des données (DPO) nommé', completed: false },
-  { id: 7, item: 'Analyse d\'impact (AIPD) pour les traitements à risque', completed: false },
+  { id: 7, item: "Analyse d'impact (AIPD) pour les traitements à risque", completed: false },
   { id: 8, item: 'Procédure de notification de violation de données', completed: true },
 ]
 
@@ -218,37 +185,117 @@ const iso27001Checks = [
 
 // ─── Component ───────────────────────────────────────────────
 export default function EnterpriseModule() {
+  const [organizations, setOrganizations] = useState<OrgInfo[]>([])
+  const [members, setMembers] = useState<OrgMember[]>([])
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
+  const [featureFlags, setFeatureFlags] = useState<FeatureFlag[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [actionFilter, setActionFilter] = useState('all')
   const [resourceFilter, setResourceFilter] = useState('all')
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false)
-  const [featureFlags, setFeatureFlags] = useState(demoFeatureFlags)
   const [auditDetailOpen, setAuditDetailOpen] = useState(false)
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null)
 
-  const filteredLogs = demoAuditLogs.filter((l) => {
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [oRes, aRes, fRes] = await Promise.all([
+        fetch('/api/enterprise/organizations'),
+        fetch('/api/enterprise/audit-logs'),
+        fetch('/api/enterprise/feature-flags'),
+      ])
+      const oData = await oRes.json()
+      const aData = await aRes.json()
+      const fData = await fRes.json()
+
+      if (oData.success) {
+        setOrganizations(oData.data)
+        // Simulate members from organizations + _count
+        const simulatedMembers: OrgMember[] = []
+        const roles = ['super_admin', 'enterprise_admin', 'school_admin', 'instructor', 'student']
+        oData.data.forEach((org: OrgInfo & { _count: { vehicles: number; drivers: number } }, idx: number) => {
+          simulatedMembers.push({
+            id: `org-${org.id}`,
+            name: org.name,
+            email: `${org.name.toLowerCase().replace(/\s+/g, '.')}@adso.fr`,
+            role: roles[Math.min(idx, roles.length - 1)],
+            status: 'active',
+            joinedAt: org.createdAt,
+            lastActive: org.createdAt,
+          })
+        })
+        setMembers(simulatedMembers)
+      }
+      if (aData.success) {
+        setAuditLogs(aData.data.map((log: { id: string; createdAt: string; action: string; resource: string; resourceId: string | null; status: string; details: string | null; ipAddress: string | null; user: { name: string; email: string } }) => ({
+          id: log.id,
+          timestamp: log.createdAt,
+          userName: log.user?.name ?? 'Système',
+          action: log.action,
+          resource: log.resource,
+          resourceId: log.resourceId,
+          status: log.status,
+          details: log.details,
+          ipAddress: log.ipAddress,
+        })))
+      }
+      if (fData.success) setFeatureFlags(fData.data)
+    } catch (e) {
+      console.error('Erreur chargement données entreprise:', e)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { loadData() }, [loadData])
+
+  const filteredLogs = auditLogs.filter((l) => {
     if (actionFilter !== 'all' && l.action !== actionFilter) return false
     if (resourceFilter !== 'all' && l.resource !== resourceFilter) return false
     if (searchQuery && !l.userName.toLowerCase().includes(searchQuery.toLowerCase()) && !l.resource.toLowerCase().includes(searchQuery.toLowerCase())) return false
     return true
   })
 
-  const filteredMembers = demoMembers.filter(
+  const filteredMembers = members.filter(
     (m) => m.name.toLowerCase().includes(searchQuery.toLowerCase()) || m.email.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const toggleFlag = (id: string) => {
-    setFeatureFlags((prev) => prev.map((f) => (f.id === id ? { ...f, enabled: !f.enabled } : f)))
+  const toggleFlag = async (id: string, enabled: boolean) => {
+    try {
+      const res = await fetch('/api/enterprise/feature-flags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ flagId: id, enabled }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setFeatureFlags((prev) => prev.map((f) => (f.id === id ? { ...f, enabled } : f)))
+      }
+    } catch (e) {
+      console.error('Erreur mise à jour feature flag:', e)
+    }
   }
 
+  const orgInfo = organizations[0]
   const roleDistribution = Object.entries(
-    demoMembers.reduce((acc, m) => { acc[m.role] = (acc[m.role] || 0) + 1; return acc }, {} as Record<string, number>)
+    members.reduce((acc, m) => { acc[m.role] = (acc[m.role] || 0) + 1; return acc }, {} as Record<string, number>)
   )
 
   const gdprProgress = Math.round((gdprChecklist.filter(c => c.completed).length / gdprChecklist.length) * 100)
   const isoProgress = Math.round((iso27001Checks.filter(c => c.completed).length / iso27001Checks.length) * 100)
   const owaspPass = owaspChecks.filter(c => c.status === 'pass').length
   const owaspTotal = owaspChecks.length
+
+  // ─── Skeleton helper ───────────────────────────────────────
+  const SkeletonCard = () => (
+    <Card className="bg-slate-900 border-slate-800">
+      <CardContent className="p-4">
+        <Skeleton className="h-4 w-32 mb-2 bg-slate-800" />
+        <Skeleton className="h-8 w-16 bg-slate-800" />
+      </CardContent>
+    </Card>
+  )
 
   return (
     <div className="pt-20 pb-8 min-h-screen bg-slate-950">
@@ -271,197 +318,222 @@ export default function EnterpriseModule() {
         </motion.div>
 
         <Tabs defaultValue="organization" className="space-y-6">
-          <TabsList className="bg-slate-900 border border-slate-800">
-            <TabsTrigger value="organization" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-              <Building2 className="h-4 w-4 mr-2" />Organisation
-            </TabsTrigger>
-            <TabsTrigger value="audit" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-              <ClipboardList className="h-4 w-4 mr-2" />Journaux d\'Audit
-            </TabsTrigger>
-            <TabsTrigger value="flags" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-              <Flag className="h-4 w-4 mr-2" />Feature Flags
-            </TabsTrigger>
-            <TabsTrigger value="security" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-              <Shield className="h-4 w-4 mr-2" />Sécurité
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-              <Settings className="h-4 w-4 mr-2" />Paramètres
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex items-center justify-between">
+            <TabsList className="bg-slate-900 border border-slate-800">
+              <TabsTrigger value="organization" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                <Building2 className="h-4 w-4 mr-2" />Organisation
+              </TabsTrigger>
+              <TabsTrigger value="audit" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                <ClipboardList className="h-4 w-4 mr-2" />Journaux d'Audit
+              </TabsTrigger>
+              <TabsTrigger value="flags" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                <Flag className="h-4 w-4 mr-2" />Feature Flags
+              </TabsTrigger>
+              <TabsTrigger value="security" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                <Shield className="h-4 w-4 mr-2" />Sécurité
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                <Settings className="h-4 w-4 mr-2" />Paramètres
+              </TabsTrigger>
+            </TabsList>
+            <Button variant="outline" className="border-slate-700 text-slate-300" onClick={loadData} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />Actualiser
+            </Button>
+          </div>
 
           {/* ═══ TAB 1: Organization ═══ */}
           <TabsContent value="organization" className="space-y-6">
-            {/* Org Info */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="bg-slate-900 border-slate-800">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-white text-base">Informations de l\'Organisation</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    {[
-                      { label: 'Nom', value: orgInfo.name },
-                      { label: 'Plan', value: orgInfo.plan.charAt(0).toUpperCase() + orgInfo.plan.slice(1) },
-                      { label: 'Pays', value: '🇫🇷 France' },
-                      { label: 'Membres', value: `${orgInfo.members} / ${orgInfo.maxMembers}` },
-                      { label: 'Créée le', value: new Date(orgInfo.createdAt).toLocaleDateString('fr-FR') },
-                    ].map((item) => (
-                      <div key={item.label} className="flex items-center justify-between">
-                        <span className="text-sm text-slate-400">{item.label}</span>
-                        <span className="text-sm text-white font-medium">{item.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <Separator className="bg-slate-800" />
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-400">Statut</span>
-                    <Badge variant="outline" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-                      <CheckCircle2 className="h-3 w-3 mr-1" />Actif
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* RBAC Role Management */}
-              <Card className="bg-slate-900 border-slate-800">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-white text-base">Gestion des Rôles (RBAC)</CardTitle>
-                  <CardDescription className="text-slate-500 text-xs">Hiérarchie des permissions par rôle</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {Object.entries(roleLabels).map(([key, label]) => {
-                    const count = demoMembers.filter(m => m.role === key).length
-                    return (
-                      <div key={key} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-800/50 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <Badge variant="outline" className={roleColors[key]}>{label}</Badge>
-                        </div>
-                        <span className="text-sm text-slate-400">{count} membre{count > 1 ? 's' : ''}</span>
-                      </div>
-                    )
-                  })}
-                </CardContent>
-              </Card>
-
-              {/* Quick Stats */}
-              <Card className="bg-slate-900 border-slate-800">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-white text-base">Activité Récente</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-400">Connexions (7j)</span>
-                      <span className="text-sm text-emerald-400 font-medium">156</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-400">Actions auditées</span>
-                      <span className="text-sm text-cyan-400 font-medium">1,247</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-400">Examens passés</span>
-                      <span className="text-sm text-amber-400 font-medium">89</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-400">Taux de réussite</span>
-                      <span className="text-sm text-emerald-400 font-medium">78%</span>
-                    </div>
-                    <Separator className="bg-slate-800" />
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-400">Alertes sécurité</span>
-                      <span className="text-sm text-red-400 font-medium">2</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Member List */}
-            <Card className="bg-slate-900 border-slate-800">
-              <CardHeader className="pb-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <CardTitle className="text-white text-base">Membres de l\'Organisation</CardTitle>
-                  <div className="flex gap-2">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-                      <Input
-                        placeholder="Rechercher..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 bg-slate-800 border-slate-700 text-white w-52"
-                      />
-                    </div>
-                    <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white h-9">
-                          <Plus className="h-4 w-4 mr-1" />Inviter
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="bg-slate-900 border-slate-800 text-white">
-                        <DialogHeader>
-                          <DialogTitle>Inviter un membre</DialogTitle>
-                          <DialogDescription className="text-slate-400">Envoyez une invitation par email</DialogDescription>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                          <div className="space-y-2">
-                            <Label>Email</Label>
-                            <Input type="email" placeholder="email@exemple.fr" className="bg-slate-800 border-slate-700" />
+            {loading ? (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <SkeletonCard /><SkeletonCard /><SkeletonCard />
+              </div>
+            ) : (
+              <>
+                {/* Org Info */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <Card className="bg-slate-900 border-slate-800">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-white text-base">Informations de l'Organisation</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-3">
+                        {orgInfo ? [
+                          { label: 'Nom', value: orgInfo.name },
+                          { label: 'Plan', value: orgInfo.plan.charAt(0).toUpperCase() + orgInfo.plan.slice(1) },
+                          { label: 'Pays', value: '🇫🇷 France' },
+                          { label: 'Membres', value: `${orgInfo._count.drivers} / ${orgInfo.maxDrivers}` },
+                          { label: 'Créée le', value: new Date(orgInfo.createdAt).toLocaleDateString('fr-FR') },
+                        ].map((item) => (
+                          <div key={item.label} className="flex items-center justify-between">
+                            <span className="text-sm text-slate-400">{item.label}</span>
+                            <span className="text-sm text-white font-medium">{item.value}</span>
                           </div>
-                          <div className="space-y-2">
-                            <Label>Rôle</Label>
-                            <Select>
-                              <SelectTrigger className="bg-slate-800 border-slate-700"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                              <SelectContent>
-                                {Object.entries(roleLabels).map(([k, v]) => (
-                                  <SelectItem key={k} value={k}>{v}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                        )) : [
+                          { label: 'Nom', value: 'Aucune organisation' },
+                          { label: 'Plan', value: '—' },
+                        ].map((item) => (
+                          <div key={item.label} className="flex items-center justify-between">
+                            <span className="text-sm text-slate-400">{item.label}</span>
+                            <span className="text-sm text-white font-medium">{item.value}</span>
                           </div>
-                        </div>
-                        <DialogFooter>
-                          <Button variant="outline" className="border-slate-700 text-slate-300" onClick={() => setInviteDialogOpen(false)}>Annuler</Button>
-                          <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setInviteDialogOpen(false)}>Inviter</Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-slate-800 hover:bg-slate-800/50">
-                        <TableHead className="text-slate-400">Membre</TableHead>
-                        <TableHead className="text-slate-400">Rôle</TableHead>
-                        <TableHead className="text-slate-400">Statut</TableHead>
-                        <TableHead className="text-slate-400">Dernière activité</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredMembers.map((m) => (
-                        <TableRow key={m.id} className="border-slate-800 hover:bg-slate-800/50">
-                          <TableCell>
-                            <div>
-                              <p className="text-white text-sm font-medium">{m.name}</p>
-                              <p className="text-xs text-slate-500">{m.email}</p>
+                        ))}
+                      </div>
+                      <Separator className="bg-slate-800" />
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-slate-400">Statut</span>
+                        <Badge variant="outline" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />Actif
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* RBAC Role Management */}
+                  <Card className="bg-slate-900 border-slate-800">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-white text-base">Gestion des Rôles (RBAC)</CardTitle>
+                      <CardDescription className="text-slate-500 text-xs">Hiérarchie des permissions par rôle</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {Object.entries(roleLabels).map(([key, label]) => {
+                        const count = members.filter(m => m.role === key).length
+                        return (
+                          <div key={key} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-800/50 transition-colors">
+                            <div className="flex items-center gap-3">
+                              <Badge variant="outline" className={roleColors[key]}>{label}</Badge>
                             </div>
-                          </TableCell>
-                          <TableCell><Badge variant="outline" className={roleColors[m.role]}>{roleLabels[m.role]}</Badge></TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className={m.status === 'active' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-slate-500/20 text-slate-400 border-slate-500/30'}>
-                              {m.status === 'active' ? 'Actif' : 'Inactif'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-slate-400 text-sm">{new Date(m.lastActive).toLocaleDateString('fr-FR')}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                            <span className="text-sm text-slate-400">{count} membre{count > 1 ? 's' : ''}</span>
+                          </div>
+                        )
+                      })}
+                    </CardContent>
+                  </Card>
+
+                  {/* Quick Stats */}
+                  <Card className="bg-slate-900 border-slate-800">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-white text-base">Activité Récente</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-slate-400">Organisations</span>
+                          <span className="text-sm text-emerald-400 font-medium">{organizations.length}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-slate-400">Actions auditées</span>
+                          <span className="text-sm text-cyan-400 font-medium">{auditLogs.length.toLocaleString('fr-FR')}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-slate-400">Véhicules totaux</span>
+                          <span className="text-sm text-amber-400 font-medium">{organizations.reduce((s, o) => s + o._count.vehicles, 0)}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-slate-400">Conducteurs totaux</span>
+                          <span className="text-sm text-emerald-400 font-medium">{organizations.reduce((s, o) => s + o._count.drivers, 0)}</span>
+                        </div>
+                        <Separator className="bg-slate-800" />
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-slate-400">Alertes sécurité</span>
+                          <span className="text-sm text-red-400 font-medium">{auditLogs.filter(l => l.status === 'denied').length}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
-              </CardContent>
-            </Card>
+
+                {/* Member List */}
+                <Card className="bg-slate-900 border-slate-800">
+                  <CardHeader className="pb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <CardTitle className="text-white text-base">Membres de l'Organisation</CardTitle>
+                      <div className="flex gap-2">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                          <Input
+                            placeholder="Rechercher..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-9 bg-slate-800 border-slate-700 text-white w-52"
+                          />
+                        </div>
+                        <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white h-9">
+                              <Plus className="h-4 w-4 mr-1" />Inviter
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="bg-slate-900 border-slate-800 text-white">
+                            <DialogHeader>
+                              <DialogTitle>Inviter un membre</DialogTitle>
+                              <DialogDescription className="text-slate-400">Envoyez une invitation par email</DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                              <div className="space-y-2">
+                                <Label>Email</Label>
+                                <Input type="email" placeholder="email@exemple.fr" className="bg-slate-800 border-slate-700" />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Rôle</Label>
+                                <Select>
+                                  <SelectTrigger className="bg-slate-800 border-slate-700"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                                  <SelectContent>
+                                    {Object.entries(roleLabels).map(([k, v]) => (
+                                      <SelectItem key={k} value={k}>{v}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            <DialogFooter>
+                              <Button variant="outline" className="border-slate-700 text-slate-300" onClick={() => setInviteDialogOpen(false)}>Annuler</Button>
+                              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setInviteDialogOpen(false)}>Inviter</Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-slate-800 hover:bg-slate-800/50">
+                            <TableHead className="text-slate-400">Membre</TableHead>
+                            <TableHead className="text-slate-400">Rôle</TableHead>
+                            <TableHead className="text-slate-400">Statut</TableHead>
+                            <TableHead className="text-slate-400">Dernière activité</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredMembers.length > 0 ? filteredMembers.map((m) => (
+                            <TableRow key={m.id} className="border-slate-800 hover:bg-slate-800/50">
+                              <TableCell>
+                                <div>
+                                  <p className="text-white text-sm font-medium">{m.name}</p>
+                                  <p className="text-xs text-slate-500">{m.email}</p>
+                                </div>
+                              </TableCell>
+                              <TableCell><Badge variant="outline" className={roleColors[m.role] ?? 'bg-slate-500/20 text-slate-400 border-slate-500/30'}>{roleLabels[m.role] ?? m.role}</Badge></TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={m.status === 'active' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-slate-500/20 text-slate-400 border-slate-500/30'}>
+                                  {m.status === 'active' ? 'Actif' : 'Inactif'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-slate-400 text-sm">{new Date(m.lastActive).toLocaleDateString('fr-FR')}</TableCell>
+                            </TableRow>
+                          )) : (
+                            <TableRow>
+                              <TableCell colSpan={4} className="text-center text-slate-500 py-8">Aucun membre trouvé</TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </TabsContent>
 
           {/* ═══ TAB 2: Audit Logs ═══ */}
@@ -507,7 +579,16 @@ export default function EnterpriseModule() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredLogs.map((l) => (
+                      {loading ? Array.from({ length: 5 }).map((_, i) => (
+                        <TableRow key={i} className="border-slate-800">
+                          <TableCell><Skeleton className="h-4 w-24 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-28 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-5 w-16 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-20 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-5 w-16 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-5 w-8 bg-slate-800" /></TableCell>
+                        </TableRow>
+                      )) : filteredLogs.length > 0 ? filteredLogs.map((l) => (
                         <TableRow key={l.id} className="border-slate-800 hover:bg-slate-800/50 cursor-pointer" onClick={() => { setSelectedLog(l); setAuditDetailOpen(true) }}>
                           <TableCell className="text-slate-400 text-xs font-mono whitespace-nowrap">{new Date(l.timestamp).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</TableCell>
                           <TableCell className="text-white text-sm whitespace-nowrap">{l.userName}</TableCell>
@@ -524,7 +605,11 @@ export default function EnterpriseModule() {
                             </Button>
                           </TableCell>
                         </TableRow>
-                      ))}
+                      )) : (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center text-slate-500 py-8">Aucun journal d'audit trouvé</TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -536,7 +621,7 @@ export default function EnterpriseModule() {
               <DialogContent className="bg-slate-900 border-slate-800 text-white max-w-lg">
                 <DialogHeader>
                   <DialogTitle>Détails du Journal</DialogTitle>
-                  <DialogDescription className="text-slate-400">Entrée d\'audit complète</DialogDescription>
+                  <DialogDescription className="text-slate-400">Entrée d'audit complète</DialogDescription>
                 </DialogHeader>
                 {selectedLog && (
                   <div className="space-y-3">
@@ -551,7 +636,7 @@ export default function EnterpriseModule() {
                     {selectedLog.details && (
                       <div className="space-y-1 mt-2">
                         <p className="text-xs text-slate-500">Détails</p>
-                        <pre className="text-xs text-slate-300 bg-slate-800 p-3 rounded-lg overflow-x-auto">{JSON.stringify(JSON.parse(selectedLog.details), null, 2)}</pre>
+                        <pre className="text-xs text-slate-300 bg-slate-800 p-3 rounded-lg overflow-x-auto">{(() => { try { return JSON.stringify(JSON.parse(selectedLog.details), null, 2) } catch { return selectedLog.details } })()}</pre>
                       </div>
                     )}
                   </div>
@@ -586,7 +671,7 @@ export default function EnterpriseModule() {
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-amber-500/10"><Users className="h-5 w-5 text-amber-400" /></div>
-                    <div><p className="text-sm text-slate-400">Audiences ciblées</p><p className="text-xl font-bold text-white">4</p></div>
+                    <div><p className="text-sm text-slate-400">Audiences ciblées</p><p className="text-xl font-bold text-white">{new Set(featureFlags.flatMap(f => f.targetAudience)).size}</p></div>
                   </div>
                 </CardContent>
               </Card>
@@ -612,7 +697,7 @@ export default function EnterpriseModule() {
                             <div className="flex items-center gap-3">
                               <Switch
                                 checked={f.enabled}
-                                onCheckedChange={() => toggleFlag(f.id)}
+                                onCheckedChange={(checked) => toggleFlag(f.id, checked)}
                                 className="data-[state=checked]:bg-emerald-600"
                               />
                               <span className={`text-sm font-medium ${f.enabled ? 'text-white' : 'text-slate-500'}`}>{f.name}</span>
@@ -693,17 +778,17 @@ export default function EnterpriseModule() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-                    {gdprChecklist.map((item) => (
-                      <div key={item.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-800/50">
-                        {item.completed ? (
-                          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-red-400 shrink-0" />
-                        )}
-                        <span className={`text-sm ${item.completed ? 'text-slate-300' : 'text-slate-500'}`}>{item.item}</span>
-                      </div>
-                    ))}
-                  </div>
+                  {gdprChecklist.map((item) => (
+                    <div key={item.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-800/50">
+                      {item.completed ? (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-red-400 shrink-0" />
+                      )}
+                      <span className={`text-sm ${item.completed ? 'text-slate-300' : 'text-slate-500'}`}>{item.item}</span>
+                    </div>
+                  ))}
+                </div>
                 </CardContent>
               </Card>
 
@@ -758,14 +843,27 @@ export default function EnterpriseModule() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex items-start gap-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                    <AlertTriangle className="h-5 w-5 text-red-400 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="text-sm text-red-400 font-medium">Tentative d\'escalade de privilèges détectée</p>
-                      <p className="text-xs text-slate-500 mt-1">Utilisateur Marie Lefèvre — Tentative d\'attribution du rôle super_admin — 10 Juil 2025 16:45</p>
+                  {auditLogs.filter(l => l.status === 'denied').length > 0 ? auditLogs.filter(l => l.status === 'denied').slice(0, 3).map(l => (
+                    <div key={l.id} className="flex items-start gap-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                      <AlertTriangle className="h-5 w-5 text-red-400 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm text-red-400 font-medium">Action non autorisée détectée</p>
+                        <p className="text-xs text-slate-500 mt-1">{l.userName} — {actionLabels[l.action] ?? l.action} sur {resourceLabels[l.resource] ?? l.resource} — {new Date(l.timestamp).toLocaleDateString('fr-FR')}</p>
+                      </div>
+                      <Badge variant="outline" className="bg-red-500/20 text-red-400 border-red-500/30 shrink-0">Critique</Badge>
                     </div>
-                    <Badge variant="outline" className="bg-red-500/20 text-red-400 border-red-500/30 shrink-0">Critique</Badge>
-                  </div>
+                  )) : (
+                    <>
+                      <div className="flex items-start gap-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                        <CheckCircle2 className="h-5 w-5 text-emerald-400 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-sm text-emerald-400 font-medium">Aucune alerte de sécurité</p>
+                          <p className="text-xs text-slate-500 mt-1">Toutes les actions auditées sont conformes</p>
+                        </div>
+                        <Badge variant="outline" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shrink-0">OK</Badge>
+                      </div>
+                    </>
+                  )}
                   <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
                     <AlertTriangle className="h-5 w-5 text-amber-400 mt-0.5" />
                     <div className="flex-1">
@@ -785,17 +883,17 @@ export default function EnterpriseModule() {
               {/* Organization Profile */}
               <Card className="bg-slate-900 border-slate-800">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-white text-base">Profil de l\'Organisation</CardTitle>
+                  <CardTitle className="text-white text-base">Profil de l'Organisation</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Nom de l\'organisation</Label>
-                    <Input defaultValue={orgInfo.name} className="bg-slate-800 border-slate-700" />
+                    <Label>Nom de l'organisation</Label>
+                    <Input defaultValue={orgInfo?.name ?? ''} className="bg-slate-800 border-slate-700" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Pays</Label>
-                      <Select defaultValue="FR">
+                      <Select defaultValue={orgInfo?.country ?? 'FR'}>
                         <SelectTrigger className="bg-slate-800 border-slate-700"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="FR">🇫🇷 France</SelectItem>
@@ -809,7 +907,7 @@ export default function EnterpriseModule() {
                     </div>
                     <div className="space-y-2">
                       <Label>Plan</Label>
-                      <Select defaultValue="enterprise">
+                      <Select defaultValue={orgInfo?.plan ?? 'starter'}>
                         <SelectTrigger className="bg-slate-800 border-slate-700"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="starter">Starter</SelectItem>
@@ -832,11 +930,11 @@ export default function EnterpriseModule() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Max véhicules</Label>
-                      <Input type="number" defaultValue="100" className="bg-slate-800 border-slate-700" />
+                      <Input type="number" defaultValue={orgInfo?.maxVehicles ?? 100} className="bg-slate-800 border-slate-700" />
                     </div>
                     <div className="space-y-2">
                       <Label>Max membres</Label>
-                      <Input type="number" defaultValue="50" className="bg-slate-800 border-slate-700" />
+                      <Input type="number" defaultValue={orgInfo?.maxDrivers ?? 50} className="bg-slate-800 border-slate-700" />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">

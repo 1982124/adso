@@ -38,13 +38,16 @@ async function computeTrustScore(userId: string) {
   // 5. Driving Quality: derived from telematics + exam performance
   const drivingQuality = Math.round(telematicsScore * 0.6 + examPerformance * 0.4)
 
-  // 6. Mechanical Health: from diagnostic records
+  // 6. Mechanical Health: from diagnostic records (compute from severity)
   const diagnostics = await db.diagnosticRecord.findMany({
     where: { userId },
-    select: { overallHealth: true },
+    select: { severity: true },
   })
   const mechanicalHealth = diagnostics.length > 0
-    ? Math.round(diagnostics.reduce((s, d) => s + (d.overallHealth || 50), 0) / diagnostics.length)
+    ? Math.round(diagnostics.reduce((s, d) => {
+        const sev = d.severity === 'low' ? 90 : d.severity === 'medium' ? 60 : d.severity === 'high' ? 30 : 10
+        return s + sev
+      }, 0) / diagnostics.length)
     : 50
 
   // 7. Maintenance: based on vehicle profiles with recent service

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import {
   Truck,
@@ -27,6 +27,7 @@ import {
   ChevronRight,
   Filter,
   ArrowUpDown,
+  RefreshCw,
 } from 'lucide-react'
 import {
   Card,
@@ -85,6 +86,7 @@ import {
   Cell,
   ResponsiveContainer,
 } from 'recharts'
+import { Skeleton } from '@/components/ui/skeleton'
 
 // ─── Types ───────────────────────────────────────────────────
 interface Vehicle {
@@ -100,6 +102,14 @@ interface Vehicle {
   assignedDriverId: string | null
   fleet: { name: string }
   _count: { maintenanceRecords: number; fuelRecords: number }
+}
+
+interface DriverGroup {
+  id: string
+  name: string
+  driverCount: number
+  vehicleCount: number
+  plan: string
 }
 
 interface MaintenanceRecord {
@@ -127,78 +137,7 @@ interface FuelRecord {
   vehicle: { id: string; make: string; model: string; licensePlate: string }
 }
 
-// ─── Demo Data ───────────────────────────────────────────────
-const demoVehicles: Vehicle[] = [
-  { id: 'v1', make: 'Renault', model: 'Kangoo E-Tech', year: 2024, type: 'car', fuelType: 'electric', licensePlate: 'AB-123-CD', mileage: 15200, status: 'active', assignedDriverId: 'd1', fleet: { name: 'Flotte ADSO' }, _count: { maintenanceRecords: 3, fuelRecords: 12 } },
-  { id: 'v2', make: 'Peugeot', model: 'Expert', year: 2023, type: 'car', fuelType: 'diesel', licensePlate: 'EF-456-GH', mileage: 45800, status: 'active', assignedDriverId: 'd2', fleet: { name: 'Flotte ADSO' }, _count: { maintenanceRecords: 7, fuelRecords: 34 } },
-  { id: 'v3', make: 'Citroën', model: 'ë-Jumpy', year: 2024, type: 'car', fuelType: 'electric', licensePlate: 'IJ-789-KL', mileage: 8900, status: 'maintenance', assignedDriverId: null, fleet: { name: 'Flotte ADSO' }, _count: { maintenanceRecords: 2, fuelRecords: 8 } },
-  { id: 'v4', make: 'Dacia', model: 'Spring', year: 2023, type: 'car', fuelType: 'electric', licensePlate: 'MN-012-OP', mileage: 22100, status: 'active', assignedDriverId: 'd3', fleet: { name: 'Flotte ADSO' }, _count: { maintenanceRecords: 5, fuelRecords: 18 } },
-  { id: 'v5', make: 'Mercedes', model: 'Sprinter', year: 2022, type: 'truck', fuelType: 'diesel', licensePlate: 'QR-345-ST', mileage: 87500, status: 'out_of_service', assignedDriverId: null, fleet: { name: 'Flotte ADSO' }, _count: { maintenanceRecords: 12, fuelRecords: 56 } },
-  { id: 'v6', make: 'Renault', model: 'Master E-Tech', year: 2024, type: 'truck', fuelType: 'electric', licensePlate: 'UV-678-WX', mileage: 5300, status: 'active', assignedDriverId: 'd4', fleet: { name: 'Flotte ADSO' }, _count: { maintenanceRecords: 1, fuelRecords: 4 } },
-]
-
-const demoDrivers = [
-  { id: 'd1', name: 'Jean Dupont', licenseType: 'B', drivingScore: 92, totalTrips: 342, totalDistance: 12450, licenseExpiry: '2027-03-15', status: 'active' },
-  { id: 'd2', name: 'Marie Martin', licenseType: 'B, BE', drivingScore: 88, totalTrips: 287, totalDistance: 9820, licenseExpiry: '2026-08-22', status: 'active' },
-  { id: 'd3', name: 'Pierre Bernard', licenseType: 'B', drivingScore: 76, totalTrips: 156, totalDistance: 5430, licenseExpiry: '2026-01-10', status: 'active' },
-  { id: 'd4', name: 'Sophie Laurent', licenseType: 'C', drivingScore: 94, totalTrips: 410, totalDistance: 18200, licenseExpiry: '2028-06-30', status: 'active' },
-  { id: 'd5', name: 'Luc Moreau', licenseType: 'B', drivingScore: 65, totalTrips: 89, totalDistance: 3200, licenseExpiry: '2025-12-01', status: 'suspended' },
-]
-
-const demoMaintenance: MaintenanceRecord[] = [
-  { id: 'm1', type: 'routine', description: 'Vidange huile moteur + filtres', cost: 185, performedAt: '2025-06-15', nextDueDate: '2025-12-15', nextDueMileage: 30000, status: 'completed', vehicle: { id: 'v1', make: 'Renault', model: 'Kangoo', licensePlate: 'AB-123-CD' } },
-  { id: 'm2', type: 'tire', description: 'Rotation pneus + vérification usure', cost: 60, performedAt: '2025-07-01', nextDueDate: '2025-10-01', nextDueMileage: 20000, status: 'completed', vehicle: { id: 'v2', make: 'Peugeot', model: 'Expert', licensePlate: 'EF-456-GH' } },
-  { id: 'm3', type: 'brake', description: 'Remplacement plaquettes de frein avant', cost: 320, performedAt: null, nextDueDate: '2025-07-20', nextDueMileage: null, status: 'overdue', vehicle: { id: 'v3', make: 'Citroën', model: 'ë-Jumpy', licensePlate: 'IJ-789-KL' } },
-  { id: 'm4', type: 'inspection', description: 'Contrôle technique annuel', cost: 95, performedAt: null, nextDueDate: '2025-08-15', nextDueMileage: null, status: 'scheduled', vehicle: { id: 'v4', make: 'Dacia', model: 'Spring', licensePlate: 'MN-012-OP' } },
-  { id: 'm5', type: 'battery', description: 'Remplacement batterie 12V', cost: 210, performedAt: null, nextDueDate: '2025-07-25', nextDueMileage: null, status: 'in_progress', vehicle: { id: 'v5', make: 'Mercedes', model: 'Sprinter', licensePlate: 'QR-345-ST' } },
-  { id: 'm6', type: 'routine', description: 'Révision 30 000 km complète', cost: 450, performedAt: '2025-05-10', nextDueDate: '2025-11-10', nextDueMileage: 60000, status: 'completed', vehicle: { id: 'v2', make: 'Peugeot', model: 'Expert', licensePlate: 'EF-456-GH' } },
-]
-
-const demoFuel: FuelRecord[] = [
-  { id: 'f1', fuelType: 'electric', quantity: 45, costPerLiter: 0.18, totalCost: 8.1, odometer: 15200, fuelingDate: '2025-07-10', stationName: 'Ionity Paris', location: 'Paris', vehicle: { id: 'v1', make: 'Renault', model: 'Kangoo', licensePlate: 'AB-123-CD' } },
-  { id: 'f2', fuelType: 'diesel', quantity: 55, costPerLiter: 1.75, totalCost: 96.25, odometer: 45800, fuelingDate: '2025-07-08', stationName: 'TotalEnergies', location: 'Lyon', vehicle: { id: 'v2', make: 'Peugeot', model: 'Expert', licensePlate: 'EF-456-GH' } },
-  { id: 'f3', fuelType: 'electric', quantity: 38, costPerLiter: 0.15, totalCost: 5.7, odometer: 8900, fuelingDate: '2025-07-05', stationName: 'Tesla SC', location: 'Marseille', vehicle: { id: 'v3', make: 'Citroën', model: 'ë-Jumpy', licensePlate: 'IJ-789-KL' } },
-  { id: 'f4', fuelType: 'diesel', quantity: 70, costPerLiter: 1.72, totalCost: 120.4, odometer: 87500, fuelingDate: '2025-07-03', stationName: 'BP', location: 'Toulouse', vehicle: { id: 'v5', make: 'Mercedes', model: 'Sprinter', licensePlate: 'QR-345-ST' } },
-  { id: 'f5', fuelType: 'electric', quantity: 52, costPerLiter: 0.16, totalCost: 8.32, odometer: 5300, fuelingDate: '2025-07-01', stationName: 'Ionity Bordeaux', location: 'Bordeaux', vehicle: { id: 'v6', make: 'Renault', model: 'Master', licensePlate: 'UV-678-WX' } },
-  { id: 'f6', fuelType: 'diesel', quantity: 48, costPerLiter: 1.78, totalCost: 85.44, odometer: 45200, fuelingDate: '2025-06-28', stationName: 'Shell', location: 'Nice', vehicle: { id: 'v2', make: 'Peugeot', model: 'Expert', licensePlate: 'EF-456-GH' } },
-]
-
-const costPerVehicleChart = [
-  { vehicle: 'Kangoo', cout: 1250 },
-  { vehicle: 'Expert', cout: 3420 },
-  { vehicle: 'ë-Jumpy', cout: 890 },
-  { vehicle: 'Spring', cout: 650 },
-  { vehicle: 'Sprinter', cout: 5800 },
-  { vehicle: 'Master', cout: 420 },
-]
-
-const fuelTrendChart = [
-  { mois: 'Jan', litres: 280, cout: 485 },
-  { mois: 'Fév', litres: 310, cout: 520 },
-  { mois: 'Mar', litres: 290, cout: 495 },
-  { mois: 'Avr', litres: 340, cout: 560 },
-  { mois: 'Mai', litres: 320, cout: 530 },
-  { mois: 'Jun', litres: 350, cout: 575 },
-  { mois: 'Jul', litres: 305, cout: 505 },
-]
-
-const maintenanceCostChart = [
-  { mois: 'Jan', cout: 850 },
-  { mois: 'Fév', cout: 1200 },
-  { mois: 'Mar', cout: 650 },
-  { mois: 'Avr', cout: 2100 },
-  { mois: 'Mai', cout: 980 },
-  { mois: 'Jun', cout: 1500 },
-  { mois: 'Jul', cout: 735 },
-]
-
-const statusData = [
-  { name: 'Actif', value: 4, color: '#10b981' },
-  { name: 'Maintenance', value: 1, color: '#f59e0b' },
-  { name: 'Hors service', value: 1, color: '#ef4444' },
-  { name: 'Réformé', value: 0, color: '#6b7280' },
-]
-
+// ─── Chart configs ───────────────────────────────────────────
 const costChartConfig: ChartConfig = {
   cout: { label: 'Coût (€)', color: '#10b981' },
 }
@@ -252,14 +191,60 @@ const maintenanceTypeLabels: Record<string, string> = {
   body: 'Carrosserie',
 }
 
+const MOIS_ABREGE = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
+
 // ─── Component ───────────────────────────────────────────────
 export default function FleetModule() {
-  const [vehicles] = useState<Vehicle[]>(demoVehicles)
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [driverGroups, setDriverGroups] = useState<DriverGroup[]>([])
+  const [maintenance, setMaintenance] = useState<MaintenanceRecord[]>([])
+  const [fuel, setFuel] = useState<FuelRecord[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [vehicleDialogOpen, setVehicleDialogOpen] = useState(false)
   const [maintenanceDialogOpen, setMaintenanceDialogOpen] = useState(false)
   const [fuelDialogOpen, setFuelDialogOpen] = useState(false)
+  const [fleetDialogOpen, setFleetDialogOpen] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [vRes, fRes, mRes, fuRes] = await Promise.all([
+        fetch('/api/fleet/vehicles'),
+        fetch('/api/fleet'),
+        fetch('/api/fleet/maintenance'),
+        fetch('/api/fleet/fuel'),
+      ])
+      const vData = await vRes.json()
+      const fData = await fRes.json()
+      const mData = await mRes.json()
+      const fuData = await fuRes.json()
+
+      if (vData.success) setVehicles(vData.data)
+      if (fData.success) {
+        setDriverGroups(
+          fData.data.map((org: { id: string; name: string; plan: string; _count: { vehicles: number; drivers: number } }) => ({
+            id: org.id,
+            name: org.name,
+            driverCount: org._count.drivers,
+            vehicleCount: org._count.vehicles,
+            plan: org.plan,
+          }))
+        )
+      }
+      if (mData.success) setMaintenance(mData.data)
+      if (fuData.success) setFuel(fuData.data)
+    } catch (e) {
+      console.error('Erreur chargement données flotte:', e)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { loadData() }, [loadData])
+
+  // ─── Computed data ─────────────────────────────────────────
   const filteredVehicles = vehicles.filter(
     (v) =>
       `${v.make} ${v.model}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -269,14 +254,204 @@ export default function FleetModule() {
   const activeCount = vehicles.filter((v) => v.status === 'active').length
   const maintenanceCount = vehicles.filter((v) => v.status === 'maintenance').length
   const totalMileage = vehicles.reduce((s, v) => s + v.mileage, 0)
-  const totalCosts = 12410
-  const recentActivity = [
-    { id: 1, text: 'Vidange complétée - Renault Kangoo AB-123-CD', time: 'Il y a 2h', icon: <CheckCircle2 className="h-4 w-4 text-emerald-400" /> },
-    { id: 2, text: 'Plaquettes freins en retard - Citroën ë-Jumpy', time: 'Il y a 4h', icon: <AlertTriangle className="h-4 w-4 text-red-400" /> },
-    { id: 3, text: 'Ravitaillement - Peugeot Expert EF-456-GH', time: 'Il y a 6h', icon: <Fuel className="h-4 w-4 text-cyan-400" /> },
-    { id: 4, text: 'Contrôle technique planifié - Dacia Spring', time: 'Il y a 8h', icon: <Calendar className="h-4 w-4 text-blue-400" /> },
-    { id: 5, text: 'Sprinter QR-345-ST mis hors service', time: 'Il y a 1j', icon: <XCircle className="h-4 w-4 text-red-400" /> },
+  const totalCosts = maintenance.reduce((s, m) => s + (m.cost ?? 0), 0) + fuel.reduce((s, f) => s + (f.totalCost ?? 0), 0)
+  const totalDrivers = driverGroups.reduce((s, d) => s + d.driverCount, 0)
+
+  const pendingMaintCount = maintenance.filter(m => m.status === 'scheduled' || m.status === 'overdue').length
+
+  const statusData = [
+    { name: 'Actif', value: vehicles.filter(v => v.status === 'active').length, color: '#10b981' },
+    { name: 'Maintenance', value: vehicles.filter(v => v.status === 'maintenance').length, color: '#f59e0b' },
+    { name: 'Hors service', value: vehicles.filter(v => v.status === 'out_of_service').length, color: '#ef4444' },
+    { name: 'Réformé', value: vehicles.filter(v => v.status === 'retired').length, color: '#6b7280' },
   ]
+
+  const costPerVehicleChart = vehicles.length > 0
+    ? vehicles.map(v => {
+        const maintCost = maintenance.filter(m => m.vehicle.id === v.id).reduce((s, m) => s + (m.cost ?? 0), 0)
+        const fuelCost = fuel.filter(f => f.vehicle.id === v.id).reduce((s, f) => s + (f.totalCost ?? 0), 0)
+        return { vehicle: `${v.make} ${v.model}`, cout: Math.round(maintCost + fuelCost) }
+      }).filter(c => c.cout > 0)
+    : []
+
+  const fuelTrendChart = (() => {
+    const byMonth: Record<string, { litres: number; cout: number }> = {}
+    fuel.forEach(f => {
+      const d = new Date(f.fuelingDate)
+      const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`
+      if (!byMonth[key]) byMonth[key] = { litres: 0, cout: 0 }
+      byMonth[key].litres += f.quantity
+      byMonth[key].cout += f.totalCost ?? 0
+    })
+    return Object.entries(byMonth)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-7)
+      .map(([, v], i) => ({
+        mois: MOIS_ABREGE[(new Date().getMonth() - 6 + i + 12) % 12],
+        litres: Math.round(v.litres),
+        cout: Math.round(v.cout),
+      }))
+  })()
+
+  const maintenanceCostChart = (() => {
+    const byMonth: Record<string, number> = {}
+    maintenance.forEach(m => {
+      if (m.performedAt) {
+        const d = new Date(m.performedAt)
+        const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`
+        byMonth[key] = (byMonth[key] ?? 0) + (m.cost ?? 0)
+      }
+    })
+    return Object.entries(byMonth)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-7)
+      .map(([, v], i) => ({
+        mois: MOIS_ABREGE[(new Date().getMonth() - 6 + i + 12) % 12],
+        cout: Math.round(v),
+      }))
+  })()
+
+  const recentActivity = (() => {
+    const activities: Array<{ id: number; text: string; time: string; icon: React.ReactNode }> = []
+    maintenance.slice(0, 3).forEach((m, i) => {
+      activities.push({
+        id: i,
+        text: `${maintenanceTypeLabels[m.type] ?? m.type} — ${m.vehicle.make} ${m.vehicle.model} ${m.vehicle.licensePlate}`,
+        time: m.performedAt ? `Le ${new Date(m.performedAt).toLocaleDateString('fr-FR')}` : 'Planifié',
+        icon: m.status === 'overdue'
+          ? <AlertTriangle className="h-4 w-4 text-red-400" />
+          : m.status === 'completed'
+            ? <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+            : <Clock className="h-4 w-4 text-blue-400" />,
+      })
+    })
+    fuel.slice(0, 2).forEach((f, i) => {
+      activities.push({
+        id: 10 + i,
+        text: `Ravitaillement — ${f.vehicle.make} ${f.vehicle.model} (${f.vehicle.licensePlate})`,
+        time: `Le ${new Date(f.fuelingDate).toLocaleDateString('fr-FR')}`,
+        icon: <Fuel className="h-4 w-4 text-cyan-400" />,
+      })
+    })
+    return activities.slice(0, 5)
+  })()
+
+  // ─── Form handlers ─────────────────────────────────────────
+  const handleCreateFleet = async () => {
+    const nameInput = document.getElementById('fleet-name') as HTMLInputElement
+    if (!nameInput?.value) return
+    setSubmitting(true)
+    try {
+      await fetch('/api/fleet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: nameInput.value }),
+      })
+      setFleetDialogOpen(false)
+      loadData()
+    } catch (e) {
+      console.error('Erreur création flotte:', e)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleAddVehicle = async () => {
+    const make = (document.getElementById('v-make') as HTMLInputElement)?.value
+    const model = (document.getElementById('v-model') as HTMLInputElement)?.value
+    const year = parseInt((document.getElementById('v-year') as HTMLInputElement)?.value ?? '0')
+    const plate = (document.getElementById('v-plate') as HTMLInputElement)?.value
+    const fuelTypeEl = document.querySelector('[data-fuel-type]') as HTMLSelectElement
+    const typeEl = document.querySelector('[data-vehicle-type]') as HTMLSelectElement
+    if (!make || !model || !year) return
+    const fleetId = driverGroups[0]?.id
+    if (!fleetId) return
+    setSubmitting(true)
+    try {
+      await fetch('/api/fleet/vehicles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fleetId, make, model, year, licensePlate: plate, fuelType: fuelTypeEl?.value, type: typeEl?.value }),
+      })
+      setVehicleDialogOpen(false)
+      loadData()
+    } catch (e) {
+      console.error('Erreur ajout véhicule:', e)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleAddMaintenance = async () => {
+    const vehicleEl = document.querySelector('[data-maint-vehicle]') as HTMLSelectElement
+    const typeEl = document.querySelector('[data-maint-type]') as HTMLSelectElement
+    const costEl = (document.getElementById('m-cost') as HTMLInputElement)?.value
+    const descEl = (document.getElementById('m-desc') as HTMLInputElement)?.value
+    const dateEl = (document.getElementById('m-date') as HTMLInputElement)?.value
+    const mileageEl = (document.getElementById('m-mileage') as HTMLInputElement)?.value
+    if (!vehicleEl?.value || !descEl) return
+    setSubmitting(true)
+    try {
+      await fetch('/api/fleet/maintenance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fleetVehicleId: vehicleEl.value,
+          type: typeEl?.value ?? 'routine',
+          description: descEl,
+          cost: costEl ? parseFloat(costEl) : null,
+          nextDueDate: dateEl || null,
+          nextDueMileage: mileageEl ? parseInt(mileageEl) : null,
+          status: 'scheduled',
+        }),
+      })
+      setMaintenanceDialogOpen(false)
+      loadData()
+    } catch (e) {
+      console.error('Erreur planification maintenance:', e)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleAddFuel = async () => {
+    const vehicleEl = document.querySelector('[data-fuel-vehicle]') as HTMLSelectElement
+    const qtyEl = (document.getElementById('f-qty') as HTMLInputElement)?.value
+    const costEl = (document.getElementById('f-cost') as HTMLInputElement)?.value
+    const stationEl = (document.getElementById('f-station') as HTMLInputElement)?.value
+    const odometerEl = (document.getElementById('f-odometer') as HTMLInputElement)?.value
+    if (!vehicleEl?.value || !qtyEl) return
+    setSubmitting(true)
+    try {
+      await fetch('/api/fleet/fuel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fleetVehicleId: vehicleEl.value,
+          quantity: parseFloat(qtyEl),
+          totalCost: costEl ? parseFloat(costEl) : null,
+          stationName: stationEl || null,
+          odometer: odometerEl ? parseInt(odometerEl) : null,
+        }),
+      })
+      setFuelDialogOpen(false)
+      loadData()
+    } catch (e) {
+      console.error('Erreur ajout carburant:', e)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // ─── Skeleton helper ───────────────────────────────────────
+  const SkeletonCard = () => (
+    <Card className="bg-slate-900 border-slate-800">
+      <CardContent className="p-4">
+        <Skeleton className="h-4 w-24 mb-2 bg-slate-800" />
+        <Skeleton className="h-8 w-16 bg-slate-800" />
+      </CardContent>
+    </Card>
+  )
 
   return (
     <div className="pt-20 pb-8 min-h-screen bg-slate-950">
@@ -299,136 +474,183 @@ export default function FleetModule() {
         </motion.div>
 
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="bg-slate-900 border border-slate-800">
-            <TabsTrigger value="dashboard" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-              <BarChart3 className="h-4 w-4 mr-2" />Tableau de bord
-            </TabsTrigger>
-            <TabsTrigger value="vehicles" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-              <Car className="h-4 w-4 mr-2" />Véhicules
-            </TabsTrigger>
-            <TabsTrigger value="drivers" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-              <Users className="h-4 w-4 mr-2" />Conducteurs
-            </TabsTrigger>
-            <TabsTrigger value="maintenance" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-              <Wrench className="h-4 w-4 mr-2" />Maintenance
-            </TabsTrigger>
-            <TabsTrigger value="fuel" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-              <Fuel className="h-4 w-4 mr-2" />Carburant
-            </TabsTrigger>
-            <TabsTrigger value="reports" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-              <FileText className="h-4 w-4 mr-2" />Rapports
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex items-center justify-between">
+            <TabsList className="bg-slate-900 border border-slate-800">
+              <TabsTrigger value="dashboard" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                <BarChart3 className="h-4 w-4 mr-2" />Tableau de bord
+              </TabsTrigger>
+              <TabsTrigger value="vehicles" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                <Car className="h-4 w-4 mr-2" />Véhicules
+              </TabsTrigger>
+              <TabsTrigger value="drivers" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                <Users className="h-4 w-4 mr-2" />Conducteurs
+              </TabsTrigger>
+              <TabsTrigger value="maintenance" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                <Wrench className="h-4 w-4 mr-2" />Maintenance
+              </TabsTrigger>
+              <TabsTrigger value="fuel" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                <Fuel className="h-4 w-4 mr-2" />Carburant
+              </TabsTrigger>
+              <TabsTrigger value="reports" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                <FileText className="h-4 w-4 mr-2" />Rapports
+              </TabsTrigger>
+            </TabsList>
+            <div className="flex gap-2">
+              <Button variant="outline" className="border-slate-700 text-slate-300" onClick={loadData} disabled={loading}>
+                <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />Actualiser
+              </Button>
+              <Dialog open={fleetDialogOpen} onOpenChange={setFleetDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                    <Plus className="h-4 w-4 mr-2" />Créer une flotte
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-slate-900 border-slate-800 text-white">
+                  <DialogHeader>
+                    <DialogTitle>Créer une Flotte</DialogTitle>
+                    <DialogDescription className="text-slate-400">Créez une nouvelle organisation de flotte</DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                      <Label>Nom de la flotte</Label>
+                      <Input id="fleet-name" placeholder="Ex: Flotte ADSO" className="bg-slate-800 border-slate-700" />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" className="border-slate-700 text-slate-300" onClick={() => setFleetDialogOpen(false)}>Annuler</Button>
+                    <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleCreateFleet} disabled={submitting}>{submitting ? 'Création...' : 'Créer'}</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
 
           {/* ═══ TAB 1: Dashboard ═══ */}
           <TabsContent value="dashboard" className="space-y-6">
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[
-                { label: 'Total Véhicules', value: vehicles.length, icon: <Car className="h-5 w-5" />, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-                { label: 'Conducteurs Actifs', value: demoDrivers.filter(d => d.status === 'active').length, icon: <Users className="h-5 w-5" />, color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
-                { label: 'Maintenance en attente', value: maintenanceCount + demoMaintenance.filter(m => m.status === 'scheduled' || m.status === 'overdue').length, icon: <Wrench className="h-5 w-5" />, color: 'text-amber-400', bg: 'bg-amber-500/10' },
-                { label: 'Coûts Totaux', value: `${totalCosts.toLocaleString('fr-FR')} €`, icon: <Euro className="h-5 w-5" />, color: 'text-purple-400', bg: 'bg-purple-500/10' },
-              ].map((card) => (
-                <Card key={card.label} className="bg-slate-900 border-slate-800">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-slate-400">{card.label}</p>
-                        <p className="text-2xl font-bold text-white mt-1">{card.value}</p>
-                      </div>
-                      <div className={`p-3 rounded-lg ${card.bg}`}>
-                        <span className={card.color}>{card.icon}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Fleet Health */}
-              <Card className="bg-slate-900 border-slate-800">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-white text-base">Santé de la Flotte</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-300">Véhicules actifs</span>
-                    <span className="text-emerald-400 font-medium">{activeCount}/{vehicles.length}</span>
-                  </div>
-                  <Progress value={(activeCount / vehicles.length) * 100} className="h-2" />
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-300">Kilométrage moyen</span>
-                    <span className="text-cyan-400 font-medium">{(totalMileage / vehicles.length).toLocaleString('fr-FR')} km</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-300">Score moyen conducteurs</span>
-                    <span className="text-amber-400 font-medium">{(demoDrivers.reduce((s, d) => s + d.drivingScore, 0) / demoDrivers.length).toFixed(0)}/100</span>
-                  </div>
-                  <Separator className="bg-slate-800" />
-                  <div className="space-y-2">
-                    <p className="text-sm text-slate-400">Répartition par statut</p>
-                    {statusData.filter(s => s.value > 0).map((s) => (
-                      <div key={s.name} className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: s.color }} />
-                        <span className="text-sm text-slate-300 flex-1">{s.name}</span>
-                        <Badge variant="outline" className={statusColors[s.name === 'Actif' ? 'active' : s.name === 'Maintenance' ? 'maintenance' : 'out_of_service']}>
-                          {s.value}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Vehicle Status Pie */}
-              <Card className="bg-slate-900 border-slate-800">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-white text-base">Statut des Véhicules</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer config={costChartConfig} className="h-[200px] w-full">
-                    <PieChart>
-                      <Pie
-                        data={statusData.filter(s => s.value > 0)}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={50}
-                        outerRadius={80}
-                        dataKey="value"
-                        nameKey="name"
-                      >
-                        {statusData.filter(s => s.value > 0).map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                    </PieChart>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
-
-              {/* Recent Activity */}
-              <Card className="bg-slate-900 border-slate-800">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-white text-base">Activité Récente</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 max-h-[240px] overflow-y-auto pr-1">
-                    {recentActivity.map((a) => (
-                      <div key={a.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-slate-800/50 transition-colors">
-                        <div className="mt-0.5">{a.icon}</div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-slate-300 truncate">{a.text}</p>
-                          <p className="text-xs text-slate-500 mt-0.5">{a.time}</p>
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
+              </div>
+            ) : (
+              <>
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {[
+                    { label: 'Total Véhicules', value: vehicles.length, icon: <Car className="h-5 w-5" />, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+                    { label: 'Conducteurs Actifs', value: totalDrivers, icon: <Users className="h-5 w-5" />, color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
+                    { label: 'Maintenance en attente', value: maintenanceCount + pendingMaintCount, icon: <Wrench className="h-5 w-5" />, color: 'text-amber-400', bg: 'bg-amber-500/10' },
+                    { label: 'Coûts Totaux', value: `${totalCosts.toLocaleString('fr-FR')} €`, icon: <Euro className="h-5 w-5" />, color: 'text-purple-400', bg: 'bg-purple-500/10' },
+                  ].map((card) => (
+                    <Card key={card.label} className="bg-slate-900 border-slate-800">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-slate-400">{card.label}</p>
+                            <p className="text-2xl font-bold text-white mt-1">{card.value}</p>
+                          </div>
+                          <div className={`p-3 rounded-lg ${card.bg}`}>
+                            <span className={card.color}>{card.icon}</span>
+                          </div>
                         </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Fleet Health */}
+                  <Card className="bg-slate-900 border-slate-800">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-white text-base">Santé de la Flotte</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-300">Véhicules actifs</span>
+                        <span className="text-emerald-400 font-medium">{activeCount}/{vehicles.length || 1}</span>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                      <Progress value={vehicles.length ? (activeCount / vehicles.length) * 100 : 0} className="h-2" />
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-300">Kilométrage moyen</span>
+                        <span className="text-cyan-400 font-medium">{vehicles.length ? (totalMileage / vehicles.length).toLocaleString('fr-FR') : 0} km</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-300">Organisations flotte</span>
+                        <span className="text-amber-400 font-medium">{driverGroups.length}</span>
+                      </div>
+                      <Separator className="bg-slate-800" />
+                      <div className="space-y-2">
+                        <p className="text-sm text-slate-400">Répartition par statut</p>
+                        {statusData.filter(s => s.value > 0).map((s) => (
+                          <div key={s.name} className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: s.color }} />
+                            <span className="text-sm text-slate-300 flex-1">{s.name}</span>
+                            <Badge variant="outline" className={statusColors[s.name === 'Actif' ? 'active' : s.name === 'Maintenance' ? 'maintenance' : 'out_of_service']}>
+                              {s.value}
+                            </Badge>
+                          </div>
+                        ))}
+                        {statusData.every(s => s.value === 0) && (
+                          <p className="text-sm text-slate-500">Aucun véhicule enregistré</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Vehicle Status Pie */}
+                  <Card className="bg-slate-900 border-slate-800">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-white text-base">Statut des Véhicules</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {statusData.some(s => s.value > 0) ? (
+                        <ChartContainer config={costChartConfig} className="h-[200px] w-full">
+                          <PieChart>
+                            <Pie
+                              data={statusData.filter(s => s.value > 0)}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={50}
+                              outerRadius={80}
+                              dataKey="value"
+                              nameKey="name"
+                            >
+                              {statusData.filter(s => s.value > 0).map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                          </PieChart>
+                        </ChartContainer>
+                      ) : (
+                        <div className="h-[200px] flex items-center justify-center text-slate-500 text-sm">Aucune donnée</div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Recent Activity */}
+                  <Card className="bg-slate-900 border-slate-800">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-white text-base">Activité Récente</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3 max-h-[240px] overflow-y-auto pr-1">
+                        {recentActivity.length > 0 ? recentActivity.map((a) => (
+                          <div key={a.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-slate-800/50 transition-colors">
+                            <div className="mt-0.5">{a.icon}</div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-slate-300 truncate">{a.text}</p>
+                              <p className="text-xs text-slate-500 mt-0.5">{a.time}</p>
+                            </div>
+                          </div>
+                        )) : (
+                          <p className="text-sm text-slate-500 text-center py-8">Aucune activité récente</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </>
+            )}
           </TabsContent>
 
           {/* ═══ TAB 2: Vehicles ═══ */}
@@ -445,7 +667,7 @@ export default function FleetModule() {
               </div>
               <Dialog open={vehicleDialogOpen} onOpenChange={setVehicleDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={driverGroups.length === 0}>
                     <Plus className="h-4 w-4 mr-2" />Ajouter un véhicule
                   </Button>
                 </DialogTrigger>
@@ -458,28 +680,28 @@ export default function FleetModule() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Marque</Label>
-                        <Input placeholder="Ex: Renault" className="bg-slate-800 border-slate-700" />
+                        <Input id="v-make" placeholder="Ex: Renault" className="bg-slate-800 border-slate-700" />
                       </div>
                       <div className="space-y-2">
                         <Label>Modèle</Label>
-                        <Input placeholder="Ex: Kangoo" className="bg-slate-800 border-slate-700" />
+                        <Input id="v-model" placeholder="Ex: Kangoo" className="bg-slate-800 border-slate-700" />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Année</Label>
-                        <Input type="number" placeholder="2024" className="bg-slate-800 border-slate-700" />
+                        <Input id="v-year" type="number" placeholder="2024" className="bg-slate-800 border-slate-700" />
                       </div>
                       <div className="space-y-2">
                         <Label>Immatriculation</Label>
-                        <Input placeholder="AB-123-CD" className="bg-slate-800 border-slate-700" />
+                        <Input id="v-plate" placeholder="AB-123-CD" className="bg-slate-800 border-slate-700" />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Type de carburant</Label>
                         <Select>
-                          <SelectTrigger className="bg-slate-800 border-slate-700"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                          <SelectTrigger data-fuel-type className="bg-slate-800 border-slate-700"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="diesel">Diesel</SelectItem>
                             <SelectItem value="gasoline">Essence</SelectItem>
@@ -491,7 +713,7 @@ export default function FleetModule() {
                       <div className="space-y-2">
                         <Label>Type</Label>
                         <Select>
-                          <SelectTrigger className="bg-slate-800 border-slate-700"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                          <SelectTrigger data-vehicle-type className="bg-slate-800 border-slate-700"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="car">Voiture</SelectItem>
                             <SelectItem value="truck">Camion</SelectItem>
@@ -507,7 +729,7 @@ export default function FleetModule() {
                   </div>
                   <DialogFooter>
                     <Button variant="outline" className="border-slate-700 text-slate-300" onClick={() => setVehicleDialogOpen(false)}>Annuler</Button>
-                    <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setVehicleDialogOpen(false)}>Ajouter</Button>
+                    <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleAddVehicle} disabled={submitting}>{submitting ? 'Ajout...' : 'Ajouter'}</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -527,7 +749,15 @@ export default function FleetModule() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredVehicles.map((v) => (
+                      {loading ? Array.from({ length: 3 }).map((_, i) => (
+                        <TableRow key={i} className="border-slate-800">
+                          <TableCell><Skeleton className="h-4 w-32 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-20 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-16 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-5 w-20 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-5 w-16 bg-slate-800" /></TableCell>
+                        </TableRow>
+                      )) : filteredVehicles.length > 0 ? filteredVehicles.map((v) => (
                         <TableRow key={v.id} className="border-slate-800 hover:bg-slate-800/50">
                           <TableCell className="text-white font-medium">{v.make} {v.model} <span className="text-slate-500">({v.year})</span></TableCell>
                           <TableCell className="text-slate-300 font-mono text-sm">{v.licensePlate}</TableCell>
@@ -552,7 +782,11 @@ export default function FleetModule() {
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))}
+                      )) : (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center text-slate-500 py-8">Aucun véhicule trouvé. Créez d'abord une flotte, puis ajoutez des véhicules.</TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -562,52 +796,56 @@ export default function FleetModule() {
 
           {/* ═══ TAB 3: Drivers ═══ */}
           <TabsContent value="drivers" className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {demoDrivers.map((d) => {
-                const scoreColor = d.drivingScore >= 85 ? 'text-emerald-400' : d.drivingScore >= 70 ? 'text-amber-400' : 'text-red-400'
-                const expiryDate = new Date(d.licenseExpiry)
-                const daysUntilExpiry = Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-                const isExpiringSoon = daysUntilExpiry < 90
-                return (
-                  <Card key={d.id} className="bg-slate-900 border-slate-800">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <p className="text-white font-medium">{d.name}</p>
-                          <p className="text-xs text-slate-500">{d.licenseType}</p>
-                        </div>
-                        <Badge variant="outline" className={statusColors[d.status]}>
-                          {statusLabels[d.status]}
-                        </Badge>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-slate-400">Score conduite</span>
-                          <span className={`font-bold ${scoreColor}`}>{d.drivingScore}/100</span>
-                        </div>
-                        <Progress value={d.drivingScore} className="h-1.5" />
-                        <div className="grid grid-cols-2 gap-2 mt-2">
-                          <div className="text-center p-2 rounded bg-slate-800/50">
-                            <p className="text-xs text-slate-500">Trajets</p>
-                            <p className="text-sm font-medium text-white">{d.totalTrips}</p>
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
+              </div>
+            ) : driverGroups.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {driverGroups.map((d) => {
+                  const planColor = d.plan === 'enterprise' ? 'text-purple-400' : d.plan === 'professional' ? 'text-cyan-400' : 'text-emerald-400'
+                  return (
+                    <Card key={d.id} className="bg-slate-900 border-slate-800">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <p className="text-white font-medium">{d.name}</p>
+                            <p className="text-xs text-slate-500">Plan {d.plan}</p>
                           </div>
-                          <div className="text-center p-2 rounded bg-slate-800/50">
-                            <p className="text-xs text-slate-500">Distance</p>
-                            <p className="text-sm font-medium text-white">{(d.totalDistance / 1000).toFixed(1)}k km</p>
+                          <Badge variant="outline" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                            Actif
+                          </Badge>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-slate-400">Conducteurs</span>
+                            <span className={`font-bold ${planColor}`}>{d.driverCount}</span>
+                          </div>
+                          <Progress value={d.driverCount > 0 ? Math.min((d.driverCount / d.vehicleCount) * 50, 100) : 0} className="h-1.5" />
+                          <div className="grid grid-cols-2 gap-2 mt-2">
+                            <div className="text-center p-2 rounded bg-slate-800/50">
+                              <p className="text-xs text-slate-500">Véhicules</p>
+                              <p className="text-sm font-medium text-white">{d.vehicleCount}</p>
+                            </div>
+                            <div className="text-center p-2 rounded bg-slate-800/50">
+                              <p className="text-xs text-slate-500">Plan</p>
+                              <p className={`text-sm font-medium ${planColor}`}>{d.plan.charAt(0).toUpperCase() + d.plan.slice(1)}</p>
+                            </div>
                           </div>
                         </div>
-                        {isExpiringSoon && (
-                          <div className="flex items-center gap-2 mt-2 p-2 rounded bg-red-500/10">
-                            <AlertTriangle className="h-3.5 w-3.5 text-red-400" />
-                            <span className="text-xs text-red-400">Permis expire dans {daysUntilExpiry}j</span>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+            ) : (
+              <Card className="bg-slate-900 border-slate-800">
+                <CardContent className="p-8 text-center">
+                  <Users className="h-10 w-10 text-slate-600 mx-auto mb-3" />
+                  <p className="text-slate-400">Aucune organisation de flotte. Créez une flotte pour gérer vos conducteurs.</p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* ═══ TAB 4: Maintenance ═══ */}
@@ -615,15 +853,15 @@ export default function FleetModule() {
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="bg-red-500/10 text-red-400 border-red-500/30">
-                  <AlertTriangle className="h-3 w-3 mr-1" />{demoMaintenance.filter(m => m.status === 'overdue').length} En retard
+                  <AlertTriangle className="h-3 w-3 mr-1" />{maintenance.filter(m => m.status === 'overdue').length} En retard
                 </Badge>
                 <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30">
-                  <Clock className="h-3 w-3 mr-1" />{demoMaintenance.filter(m => m.status === 'scheduled').length} Planifiés
+                  <Clock className="h-3 w-3 mr-1" />{maintenance.filter(m => m.status === 'scheduled').length} Planifiés
                 </Badge>
               </div>
               <Dialog open={maintenanceDialogOpen} onOpenChange={setMaintenanceDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={vehicles.length === 0}>
                     <Plus className="h-4 w-4 mr-2" />Planifier maintenance
                   </Button>
                 </DialogTrigger>
@@ -636,7 +874,7 @@ export default function FleetModule() {
                     <div className="space-y-2">
                       <Label>Véhicule</Label>
                       <Select>
-                        <SelectTrigger className="bg-slate-800 border-slate-700"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                        <SelectTrigger data-maint-vehicle className="bg-slate-800 border-slate-700"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                         <SelectContent>
                           {vehicles.map(v => (
                             <SelectItem key={v.id} value={v.id}>{v.make} {v.model} ({v.licensePlate})</SelectItem>
@@ -648,7 +886,7 @@ export default function FleetModule() {
                       <div className="space-y-2">
                         <Label>Type</Label>
                         <Select>
-                          <SelectTrigger className="bg-slate-800 border-slate-700"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                          <SelectTrigger data-maint-type className="bg-slate-800 border-slate-700"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                           <SelectContent>
                             {Object.entries(maintenanceTypeLabels).map(([k, v]) => (
                               <SelectItem key={k} value={k}>{v}</SelectItem>
@@ -658,27 +896,27 @@ export default function FleetModule() {
                       </div>
                       <div className="space-y-2">
                         <Label>Coût estimé (€)</Label>
-                        <Input type="number" placeholder="0" className="bg-slate-800 border-slate-700" />
+                        <Input id="m-cost" type="number" placeholder="0" className="bg-slate-800 border-slate-700" />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label>Description</Label>
-                      <Input placeholder="Description de l'intervention" className="bg-slate-800 border-slate-700" />
+                      <Input id="m-desc" placeholder="Description de l'intervention" className="bg-slate-800 border-slate-700" />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Date prévue</Label>
-                        <Input type="date" className="bg-slate-800 border-slate-700" />
+                        <Input id="m-date" type="date" className="bg-slate-800 border-slate-700" />
                       </div>
                       <div className="space-y-2">
                         <Label>Prochain kilométrage</Label>
-                        <Input type="number" placeholder="0" className="bg-slate-800 border-slate-700" />
+                        <Input id="m-mileage" type="number" placeholder="0" className="bg-slate-800 border-slate-700" />
                       </div>
                     </div>
                   </div>
                   <DialogFooter>
                     <Button variant="outline" className="border-slate-700 text-slate-300" onClick={() => setMaintenanceDialogOpen(false)}>Annuler</Button>
-                    <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setMaintenanceDialogOpen(false)}>Planifier</Button>
+                    <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleAddMaintenance} disabled={submitting}>{submitting ? 'Planification...' : 'Planifier'}</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -699,10 +937,19 @@ export default function FleetModule() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {demoMaintenance.map((m) => (
+                      {loading ? Array.from({ length: 3 }).map((_, i) => (
+                        <TableRow key={i} className="border-slate-800">
+                          <TableCell><Skeleton className="h-4 w-32 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-5 w-16 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-40 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-20 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-5 w-20 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-16 bg-slate-800" /></TableCell>
+                        </TableRow>
+                      )) : maintenance.length > 0 ? maintenance.map((m) => (
                         <TableRow key={m.id} className={`border-slate-800 hover:bg-slate-800/50 ${m.status === 'overdue' ? 'bg-red-500/5' : ''}`}>
                           <TableCell className="text-white text-sm">{m.vehicle.make} {m.vehicle.model} <span className="text-slate-500 font-mono">({m.vehicle.licensePlate})</span></TableCell>
-                          <TableCell><Badge variant="outline" className="bg-slate-800 text-slate-300 border-slate-700">{maintenanceTypeLabels[m.type]}</Badge></TableCell>
+                          <TableCell><Badge variant="outline" className="bg-slate-800 text-slate-300 border-slate-700">{maintenanceTypeLabels[m.type] ?? m.type}</Badge></TableCell>
                           <TableCell className="text-slate-300 text-sm max-w-[200px] truncate">{m.description}</TableCell>
                           <TableCell className="text-slate-300 text-sm">{m.nextDueDate ? new Date(m.nextDueDate).toLocaleDateString('fr-FR') : '—'}</TableCell>
                           <TableCell>
@@ -713,7 +960,11 @@ export default function FleetModule() {
                           </TableCell>
                           <TableCell className="text-slate-300">{m.cost ? `${m.cost} €` : '—'}</TableCell>
                         </TableRow>
-                      ))}
+                      )) : (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center text-slate-500 py-8">Aucun enregistrement de maintenance</TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -732,7 +983,7 @@ export default function FleetModule() {
                     </div>
                     <div>
                       <p className="text-sm text-slate-400">Coût total carburant</p>
-                      <p className="text-xl font-bold text-white">{demoFuel.reduce((s, f) => s + (f.totalCost ?? 0), 0).toFixed(2)} €</p>
+                      <p className="text-xl font-bold text-white">{loading ? '...' : fuel.reduce((s, f) => s + (f.totalCost ?? 0), 0).toFixed(2)} €</p>
                     </div>
                   </div>
                 </CardContent>
@@ -745,7 +996,7 @@ export default function FleetModule() {
                     </div>
                     <div>
                       <p className="text-sm text-slate-400">Volume total</p>
-                      <p className="text-xl font-bold text-white">{demoFuel.reduce((s, f) => s + f.quantity, 0)} L</p>
+                      <p className="text-xl font-bold text-white">{loading ? '...' : fuel.reduce((s, f) => s + f.quantity, 0).toFixed(0)} L</p>
                     </div>
                   </div>
                 </CardContent>
@@ -758,7 +1009,7 @@ export default function FleetModule() {
                     </div>
                     <div>
                       <p className="text-sm text-slate-400">Coût moyen/L</p>
-                      <p className="text-xl font-bold text-white">{(demoFuel.filter(f => f.costPerLiter).reduce((s, f) => s + (f.costPerLiter ?? 0), 0) / demoFuel.filter(f => f.costPerLiter).length).toFixed(2)} €</p>
+                      <p className="text-xl font-bold text-white">{loading ? '...' : (() => { const withCpl = fuel.filter(f => f.costPerLiter); return withCpl.length ? (withCpl.reduce((s, f) => s + (f.costPerLiter ?? 0), 0) / withCpl.length).toFixed(2) : '—' })()} €</p>
                     </div>
                   </div>
                 </CardContent>
@@ -768,7 +1019,7 @@ export default function FleetModule() {
             <div className="flex justify-end">
               <Dialog open={fuelDialogOpen} onOpenChange={setFuelDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={vehicles.length === 0}>
                     <Plus className="h-4 w-4 mr-2" />Ajouter ravitaillement
                   </Button>
                 </DialogTrigger>
@@ -781,7 +1032,7 @@ export default function FleetModule() {
                     <div className="space-y-2">
                       <Label>Véhicule</Label>
                       <Select>
-                        <SelectTrigger className="bg-slate-800 border-slate-700"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                        <SelectTrigger data-fuel-vehicle className="bg-slate-800 border-slate-700"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                         <SelectContent>
                           {vehicles.map(v => (
                             <SelectItem key={v.id} value={v.id}>{v.make} {v.model} ({v.licensePlate})</SelectItem>
@@ -792,27 +1043,27 @@ export default function FleetModule() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Quantité (L)</Label>
-                        <Input type="number" placeholder="0" className="bg-slate-800 border-slate-700" />
+                        <Input id="f-qty" type="number" placeholder="0" className="bg-slate-800 border-slate-700" />
                       </div>
                       <div className="space-y-2">
                         <Label>Coût total (€)</Label>
-                        <Input type="number" step="0.01" placeholder="0.00" className="bg-slate-800 border-slate-700" />
+                        <Input id="f-cost" type="number" step="0.01" placeholder="0.00" className="bg-slate-800 border-slate-700" />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Station</Label>
-                        <Input placeholder="Nom de la station" className="bg-slate-800 border-slate-700" />
+                        <Input id="f-station" placeholder="Nom de la station" className="bg-slate-800 border-slate-700" />
                       </div>
                       <div className="space-y-2">
                         <Label>Kilométrage</Label>
-                        <Input type="number" placeholder="0" className="bg-slate-800 border-slate-700" />
+                        <Input id="f-odometer" type="number" placeholder="0" className="bg-slate-800 border-slate-700" />
                       </div>
                     </div>
                   </div>
                   <DialogFooter>
                     <Button variant="outline" className="border-slate-700 text-slate-300" onClick={() => setFuelDialogOpen(false)}>Annuler</Button>
-                    <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setFuelDialogOpen(false)}>Enregistrer</Button>
+                    <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleAddFuel} disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -832,7 +1083,15 @@ export default function FleetModule() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {demoFuel.map((f) => (
+                      {loading ? Array.from({ length: 3 }).map((_, i) => (
+                        <TableRow key={i} className="border-slate-800">
+                          <TableCell><Skeleton className="h-4 w-32 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-20 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-16 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-16 bg-slate-800" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-24 bg-slate-800" /></TableCell>
+                        </TableRow>
+                      )) : fuel.length > 0 ? fuel.map((f) => (
                         <TableRow key={f.id} className="border-slate-800 hover:bg-slate-800/50">
                           <TableCell className="text-white text-sm">{f.vehicle.make} {f.vehicle.model} <span className="text-slate-500 font-mono">({f.vehicle.licensePlate})</span></TableCell>
                           <TableCell className="text-slate-300 text-sm">{new Date(f.fuelingDate).toLocaleDateString('fr-FR')}</TableCell>
@@ -840,7 +1099,11 @@ export default function FleetModule() {
                           <TableCell className="text-slate-300">{f.totalCost?.toFixed(2)} €</TableCell>
                           <TableCell className="text-slate-300 text-sm">{f.stationName ?? '—'}</TableCell>
                         </TableRow>
-                      ))}
+                      )) : (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center text-slate-500 py-8">Aucun enregistrement de carburant</TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -853,17 +1116,16 @@ export default function FleetModule() {
             {/* KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { label: 'Coût/véhicule/mois', value: '2 068 €', trend: <TrendingDown className="h-4 w-4 text-emerald-400" />, trendText: '-12%', trendColor: 'text-emerald-400' },
-                { label: 'Conso. moyenne', value: '6.8 L/100km', trend: <TrendingDown className="h-4 w-4 text-emerald-400" />, trendText: '-5%', trendColor: 'text-emerald-400' },
-                { label: 'Coûts maintenance', value: '8 015 €', trend: <TrendingUp className="h-4 w-4 text-red-400" />, trendText: '+8%', trendColor: 'text-red-400' },
-                { label: 'Disponibilité flotte', value: '67%', trend: <TrendingDown className="h-4 w-4 text-red-400" />, trendText: '-15%', trendColor: 'text-red-400' },
+                { label: 'Coût/véhicule/mois', value: vehicles.length ? `${Math.round(totalCosts / vehicles.length).toLocaleString('fr-FR')} €` : '—', trend: <TrendingDown className="h-4 w-4 text-emerald-400" />, trendText: '', trendColor: 'text-emerald-400' },
+                { label: 'Conso. moyenne', value: fuel.length ? `${(fuel.reduce((s, f) => s + f.quantity, 0) / Math.max(fuel.length, 1)).toFixed(1)} L/plein` : '—', trend: <TrendingDown className="h-4 w-4 text-emerald-400" />, trendText: '', trendColor: 'text-emerald-400' },
+                { label: 'Coûts maintenance', value: `${maintenance.reduce((s, m) => s + (m.cost ?? 0), 0).toLocaleString('fr-FR')} €`, trend: <TrendingUp className="h-4 w-4 text-red-400" />, trendText: '', trendColor: 'text-red-400' },
+                { label: 'Disponibilité flotte', value: vehicles.length ? `${Math.round((activeCount / vehicles.length) * 100)}%` : '—', trend: <TrendingDown className="h-4 w-4 text-red-400" />, trendText: '', trendColor: 'text-red-400' },
               ].map((kpi) => (
                 <Card key={kpi.label} className="bg-slate-900 border-slate-800">
                   <CardContent className="p-4">
                     <p className="text-sm text-slate-400">{kpi.label}</p>
                     <div className="flex items-end gap-2 mt-1">
                       <p className="text-2xl font-bold text-white">{kpi.value}</p>
-                      <span className={`flex items-center text-sm ${kpi.trendColor}`}>{kpi.trend} {kpi.trendText}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -877,15 +1139,19 @@ export default function FleetModule() {
                   <CardTitle className="text-white text-base">Coût par Véhicule (€)</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ChartContainer config={costChartConfig} className="h-[250px] w-full">
-                    <BarChart data={costPerVehicleChart}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                      <XAxis dataKey="vehicle" stroke="#94a3b8" fontSize={12} />
-                      <YAxis stroke="#94a3b8" fontSize={12} />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="cout" fill="#10b981" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ChartContainer>
+                  {costPerVehicleChart.length > 0 ? (
+                    <ChartContainer config={costChartConfig} className="h-[250px] w-full">
+                      <BarChart data={costPerVehicleChart}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                        <XAxis dataKey="vehicle" stroke="#94a3b8" fontSize={12} />
+                        <YAxis stroke="#94a3b8" fontSize={12} />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="cout" fill="#10b981" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ChartContainer>
+                  ) : (
+                    <div className="h-[250px] flex items-center justify-center text-slate-500 text-sm">Aucune donnée de coût</div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -895,16 +1161,20 @@ export default function FleetModule() {
                   <CardTitle className="text-white text-base">Tendances Carburant</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ChartContainer config={fuelChartConfig} className="h-[250px] w-full">
-                    <LineChart data={fuelTrendChart}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                      <XAxis dataKey="mois" stroke="#94a3b8" fontSize={12} />
-                      <YAxis stroke="#94a3b8" fontSize={12} />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Line type="monotone" dataKey="litres" stroke="#06b6d4" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="cout" stroke="#f59e0b" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ChartContainer>
+                  {fuelTrendChart.length > 0 ? (
+                    <ChartContainer config={fuelChartConfig} className="h-[250px] w-full">
+                      <LineChart data={fuelTrendChart}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                        <XAxis dataKey="mois" stroke="#94a3b8" fontSize={12} />
+                        <YAxis stroke="#94a3b8" fontSize={12} />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Line type="monotone" dataKey="litres" stroke="#06b6d4" strokeWidth={2} dot={false} />
+                        <Line type="monotone" dataKey="cout" stroke="#f59e0b" strokeWidth={2} dot={false} />
+                      </LineChart>
+                    </ChartContainer>
+                  ) : (
+                    <div className="h-[250px] flex items-center justify-center text-slate-500 text-sm">Aucune donnée de carburant</div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -919,15 +1189,19 @@ export default function FleetModule() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <ChartContainer config={maintChartConfig} className="h-[250px] w-full">
-                    <BarChart data={maintenanceCostChart}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                      <XAxis dataKey="mois" stroke="#94a3b8" fontSize={12} />
-                      <YAxis stroke="#94a3b8" fontSize={12} />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="cout" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ChartContainer>
+                  {maintenanceCostChart.length > 0 ? (
+                    <ChartContainer config={maintChartConfig} className="h-[250px] w-full">
+                      <BarChart data={maintenanceCostChart}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                        <XAxis dataKey="mois" stroke="#94a3b8" fontSize={12} />
+                        <YAxis stroke="#94a3b8" fontSize={12} />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="cout" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ChartContainer>
+                  ) : (
+                    <div className="h-[250px] flex items-center justify-center text-slate-500 text-sm">Aucune donnée de maintenance</div>
+                  )}
                 </CardContent>
               </Card>
             </div>

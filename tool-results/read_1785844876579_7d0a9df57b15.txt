@@ -1,0 +1,704 @@
+     1→'use client'
+     2→
+     3→import { useState, useEffect } from 'react'
+     4→import { motion } from 'framer-motion'
+     5→import {
+     6→  MapPin,
+     7→  Car,
+     8→  Gauge,
+     9→  Timer,
+    10→  Fuel,
+    11→  AlertTriangle,
+    12→  Navigation,
+    13→  Clock,
+    14→  Zap,
+    15→  TrendingUp,
+    16→  Activity,
+    17→  Info,
+    18→  CircleDot,
+    19→  Wrench,
+    20→  Route,
+    21→  BarChart3,
+    22→} from 'lucide-react'
+    23→import {
+    24→  Card,
+    25→  CardContent,
+    26→  CardDescription,
+    27→  CardHeader,
+    28→  CardTitle,
+    29→} from '@/components/ui/card'
+    30→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+    31→import {
+    32→  Select,
+    33→  SelectContent,
+    34→  SelectItem,
+    35→  SelectTrigger,
+    36→  SelectValue,
+    37→} from '@/components/ui/select'
+    38→import { Badge } from '@/components/ui/badge'
+    39→import { Progress } from '@/components/ui/progress'
+    40→import {
+    41→  Table,
+    42→  TableBody,
+    43→  TableCell,
+    44→  TableHead,
+    45→  TableHeader,
+    46→  TableRow,
+    47→} from '@/components/ui/table'
+    48→import { Separator } from '@/components/ui/separator'
+    49→import {
+    50→  BarChart,
+    51→  Bar,
+    52→  XAxis,
+    53→  YAxis,
+    54→  CartesianGrid,
+    55→  Tooltip,
+    56→  ResponsiveContainer,
+    57→  Legend,
+    58→} from 'recharts'
+    59→
+    60→// ─── Types ───────────────────────────────────────────────────
+    61→interface Trip {
+    62→  id: number
+    63→  date: string
+    64→  depart: string
+    65→  arrivee: string
+    66→  distance: number
+    67→  duree: string
+    68→  vitesseMoy: number
+    69→  conso: number
+    70→}
+    71→
+    72→interface DrivingStats {
+    73→  scoreConduite: number
+    74→  freinagesUrgence: number
+    75→  accelerationsBrusques: number
+    76→  vitesseExcessive: number
+    77→  tempsRalenti: number
+    78→  weeklyData: { day: string; speed: number; braking: number; acceleration: number }[]
+    79→  monthlyFuel: { month: string; litres: number }[]
+    80→  carburant: { niveau: number; autonomie: number; consoMoyenne: number; coutMoisEnCours: number }
+    81→  resumeMois: { totalKm: number; totalTrajets: number; consoMoyenne: number; vitesseMoyenne: number }
+    82→}
+    83→
+    84→interface AlertItem {
+    85→  id: number
+    86→  type: 'speed' | 'geofence' | 'maintenance' | 'info'
+    87→  title: string
+    88→  description: string
+    89→  timestamp: string
+    90→  lu: boolean
+    91→}
+    92→
+    93→// ─── Mock Data ───────────────────────────────────────────────
+    94→const VEHICLES = [
+    95→  { id: 'v1', label: 'Véhicule 1 — Peugeot 308' },
+    96→  { id: 'v2', label: 'Véhicule 2 — Renault Clio' },
+    97→  { id: 'v3', label: 'Véhicule 3 — Toyota Hilux' },
+    98→]
+    99→
+   100→const ALERTS: AlertItem[] = [
+   101→  { id: 1, type: 'speed', title: 'Vitesse excessive détectée', description: '92 km/h dans une zone 50 km/h sur la Rue du Fleuve', timestamp: '2026-08-04 14:32', lu: false },
+   102→  { id: 2, type: 'geofence', title: 'Sortie de zone géo-barrière', description: 'Le véhicule a quitté la zone « Bureau » à 17h05', timestamp: '2026-08-04 17:05', lu: false },
+   103→  { id: 3, type: 'maintenance', title: 'Vidange prévue sous 500 km', description: 'Prochaine vidange estimée dans 480 km', timestamp: '2026-08-03 09:00', lu: true },
+   104→  { id: 4, type: 'speed', title: 'Vitesse excessive détectée', description: '78 km/h dans une zone 60 km/h sur l\'Avenue de l\'OUA', timestamp: '2026-08-03 11:18', lu: true },
+   105→  { id: 5, type: 'info', title: 'Mise à jour GPS effectuée', description: 'Le module GPS a été mis à jour avec succès', timestamp: '2026-08-02 08:00', lu: true },
+   106→  { id: 6, type: 'maintenance', title: 'Pression des pneus basse', description: 'Pneu avant gauche : 1.8 bar (recommandé 2.2 bar)', timestamp: '2026-08-01 16:45', lu: true },
+   107→  { id: 7, type: 'geofence', title: 'Entrée dans zone interdite', description: 'Le véhicule est entré dans la zone « Zone interdite » à 12h20', timestamp: '2026-07-31 12:20', lu: true },
+   108→  { id: 8, type: 'info', title: 'Itinéraire optimisé', description: 'Un itinéraire plus court de 3.2 km a été détecté', timestamp: '2026-07-30 07:30', lu: true },
+   109→]
+   110→
+   111→const MOCK_STATS: DrivingStats = {
+   112→  scoreConduite: 85,
+   113→  freinagesUrgence: 3,
+   114→  accelerationsBrusques: 7,
+   115→  vitesseExcessive: 2,
+   116→  tempsRalenti: 15,
+   117→  weeklyData: [
+   118→    { day: 'Lun', speed: 2, braking: 1, acceleration: 3 },
+   119→    { day: 'Mar', speed: 0, braking: 2, acceleration: 1 },
+   120→    { day: 'Mer', speed: 1, braking: 0, acceleration: 2 },
+   121→    { day: 'Jeu', speed: 3, braking: 3, acceleration: 4 },
+   122→    { day: 'Ven', speed: 0, braking: 1, acceleration: 1 },
+   123→    { day: 'Sam', speed: 1, braking: 2, acceleration: 2 },
+   124→    { day: 'Dim', speed: 0, braking: 0, acceleration: 0 },
+   125→  ],
+   126→  monthlyFuel: [
+   127→    { month: 'Mars', litres: 52 },
+   128→    { month: 'Avril', litres: 48 },
+   129→    { month: 'Mai', litres: 61 },
+   130→    { month: 'Juin', litres: 55 },
+   131→    { month: 'Juillet', litres: 58 },
+   132→    { month: 'Août', litres: 34 },
+   133→  ],
+   134→  carburant: { niveau: 65, autonomie: 450, consoMoyenne: 6.8, coutMoisEnCours: 28500 },
+   135→  resumeMois: { totalKm: 183.3, totalTrajets: 10, consoMoyenne: 6.88, vitesseMoyenne: 33.2 },
+   136→}
+   137→
+   138→const MOCK_TRIPS: Trip[] = [
+   139→  { id: 1, date: '2026-08-04', depart: 'Bamako, Kalaban-Coura', arrivee: 'Bamako, ACI 2000', distance: 8.4, duree: '00:18', vitesseMoy: 28, conso: 7.1 },
+   140→  { id: 2, date: '2026-08-03', depart: 'Bamako, ACI 2000', arrivee: 'Kati', distance: 15.2, duree: '00:25', vitesseMoy: 36, conso: 6.8 },
+   141→  { id: 3, date: '2026-08-03', depart: 'Kati', arrivee: 'Bamako, Badalabougou', distance: 14.8, duree: '00:22', vitesseMoy: 40, conso: 6.5 },
+   142→  { id: 4, date: '2026-08-02', depart: 'Bamako, Badalabougou', arrivee: 'Bamako, Hamdallaye', distance: 5.1, duree: '00:12', vitesseMoy: 25, conso: 7.4 },
+   143→  { id: 5, date: '2026-08-01', depart: 'Bamako, Hamdallaye', arrivee: 'Bamako, Lafiabougou', distance: 3.2, duree: '00:08', vitesseMoy: 24, conso: 7.8 },
+   144→  { id: 6, date: '2026-07-31', depart: 'Bamako, Lafiabougou', arrivee: 'Koulikoro', distance: 59.0, duree: '01:05', vitesseMoy: 54, conso: 6.2 },
+   145→  { id: 7, date: '2026-07-30', depart: 'Koulikoro', arrivee: 'Bamako, Kalaban-Coura', distance: 57.5, duree: '01:02', vitesseMoy: 55, conso: 6.1 },
+   146→  { id: 8, date: '2026-07-29', depart: 'Bamako, Kalaban-Coura', arrivee: 'Bamako, Baco Djicoroni', distance: 6.7, duree: '00:15', vitesseMoy: 27, conso: 7.3 },
+   147→  { id: 9, date: '2026-07-28', depart: 'Bamako, Baco Djicoroni', arrivee: 'Bamako, Sébenikoro', distance: 4.3, duree: '00:10', vitesseMoy: 26, conso: 7.6 },
+   148→  { id: 10, date: '2026-07-27', depart: 'Bamako, Sébenikoro', arrivee: 'Bamako, ACI 2000', distance: 9.1, duree: '00:20', vitesseMoy: 27, conso: 7.0 },
+   149→]
+   150→
+   151→// ─── Circular Progress ───────────────────────────────────────
+   152→function CircularProgress({ value, max, size = 120, strokeWidth = 10, color = '#10b981' }: {
+   153→  value: number; max: number; size?: number; strokeWidth?: number; color?: string
+   154→}) {
+   155→  const radius = (size - strokeWidth) / 2
+   156→  const circumference = 2 * Math.PI * radius
+   157→   const offset = circumference - (value / max) * circumference
+   158→
+   159→  return (
+   160→    <svg width={size} height={size} className="-rotate-90">
+   161→      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#1e293b" strokeWidth={strokeWidth} />
+   162→      <motion.circle
+   163→        cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={color}
+   164→        strokeWidth={strokeWidth} strokeLinecap="round"
+   165→        strokeDasharray={circumference} initial={{ strokeDashoffset: circumference }}
+   166→        animate={{ strokeDashoffset: offset }} transition={{ duration: 1.2, ease: 'easeOut' }}
+   167→      />
+   168→    </svg>
+   169→  )
+   170→}
+   171→
+   172→// ─── Alert type helpers ──────────────────────────────────────
+   173→function alertMeta(type: AlertItem['type']) {
+   174→  switch (type) {
+   175→    case 'speed': return { icon: <Gauge className="h-5 w-5" />, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', badge: 'bg-red-500/20 text-red-400' }
+   176→    case 'geofence': return { icon: <Navigation className="h-5 w-5" />, color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20', badge: 'bg-orange-500/20 text-orange-400' }
+   177→    case 'maintenance': return { icon: <Wrench className="h-5 w-5" />, color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20', badge: 'bg-yellow-500/20 text-yellow-400' }
+   178→    case 'info': return { icon: <Info className="h-5 w-5" />, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', badge: 'bg-blue-500/20 text-blue-400' }
+   179→  }
+   180→}
+   181→
+   182→
+   183→
+   184→// ─── Status badge ────────────────────────────────────────────
+   185→function StatusBadge({ status }: { status: 'moving' | 'stopped' | 'offline' }) {
+   186→  const map = {
+   187→    moving: { label: 'En mouvement', color: 'bg-emerald-500/20 text-emerald-400', dot: 'bg-emerald-500' },
+   188→    stopped: { label: 'À l\'arrêt', color: 'bg-yellow-500/20 text-yellow-400', dot: 'bg-yellow-500' },
+   189→    offline: { label: 'Hors ligne', color: 'bg-slate-500/20 text-slate-400', dot: 'bg-slate-500' },
+   190→  }
+   191→  const s = map[status]
+   192→  return (
+   193→    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${s.color}`}>
+   194→      <span className={`w-1.5 h-1.5 rounded-full ${s.dot} ${status === 'moving' ? 'animate-pulse' : ''}`} />
+   195→      {s.label}
+   196→    </span>
+   197→  )
+   198→}
+   199→
+   200→// ─── Fade-in animation wrapper ───────────────────────────────
+   201→const fadeUp = {
+   202→  initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 },
+   203→}
+   204→
+   205→// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   206→// MAIN COMPONENT
+   207→// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   208→export default function TelematicsModule() {
+   209→  const [vehicleId, setVehicleId] = useState('v1')
+   210→  const [trips, setTrips] = useState<Trip[]>(MOCK_TRIPS)
+   211→  const [stats, setStats] = useState<DrivingStats>(MOCK_STATS)
+   212→  const [vehicleStatus, setVehicleStatus] = useState<'moving' | 'stopped' | 'offline'>('moving')
+   213→  const [alerts, setAlerts] = useState<AlertItem[]>(ALERTS)
+   214→
+   215→  // Fetch from API on mount (optional, fallback to mock)
+   216→  useEffect(() => {
+   217→    fetch('/api/telematics?type=trips')
+   218→      .then(r => r.json())
+   219→      .then(res => { if (res.success) setTrips(res.data) })
+   220→      .catch(() => { /* use mock */ })
+   221→    fetch('/api/telematics?type=stats')
+   222→      .then(r => r.json())
+   223→      .then(res => { if (res.success) setStats(res.data) })
+   224→      .catch(() => { /* use mock */ })
+   225→  }, [])
+   226→
+   227→  const markAsRead = (id: number) => {
+   228→    setAlerts(prev => prev.map(a => a.id === id ? { ...a, lu: true } : a))
+   229→  }
+   230→
+   231→  const unreadCount = alerts.filter(a => !a.lu).length
+   232→
+   233→  return (
+   234→    <div className="pt-16 min-h-screen bg-slate-950">
+   235→      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+   236→        {/* Header */}
+   237→        <motion.div {...fadeUp} className="mb-8">
+   238→          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+   239→            <div>
+   240→              <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">
+   241→                <Activity className="h-8 w-8 text-emerald-500" />
+   242→                Télématique
+   243→              </h1>
+   244→              <p className="text-slate-400 mt-1">Suivi GPS, analyse de conduite et gestion du carburant</p>
+   245→            </div>
+   246→            <Select value={vehicleId} onValueChange={setVehicleId}>
+   247→              <SelectTrigger className="w-full sm:w-72 bg-slate-900 border-slate-800 text-white">
+   248→                <Car className="h-4 w-4 mr-2 text-emerald-500" />
+   249→                <SelectValue />
+   250→              </SelectTrigger>
+   251→              <SelectContent className="bg-slate-900 border-slate-800">
+   252→                {VEHICLES.map(v => (
+   253→                  <SelectItem key={v.id} value={v.id} className="text-slate-200 focus:bg-slate-800 focus:text-white">
+   254→                    {v.label}
+   255→                  </SelectItem>
+   256→                ))}
+   257→              </SelectContent>
+   258→            </Select>
+   259→          </div>
+   260→        </motion.div>
+   261→
+   262→        {/* Tabs */}
+   263→        <Tabs defaultValue="carte" className="space-y-6">
+   264→          <TabsList className="bg-slate-900 border border-slate-800 p-1 h-auto flex flex-wrap gap-1">
+   265→            <TabsTrigger value="carte" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-slate-400 gap-1.5">
+   266→              <MapPin className="h-4 w-4" /> Carte
+   267→            </TabsTrigger>
+   268→            <TabsTrigger value="trajets" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-slate-400 gap-1.5">
+   269→              <Route className="h-4 w-4" /> Trajets
+   270→            </TabsTrigger>
+   271→            <TabsTrigger value="conduite" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-slate-400 gap-1.5">
+   272→              <Gauge className="h-4 w-4" /> Conduite
+   273→            </TabsTrigger>
+   274→            <TabsTrigger value="carburant" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-slate-400 gap-1.5">
+   275→              <Fuel className="h-4 w-4" /> Carburant
+   276→            </TabsTrigger>
+   277→            <TabsTrigger value="alertes" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-slate-400 gap-1.5 relative">
+   278→              <AlertTriangle className="h-4 w-4" /> Alertes
+   279→              {unreadCount > 0 && (
+   280→                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-[10px] text-white flex items-center justify-center font-bold">
+   281→                  {unreadCount}
+   282→                </span>
+   283→              )}
+   284→            </TabsTrigger>
+   285→          </TabsList>
+   286→
+   287→          {/* ── TAB: CARTE ─────────────────────────────────── */}
+   288→          <TabsContent value="carte">
+   289→            <motion.div {...fadeUp} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+   290→              {/* Map placeholder */}
+   291→              <Card className="lg:col-span-2 bg-slate-900 border-slate-800 overflow-hidden">
+   292→                <CardContent className="p-0">
+   293→                  <div className="relative w-full h-[400px] sm:h-[500px] bg-slate-800 flex flex-col items-center justify-center rounded-t-lg">
+   294→                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(16,185,129,0.08),transparent_70%)]" />
+   295→                    <Navigation className="h-16 w-16 text-emerald-500/40 mb-4" />
+   296→                    <p className="text-slate-500 text-lg font-medium">Suivi GPS en temps réel</p>
+   297→                    <p className="text-slate-600 text-sm mt-1">Carte interactive — intégration Mapbox prévue</p>
+   298→                    {/* Animated ping on center */}
+   299→                    <div className="absolute w-4 h-4 rounded-full bg-emerald-500/60">
+   300→                      <div className="absolute inset-0 rounded-full bg-emerald-500/40 animate-ping" />
+   301→                    </div>
+   302→                  </div>
+   303→                </CardContent>
+   304→              </Card>
+   305→
+   306→              {/* Info sidebar */}
+   307→              <div className="space-y-4">
+   308→                <Card className="bg-slate-900 border-slate-800">
+   309→                  <CardHeader className="pb-3">
+   310→                    <CardTitle className="text-white text-sm font-medium flex items-center gap-2">
+   311→                      <CircleDot className="h-4 w-4 text-emerald-500" />
+   312→                      Statut du véhicule
+   313→                    </CardTitle>
+   314→                  </CardHeader>
+   315→                  <CardContent className="space-y-4">
+   316→                    <div className="flex items-center justify-between">
+   317→                      <span className="text-slate-400 text-sm">État</span>
+   318→                      <StatusBadge status={vehicleStatus} />
+   319→                    </div>
+   320→                    <Separator className="bg-slate-800" />
+   321→                    <div className="space-y-3">
+   322→                      <div className="flex items-center justify-between">
+   323→                        <span className="text-slate-400 text-sm flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> Latitude</span>
+   324→                        <span className="text-white text-sm font-mono">12.6392° N</span>
+   325→                      </div>
+   326→                      <div className="flex items-center justify-between">
+   327→                        <span className="text-slate-400 text-sm flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> Longitude</span>
+   328→                        <span className="text-white text-sm font-mono">8.0029° W</span>
+   329→                      </div>
+   330→                    </div>
+   331→                    <Separator className="bg-slate-800" />
+   332→                    <div className="flex items-center justify-between">
+   333→                      <span className="text-slate-400 text-sm flex items-center gap-1.5"><Gauge className="h-3.5 w-3.5" /> Vitesse actuelle</span>
+   334→                      <span className="text-emerald-400 text-lg font-bold">42 <span className="text-xs text-slate-500">km/h</span></span>
+   335→                    </div>
+   336→                    <div className="flex items-center justify-between">
+   337→                      <span className="text-slate-400 text-sm flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> Dernière MAJ</span>
+   338→                      <span className="text-white text-sm">14:32</span>
+   339→                    </div>
+   340→                  </CardContent>
+   341→                </Card>
+   342→
+   343→                <Card className="bg-slate-900 border-slate-800">
+   344→                  <CardContent className="pt-6">
+   345→                    <div className="text-center space-y-2">
+   346→                      <p className="text-slate-400 text-xs uppercase tracking-wider">Position</p>
+   347→                      <p className="text-white font-medium">Bamako, Kalaban-Coura</p>
+   348→                      <p className="text-slate-500 text-xs">Précision: ± 3 m</p>
+   349→                    </div>
+   350→                  </CardContent>
+   351→                </Card>
+   352→
+   353→                {/* Quick vehicle selector for mobile */}
+   354→                <div className="flex gap-2 lg:hidden">
+   355→                  {VEHICLES.map(v => (
+   356→                    <button
+   357→                      key={v.id}
+   358→                      onClick={() => setVehicleId(v.id)}
+   359→                      className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors ${
+   360→                        vehicleId === v.id ? 'bg-emerald-600 text-white' : 'bg-slate-900 text-slate-400 border border-slate-800'
+   361→                      }`}
+   362→                    >
+   363→                      V{v.id.replace('v', '')}
+   364→                    </button>
+   365→                  ))}
+   366→                </div>
+   367→              </div>
+   368→            </motion.div>
+   369→          </TabsContent>
+   370→
+   371→          {/* ── TAB: TRAJETS ───────────────────────────────── */}
+   372→          <TabsContent value="trajets">
+   373→            <motion.div {...fadeUp} className="space-y-6">
+   374→              {/* Summary stats */}
+   375→              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+   376→                {[
+   377→                  { label: 'Total km (mois)', value: `${stats.resumeMois.totalKm} km`, icon: <Route className="h-5 w-5 text-emerald-500" /> },
+   378→                  { label: 'Total trajets', value: stats.resumeMois.totalTrajets.toString(), icon: <Car className="h-5 w-5 text-emerald-500" /> },
+   379→                  { label: 'Conso. moyenne', value: `${stats.resumeMois.consoMoyenne} L/100`, icon: <Fuel className="h-5 w-5 text-emerald-500" /> },
+   380→                  { label: 'Vitesse moyenne', value: `${stats.resumeMois.vitesseMoyenne} km/h`, icon: <Gauge className="h-5 w-5 text-emerald-500" /> },
+   381→                ].map((stat, i) => (
+   382→                  <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
+   383→                    <Card className="bg-slate-900 border-slate-800">
+   384→                      <CardContent className="pt-5 pb-4">
+   385→                        <div className="flex items-center gap-2 mb-2">
+   386→                          {stat.icon}
+   387→                          <span className="text-slate-500 text-xs uppercase tracking-wider">{stat.label}</span>
+   388→                        </div>
+   389→                        <p className="text-white text-xl font-bold">{stat.value}</p>
+   390→                      </CardContent>
+   391→                    </Card>
+   392→                  </motion.div>
+   393→                ))}
+   394→              </div>
+   395→
+   396→              {/* Trips table */}
+   397→              <Card className="bg-slate-900 border-slate-800 overflow-hidden">
+   398→                <CardHeader className="pb-3">
+   399→                  <CardTitle className="text-white flex items-center gap-2">
+   400→                    <BarChart3 className="h-5 w-5 text-emerald-500" />
+   401→                    Historique des trajets
+   402→                  </CardTitle>
+   403→                  <CardDescription className="text-slate-500">10 derniers trajets enregistrés</CardDescription>
+   404→                </CardHeader>
+   405→                <CardContent className="p-0">
+   406→                  <div className="max-h-[500px] overflow-y-auto">
+   407→                    <Table>
+   408→                      <TableHeader>
+   409→                        <TableRow className="border-slate-800 hover:bg-transparent">
+   410→                          <TableHead className="text-slate-400 text-xs">Date</TableHead>
+   411→                          <TableHead className="text-slate-400 text-xs">Départ</TableHead>
+   412→                          <TableHead className="text-slate-400 text-xs hidden sm:table-cell">Arrivée</TableHead>
+   413→                          <TableHead className="text-slate-400 text-xs text-right">Distance</TableHead>
+   414→                          <TableHead className="text-slate-400 text-xs hidden md:table-cell">Durée</TableHead>
+   415→                          <TableHead className="text-slate-400 text-xs text-right hidden lg:table-cell">V. moy.</TableHead>
+   416→                          <TableHead className="text-slate-400 text-xs text-right hidden xl:table-cell">Conso.</TableHead>
+   417→                        </TableRow>
+   418→                      </TableHeader>
+   419→                      <TableBody>
+   420→                        {trips.map((trip, i) => (
+   421→                          <motion.tr
+   422→                            key={trip.id}
+   423→                            className="border-slate-800 hover:bg-slate-800/50 transition-colors"
+   424→                            initial={{ opacity: 0, x: -10 }}
+   425→                            animate={{ opacity: 1, x: 0 }}
+   426→                            transition={{ delay: i * 0.04 }}
+   427→                          >
+   428→                            <TableCell className="text-slate-300 text-sm py-3">{trip.date}</TableCell>
+   429→                            <TableCell className="text-white text-sm py-3 max-w-[150px] truncate">{trip.depart}</TableCell>
+   430→                            <TableCell className="text-slate-300 text-sm py-3 max-w-[150px] truncate hidden sm:table-cell">{trip.arrivee}</TableCell>
+   431→                            <TableCell className="text-emerald-400 text-sm py-3 text-right font-mono">{trip.distance}</TableCell>
+   432→                            <TableCell className="text-slate-300 text-sm py-3 hidden md:table-cell font-mono">{trip.duree}</TableCell>
+   433→                            <TableCell className="text-slate-300 text-sm py-3 text-right hidden lg:table-cell font-mono">{trip.vitesseMoy}</TableCell>
+   434→                            <TableCell className="text-slate-300 text-sm py-3 text-right hidden xl:table-cell font-mono">{trip.conso}</TableCell>
+   435→                          </motion.tr>
+   436→                        ))}
+   437→                      </TableBody>
+   438→                    </Table>
+   439→                  </div>
+   440→                </CardContent>
+   441→              </Card>
+   442→            </motion.div>
+   443→          </TabsContent>
+   444→
+   445→          {/* ── TAB: CONDUITE ──────────────────────────────── */}
+   446→          <TabsContent value="conduite">
+   447→            <motion.div {...fadeUp} className="space-y-6">
+   448→              {/* Score cards grid */}
+   449→              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+   450→                {/* Driving score - circular */}
+   451→                <Card className="bg-slate-900 border-slate-800 col-span-2 md:col-span-1">
+   452→                  <CardContent className="pt-6 pb-5 flex flex-col items-center">
+   453→                    <p className="text-slate-400 text-xs uppercase tracking-wider mb-3">Score de conduite</p>
+   454→                    <div className="relative">
+   455→                      <CircularProgress value={stats.scoreConduite} max={100} size={110} strokeWidth={10} color="#10b981" />
+   456→                      <div className="absolute inset-0 flex items-center justify-center">
+   457→                        <span className="text-2xl font-bold text-white">{stats.scoreConduite}</span>
+   458→                      </div>
+   459→                    </div>
+   460→                    <p className="text-slate-500 text-xs mt-2">sur 100</p>
+   461→                  </CardContent>
+   462→                </Card>
+   463→
+   464→                {/* Emergency braking */}
+   465→                <ScoreCard
+   466→                  label="Freinages d'urgence"
+   467→                  value={stats.freinagesUrgence}
+   468→                  threshold={5}
+   469→                  icon={<Zap className="h-5 w-5" />}
+   470→                />
+   471→
+   472→                {/* Harsh acceleration */}
+   473→                <ScoreCard
+   474→                  label="Accélérations brusques"
+   475→                  value={stats.accelerationsBrusques}
+   476→                  threshold={10}
+   477→                  icon={<TrendingUp className="h-5 w-5" />}
+   478→                />
+   479→
+   480→                {/* Excessive speed */}
+   481→                <ScoreCard
+   482→                  label="Vitesse excessive"
+   483→                  value={stats.vitesseExcessive}
+   484→                  threshold={5}
+   485→                  critical
+   486→                  icon={<Gauge className="h-5 w-5" />}
+   487→                />
+   488→
+   489→                {/* Idle time */}
+   490→                <ScoreCard
+   491→                  label="Temps au ralenti"
+   492→                  value={stats.tempsRalenti}
+   493→                  threshold={20}
+   494→                  unit="min"
+   495→                  icon={<Timer className="h-5 w-5" />}
+   496→                />
+   497→              </div>
+   498→
+   499→              {/* Weekly chart */}
+   500→              <Card className="bg-slate-900 border-slate-800">
+   501→                <CardHeader>
+   502→                  <CardTitle className="text-white flex items-center gap-2">
+   503→                    <BarChart3 className="h-5 w-5 text-emerald-500" />
+   504→                    Événements de conduite — Semaine
+   505→                  </CardTitle>
+   506→                  <CardDescription className="text-slate-500">Vitesse, freinage et accélération par jour</CardDescription>
+   507→                </CardHeader>
+   508→                <CardContent>
+   509→                  <div className="h-[300px] w-full">
+   510→                    <ResponsiveContainer width="100%" height="100%">
+   511→                      <BarChart data={stats.weeklyData} barGap={4}>
+   512→                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+   513→                        <XAxis dataKey="day" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={{ stroke: '#334155' }} />
+   514→                        <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={{ stroke: '#334155' }} />
+   515→                        <Tooltip
+   516→                          contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px', color: '#e2e8f0' }}
+   517→                        />
+   518→                        <Legend wrapperStyle={{ fontSize: '12px', color: '#94a3b8' }} />
+   519→                        <Bar dataKey="speed" name="Vitesse" fill="#ef4444" radius={[4, 4, 0, 0]} />
+   520→                        <Bar dataKey="braking" name="Freinage" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+   521→                        <Bar dataKey="acceleration" name="Accélération" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+   522→                      </BarChart>
+   523→                    </ResponsiveContainer>
+   524→                  </div>
+   525→                </CardContent>
+   526→              </Card>
+   527→            </motion.div>
+   528→          </TabsContent>
+   529→
+   530→          {/* ── TAB: CARBURANT ─────────────────────────────── */}
+   531→          <TabsContent value="carburant">
+   532→            <motion.div {...fadeUp} className="space-y-6">
+   533→              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+   534→                {/* Fuel level */}
+   535→                <Card className="bg-slate-900 border-slate-800">
+   536→                  <CardContent className="pt-5 pb-4 space-y-3">
+   537→                    <div className="flex items-center gap-2">
+   538→                      <Fuel className="h-5 w-5 text-emerald-500" />
+   539→                      <span className="text-slate-400 text-xs uppercase tracking-wider">Niveau de carburant</span>
+   540→                    </div>
+   541→                    <p className="text-3xl font-bold text-white">{stats.carburant.niveau}<span className="text-lg text-slate-500">%</span></p>
+   542→                    <Progress value={stats.carburant.niveau} className="h-2 bg-slate-800 [&>div]:bg-emerald-500" />
+   543→                  </CardContent>
+   544→                </Card>
+   545→
+   546→                {/* Range remaining */}
+   547→                <Card className="bg-slate-900 border-slate-800">
+   548→                  <CardContent className="pt-5 pb-4 space-y-3">
+   549→                    <div className="flex items-center gap-2">
+   550→                      <Route className="h-5 w-5 text-emerald-500" />
+   551→                      <span className="text-slate-400 text-xs uppercase tracking-wider">Autonomie restante</span>
+   552→                    </div>
+   553→                    <p className="text-3xl font-bold text-white">{stats.carburant.autonomie} <span className="text-lg text-slate-500">km</span></p>
+   554→                    <p className="text-slate-500 text-xs">Basé sur la consommation actuelle</p>
+   555→                  </CardContent>
+   556→                </Card>
+   557→
+   558→                {/* Average consumption */}
+   559→                <Card className="bg-slate-900 border-slate-800">
+   560→                  <CardContent className="pt-5 pb-4 space-y-3">
+   561→                    <div className="flex items-center gap-2">
+   562→                      <Gauge className="h-5 w-5 text-emerald-500" />
+   563→                      <span className="text-slate-400 text-xs uppercase tracking-wider">Conso. moyenne</span>
+   564→                    </div>
+   565→                    <p className="text-3xl font-bold text-white">{stats.carburant.consoMoyenne} <span className="text-lg text-slate-500">L/100</span></p>
+   566→                    <p className="text-emerald-500 text-xs">↓ 0.3L vs mois dernier</p>
+   567→                  </CardContent>
+   568→                </Card>
+   569→
+   570→                {/* Cost tracker */}
+   571→                <Card className="bg-slate-900 border-slate-800">
+   572→                  <CardContent className="pt-5 pb-4 space-y-3">
+   573→                    <div className="flex items-center gap-2">
+   574→                      <TrendingUp className="h-5 w-5 text-emerald-500" />
+   575→                      <span className="text-slate-400 text-xs uppercase tracking-wider">Coût du mois</span>
+   576→                    </div>
+   577→                    <p className="text-3xl font-bold text-white">{stats.carburant.coutMoisEnCours.toLocaleString('fr-FR')} <span className="text-lg text-slate-500">FCFA</span></p>
+   578→                    <p className="text-slate-500 text-xs">Estimation en cours</p>
+   579→                  </CardContent>
+   580→                </Card>
+   581→              </div>
+   582→
+   583→              {/* Monthly fuel chart */}
+   584→              <Card className="bg-slate-900 border-slate-800">
+   585→                <CardHeader>
+   586→                  <CardTitle className="text-white flex items-center gap-2">
+   587→                    <BarChart3 className="h-5 w-5 text-emerald-500" />
+   588→                    Consommation mensuelle
+   589→                  </CardTitle>
+   590→                  <CardDescription className="text-slate-500">Litres de carburant par mois</CardDescription>
+   591→                </CardHeader>
+   592→                <CardContent>
+   593→                  <div className="h-[300px] w-full">
+   594→                    <ResponsiveContainer width="100%" height="100%">
+   595→                      <BarChart data={stats.monthlyFuel}>
+   596→                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+   597→                        <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={{ stroke: '#334155' }} />
+   598→                        <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={{ stroke: '#334155' }} unit=" L" />
+   599→                        <Tooltip
+   600→                          contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px', color: '#e2e8f0' }}
+   601→                          formatter={(value: number) => [`${value} L`, 'Litres']}
+   602→                        />
+   603→                        <Bar dataKey="litres" name="Litres" fill="#10b981" radius={[6, 6, 0, 0]} />
+   604→                      </BarChart>
+   605→                    </ResponsiveContainer>
+   606→                  </div>
+   607→                </CardContent>
+   608→              </Card>
+   609→            </motion.div>
+   610→          </TabsContent>
+   611→
+   612→          {/* ── TAB: ALERTES ───────────────────────────────── */}
+   613→          <TabsContent value="alertes">
+   614→            <motion.div {...fadeUp} className="space-y-4">
+   615→              <div className="flex items-center justify-between">
+   616→                <div>
+   617→                  <h2 className="text-lg font-semibold text-white">Alertes récentes</h2>
+   618→                  <p className="text-slate-500 text-sm">{unreadCount} non lue{unreadCount !== 1 ? 's' : ''}</p>
+   619→                </div>
+   620→                <Badge variant="outline" className="border-slate-700 text-slate-400">
+   621→                  {alerts.length} alerte{alerts.length !== 1 ? 's' : ''}
+   622→                </Badge>
+   623→              </div>
+   624→
+   625→              <div className="max-h-[600px] overflow-y-auto space-y-3 pr-1">
+   626→                {alerts.map((alert, i) => {
+   627→                  const meta = alertMeta(alert.type)
+   628→                  return (
+   629→                    <motion.div
+   630→                      key={alert.id}
+   631→                      initial={{ opacity: 0, y: 10 }}
+   632→                      animate={{ opacity: 1, y: 0 }}
+   633→                      transition={{ delay: i * 0.05 }}
+   634→                      onClick={() => !alert.lu && markAsRead(alert.id)}
+   635→                      className={`cursor-pointer transition-all hover:scale-[1.01]`}
+   636→                    >
+   637→                      <Card className={`bg-slate-900 border ${alert.lu ? 'border-slate-800' : `${meta.border} ${meta.bg}`}`}>
+   638→                        <CardContent className="py-4 px-4">
+   639→                          <div className="flex items-start gap-3">
+   640→                            <div className={`p-2 rounded-lg ${meta.bg} ${meta.color} shrink-0 mt-0.5`}>
+   641→                              {meta.icon}
+   642→                            </div>
+   643→                            <div className="flex-1 min-w-0">
+   644→                              <div className="flex items-center justify-between gap-2 mb-1">
+   645→                                <h3 className={`text-sm font-medium ${alert.lu ? 'text-slate-300' : 'text-white'}`}>
+   646→                                  {alert.title}
+   647→                                  {!alert.lu && <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 ml-2" />}
+   648→                                </h3>
+   649→                                <Badge className={`${meta.badge} text-[10px] shrink-0`} variant="outline">
+   650→                                  {alert.lu ? 'Lu' : 'Non lu'}
+   651→                                </Badge>
+   652→                              </div>
+   653→                              <p className="text-slate-500 text-xs mb-1.5">{alert.description}</p>
+   654→                              <div className="flex items-center gap-1.5 text-slate-600 text-xs">
+   655→                                <Clock className="h-3 w-3" />
+   656→                                {alert.timestamp}
+   657→                              </div>
+   658→                            </div>
+   659→                          </div>
+   660→                        </CardContent>
+   661→                      </Card>
+   662→                    </motion.div>
+   663→                  )
+   664→                })}
+   665→              </div>
+   666→            </motion.div>
+   667→          </TabsContent>
+   668→        </Tabs>
+   669→      </div>
+   670→    </div>
+   671→  )
+   672→}
+   673→
+   674→// ─── Score Card Sub-component ────────────────────────────────
+   675→function ScoreCard({ label, value, threshold, critical, unit = '', icon }: {
+   676→  label: string; value: number; threshold: number; critical?: boolean; unit?: string; icon: React.ReactNode
+   677→}) {
+   678→  const exceeds = critical ? value > threshold : value > threshold
+   679→  const color = critical
+   680→    ? (exceeds ? 'text-red-400' : 'text-emerald-400')
+   681→    : (exceeds ? 'text-yellow-400' : 'text-emerald-400')
+   682→  const bgColor = critical
+   683→    ? (exceeds ? 'bg-red-500/10' : 'bg-emerald-500/10')
+   684→    : (exceeds ? 'bg-yellow-500/10' : 'bg-emerald-500/10')
+   685→
+   686→  return (
+   687→    <Card className="bg-slate-900 border-slate-800">
+   688→      <CardContent className="pt-5 pb-4 space-y-2">
+   689→        <div className="flex items-center gap-2">
+   690→          <span className={color}>{icon}</span>
+   691→          <span className="text-slate-400 text-xs uppercase tracking-wider">{label}</span>
+   692→        </div>
+   693→        <p className={`text-2xl font-bold ${color}`}>
+   694→          {value}
+   695→          {unit && <span className="text-sm text-slate-500 ml-1">{unit}</span>}
+   696→        </p>
+   697→        <p className={`text-xs ${exceeds ? (critical ? 'text-red-400/70' : 'text-yellow-400/70') : 'text-slate-600'}`}>
+   698→          {exceeds ? `Seuil: > ${threshold}${unit}` : 'Dans la norme'}
+   699→        </p>
+   700→      </CardContent>
+   701→    </Card>
+   702→  )
+   703→}
+   704→

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search,
@@ -16,10 +16,9 @@ import {
   Package,
   Cog,
   Building2,
-  User,
-  Filter,
   SlidersHorizontal,
   X,
+  Filter,
 } from 'lucide-react'
 import {
   Card,
@@ -42,9 +41,10 @@ import { Separator } from '@/components/ui/separator'
 
 // ─── Types ───────────────────────────────────────────────────
 interface Service {
-  id: number
+  id: string
   title: string
   category: Category
+  categoryKey?: string
   rating: number
   reviews: number
   price: string
@@ -82,20 +82,31 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   'Accessoires': <Package className="h-4 w-4" />,
 }
 
-// ─── Mock Service Data ───────────────────────────────────────
-const SERVICES: Service[] = [
-  { id: 1, title: 'Garage Central Bamako', category: 'Garages', rating: 4.8, reviews: 124, price: 'Sur devis', location: 'Bamako, ACI 2000', icon: <Building2 className="h-8 w-8" />, gradient: 'from-emerald-600/20 to-emerald-800/20' },
-  { id: 2, title: 'Mamadou Mécanique', category: 'Mécaniciens', rating: 4.6, reviews: 89, price: '15 000 FCFA/h', location: 'Bamako, Badalabougou', icon: <Wrench className="h-8 w-8" />, gradient: 'from-blue-600/20 to-blue-800/20' },
-  { id: 3, title: 'Auto Parts Mali', category: 'Pièces détachées', rating: 4.3, reviews: 56, price: 'Variable', location: 'Bamako, Baco Djicoroni', icon: <Cog className="h-8 w-8" />, gradient: 'from-orange-600/20 to-orange-800/20' },
-  { id: 4, title: 'Dépannage 24/7', category: 'Dépannage', rating: 4.9, reviews: 201, price: '25 000 FCFA', location: 'Bamako — toute la ville', icon: <Truck className="h-8 w-8" />, gradient: 'from-red-600/20 to-red-800/20' },
-  { id: 5, title: 'NSIA Assurance Auto', category: 'Assurances', rating: 4.2, reviews: 67, price: 'À partir de 35 000 FCFA/an', location: 'Bamako, Hamdallaye', icon: <Shield className="h-8 w-8" />, gradient: 'from-purple-600/20 to-purple-800/20' },
-  { id: 6, title: 'Centre de Contrôle Technique', category: 'Contrôle technique', rating: 4.5, reviews: 143, price: '10 000 FCFA', location: 'Bamako, Kalaban-Coura', icon: <ClipboardCheck className="h-8 w-8" />, gradient: 'from-yellow-600/20 to-yellow-800/20' },
-  { id: 7, title: 'Location Voitures Mali', category: 'Location', rating: 4.7, reviews: 92, price: '15 000 FCFA/jour', location: 'Bamako, Lafiabougou', icon: <Car className="h-8 w-8" />, gradient: 'from-teal-600/20 to-teal-800/20' },
-  { id: 8, title: 'Accessoires Auto Plus', category: 'Accessoires', rating: 4.4, reviews: 78, price: 'Variable', location: 'Bamako, Sébenikoro', icon: <Package className="h-8 w-8" />, gradient: 'from-pink-600/20 to-pink-800/20' },
-  { id: 9, title: 'Garage Express Kati', category: 'Garages', rating: 4.1, reviews: 45, price: 'Sur devis', location: 'Kati', icon: <Building2 className="h-8 w-8" />, gradient: 'from-cyan-600/20 to-cyan-800/20' },
-  { id: 10, title: 'Ibrahim Diagnostic Auto', category: 'Mécaniciens', rating: 4.7, reviews: 112, price: '20 000 FCFA', location: 'Bamako, Djicoroni Para', icon: <Wrench className="h-8 w-8" />, gradient: 'from-indigo-600/20 to-indigo-800/20' },
-  { id: 11, title: 'SUNU Assurances', category: 'Assurances', rating: 4.0, reviews: 38, price: 'À partir de 28 000 FCFA/an', location: 'Bamako, Quartier du Fleuve', icon: <Shield className="h-8 w-8" />, gradient: 'from-violet-600/20 to-violet-800/20' },
-  { id: 12, title: 'Dépannage Rapide Mali', category: 'Dépannage', rating: 4.5, reviews: 76, price: '20 000 FCFA', location: 'Koulikoro', icon: <Truck className="h-8 w-8" />, gradient: 'from-amber-600/20 to-amber-800/20' },
+// ─── Icon resolver for categories ──────────────────────────────
+function categoryIcon(category: string): React.ReactNode {
+  const map: Record<string, React.ReactNode> = {
+    'Garages': <Building2 className="h-8 w-8" />,
+    'Mécaniciens': <Wrench className="h-8 w-8" />,
+    'Pièces détachées': <Cog className="h-8 w-8" />,
+    'Dépannage': <Truck className="h-8 w-8" />,
+    'Assurances': <Shield className="h-8 w-8" />,
+    'Contrôle technique': <ClipboardCheck className="h-8 w-8" />,
+    'Location': <Car className="h-8 w-8" />,
+    'Accessoires': <Package className="h-8 w-8" />,
+  }
+  return map[category] || <Package className="h-8 w-8" />
+}
+
+// ─── Mock Service Data (fallback) ───────────────────────────
+const FALLBACK_SERVICES: Service[] = [
+  { id: '1', title: 'Garage Central Bamako', category: 'Garages', rating: 4.8, reviews: 124, price: 'Sur devis', location: 'Bamako, ACI 2000', icon: <Building2 className="h-8 w-8" />, gradient: 'from-emerald-600/20 to-emerald-800/20' },
+  { id: '2', title: 'Mamadou Mécanique', category: 'Mécaniciens', rating: 4.6, reviews: 89, price: '15 000 FCFA/h', location: 'Bamako, Badalabougou', icon: <Wrench className="h-8 w-8" />, gradient: 'from-blue-600/20 to-blue-800/20' },
+  { id: '3', title: 'Auto Parts Mali', category: 'Pièces détachées', rating: 4.3, reviews: 56, price: 'Variable', location: 'Bamako, Baco Djicoroni', icon: <Cog className="h-8 w-8" />, gradient: 'from-orange-600/20 to-orange-800/20' },
+  { id: '4', title: 'Dépannage 24/7', category: 'Dépannage', rating: 4.9, reviews: 201, price: '25 000 FCFA', location: 'Bamako — toute la ville', icon: <Truck className="h-8 w-8" />, gradient: 'from-red-600/20 to-red-800/20' },
+  { id: '5', title: 'NSIA Assurance Auto', category: 'Assurances', rating: 4.2, reviews: 67, price: 'À partir de 35 000 FCFA/an', location: 'Bamako, Hamdallaye', icon: <Shield className="h-8 w-8" />, gradient: 'from-purple-600/20 to-purple-800/20' },
+  { id: '6', title: 'Centre de Contrôle Technique', category: 'Contrôle technique', rating: 4.5, reviews: 143, price: '10 000 FCFA', location: 'Bamako, Kalaban-Coura', icon: <ClipboardCheck className="h-8 w-8" />, gradient: 'from-yellow-600/20 to-yellow-800/20' },
+  { id: '7', title: 'Location Voitures Mali', category: 'Location', rating: 4.7, reviews: 92, price: '15 000 FCFA/jour', location: 'Bamako, Lafiabougou', icon: <Car className="h-8 w-8" />, gradient: 'from-teal-600/20 to-teal-800/20' },
+  { id: '8', title: 'Accessoires Auto Plus', category: 'Accessoires', rating: 4.4, reviews: 78, price: 'Variable', location: 'Bamako, Sébenikoro', icon: <Package className="h-8 w-8" />, gradient: 'from-pink-600/20 to-pink-800/20' },
 ]
 
 // ─── Animation wrapper ───────────────────────────────────────
@@ -131,8 +142,8 @@ export default function MarketplaceModule() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<Category>('Tous')
   const [tab, setTab] = useState('marketplace')
-  const [favorites, setFavorites] = useState<number[]>([]
-)
+  const [favorites, setFavorites] = useState<string[]>([])
+  const [services, setServices] = useState<Service[]>(FALLBACK_SERVICES)
   const [searchFilters, setSearchFilters] = useState({
     category: 'Tous' as Category,
     priceMin: '',
@@ -140,15 +151,52 @@ export default function MarketplaceModule() {
     ratingMin: '0',
   })
 
-  const toggleFavorite = (id: number) => {
+  // Fetch listings from API on mount
+  const fetchListings = useCallback((search = '', category = 'Tous') => {
+    const params = new URLSearchParams()
+    if (search) params.set('search', search)
+    if (category !== 'Tous') params.set('category', category)
+    const qs = params.toString() ? `?${params.toString()}` : ''
+    fetch(`/api/marketplace${qs}`)
+      .then(r => r.json())
+      .then(res => {
+        if (res.success && res.data.length > 0) {
+          const mapped: Service[] = res.data.map((l: Record<string, unknown>) => ({
+            id: l.id as string,
+            title: l.title as string,
+            category: l.category as Category,
+            categoryKey: l.categoryKey as string | undefined,
+            rating: l.rating as number,
+            reviews: l.reviews as number,
+            price: l.price as string,
+            location: l.location as string,
+            icon: categoryIcon(l.category as string),
+            gradient: (l.gradient as string) || 'from-emerald-600/20 to-emerald-800/20',
+          }))
+          setServices(mapped)
+        }
+      })
+      .catch(() => { /* keep fallback */ })
+  }, [])
+
+  useEffect(() => {
+    fetchListings()
+  }, [fetchListings])
+
+  // Re-fetch when search/category changes (debounced by API)
+  useEffect(() => {
+    fetchListings(searchQuery, selectedCategory)
+  }, [searchQuery, selectedCategory, fetchListings])
+
+  const toggleFavorite = (id: string) => {
     setFavorites(prev =>
       prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]
     )
   }
 
-  // Filtered services for marketplace tab
+  // Filtered services for marketplace tab (client-side filter on top of API)
   const filteredByCategory = useMemo(() => {
-    return SERVICES.filter(s => {
+    return services.filter(s => {
       const matchCategory = selectedCategory === 'Tous' || s.category === selectedCategory
       const matchSearch = searchQuery === '' ||
         s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -156,22 +204,22 @@ export default function MarketplaceModule() {
         s.location.toLowerCase().includes(searchQuery.toLowerCase())
       return matchCategory && matchSearch
     })
-  }, [selectedCategory, searchQuery])
+  }, [services, selectedCategory, searchQuery])
 
   // Filtered for search tab
   const filteredByAdvanced = useMemo(() => {
-    return SERVICES.filter(s => {
+    return services.filter(s => {
       const matchCategory = searchFilters.category === 'Tous' || s.category === searchFilters.category
       const matchSearch = searchQuery === '' ||
         s.title.toLowerCase().includes(searchQuery.toLowerCase())
       const matchRating = s.rating >= parseInt(searchFilters.ratingMin)
       return matchCategory && matchSearch && matchRating
     })
-  }, [searchFilters, searchQuery])
+  }, [services, searchFilters, searchQuery])
 
   const favoriteServices = useMemo(() => {
-    return SERVICES.filter(s => favorites.includes(s.id))
-  }, [favorites])
+    return services.filter(s => favorites.includes(s.id))
+  }, [services, favorites])
 
   return (
     <div className="pt-16 min-h-screen bg-slate-950">

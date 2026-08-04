@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
   Shield,
@@ -89,18 +89,22 @@ interface GeofenceZone {
   bgColor: string
 }
 
-interface SecurityEvent {
-  id: number
+// ─── API Event type (from DB) ───────────────────────────
+interface ApiSecurityEvent {
+  id: string
   type: string
   event: string
   time: string
   location: string
   status: 'confirmed' | 'resolved' | 'pending'
-  icon: React.ReactNode
+  severity: string
   color: string
+  latitude?: number | null
+  longitude?: number | null
+  speed?: number | null
 }
 
-// ─── Mock Data ───────────────────────────────────────────────
+// ─── Mock Data for controls and zones (kept local) ─────────
 const INITIAL_CONTROLS: ToggleControl[] = [
   { id: 'immobilize', label: 'Immobiliser le véhicule', description: 'Bloque le démarrage du moteur à distance', icon: <Lock className="h-5 w-5" />, enabled: false },
   { id: 'alarm', label: 'Mode alarme', description: 'Déclenche une sirène en cas d\'intrusion détectée', icon: <Bell className="h-5 w-5" />, enabled: true },
@@ -114,16 +118,18 @@ const ZONES: GeofenceZone[] = [
   { id: 'z3', name: 'Zone interdite', radius: 1000, type: 'forbidden', icon: <Ban className="h-5 w-5" />, color: 'text-red-400', bgColor: 'bg-red-500/10' },
 ]
 
-const EVENTS: SecurityEvent[] = [
-  { id: 1, type: 'alarm', event: 'Alarme déclenchée', time: '2026-08-04 03:22', location: 'Bamako, Kalaban-Coura', status: 'resolved', icon: <Bell className="h-4 w-4" />, color: 'text-red-400' },
-  { id: 2, type: 'motion', event: 'Mouvement détecté', time: '2026-08-04 03:21', location: 'Bamako, Kalaban-Coura', status: 'confirmed', icon: <Move className="h-4 w-4" />, color: 'text-orange-400' },
-  { id: 3, type: 'geofence', event: 'Entrée zone interdite', time: '2026-07-31 12:20', location: 'Bamako, Zone industrielle', status: 'confirmed', icon: <Navigation className="h-4 w-4" />, color: 'text-red-400' },
-  { id: 4, type: 'towing', event: 'Tentative de remorquage', time: '2026-07-28 23:15', location: 'Bamako, Lafiabougou', status: 'resolved', icon: <Truck className="h-4 w-4" />, color: 'text-yellow-400' },
-  { id: 5, type: 'system', event: 'Système activé', time: '2026-07-28 07:00', location: '—', status: 'confirmed', icon: <ShieldCheck className="h-4 w-4" />, color: 'text-emerald-400' },
-  { id: 6, type: 'immobilize', event: 'Immobilisation activée', time: '2026-07-25 14:30', location: 'Bamako, ACI 2000', status: 'resolved', icon: <Lock className="h-4 w-4" />, color: 'text-blue-400' },
-  { id: 7, type: 'geofence', event: 'Sortie zone domicile', time: '2026-07-24 06:15', location: 'Bamako, Kalaban-Coura', status: 'confirmed', icon: <Navigation className="h-4 w-4" />, color: 'text-orange-400' },
-  { id: 8, type: 'alarm', event: 'Test alarme', time: '2026-07-23 10:00', location: '—', status: 'resolved', icon: <Bell className="h-4 w-4" />, color: 'text-emerald-400' },
-]
+// ─── Icon resolver for event types ─────────────────────────
+function eventIcon(type: string) {
+  switch (type) {
+    case 'alarm': return <Bell className="h-4 w-4" />
+    case 'motion': case 'movement': return <Move className="h-4 w-4" />
+    case 'geofence': case 'geofence_exit': case 'geofence_enter': return <Navigation className="h-4 w-4" />
+    case 'towing': case 'tow': return <Truck className="h-4 w-4" />
+    case 'immobilize': return <Lock className="h-4 w-4" />
+    case 'system': return <ShieldCheck className="h-4 w-4" />
+    default: return <Shield className="h-4 w-4" />
+  }
+}
 
 // ─── Animation wrapper ───────────────────────────────────────
 const fadeUp = {
@@ -143,16 +149,42 @@ const stagger = {
 export default function SecurityModule() {
   const [controls, setControls] = useState<ToggleControl[]>(INITIAL_CONTROLS)
   const [zones, setZones] = useState<GeofenceZone[]>(ZONES)
+  const [events, setEvents] = useState<ApiSecurityEvent[]>([])
   const [showAddZone, setShowAddZone] = useState(false)
   const [newZoneName, setNewZoneName] = useState('')
   const [newZoneRadius, setNewZoneRadius] = useState('300')
   const [newZoneType, setNewZoneType] = useState<'safe' | 'work' | 'forbidden'>('safe')
   const [eventFilter, setEventFilter] = useState('all')
 
+  // Fetch events from API on mount
+  useEffect(() => {
+    fetch('/api/security')
+      .then(r => r.json())
+      .then(res => {
+        if (res.success && res.data.length > 0) {
+          setEvents(res.data)
+        }
+      })
+      .catch(() => { /* keep empty */ })
+  }, [])
+
   const systemActive = controls.every(c => !c.enabled) || controls.some(c => c.id === 'alarm' && c.enabled)
 
   const toggleControl = (id: string) => {
-    setControls(prev => prev.map(c => c.id === id ? { ...c, enabled: !c.enabled } : c))
+    const updated = controls.map(c => c.id === id ? { ...c, enabled: !c.enabled } : c)
+    setControls(updated)
+    // POST toggle change to API as an event
+    const ctrl = updated.find(c => c.id === id)
+    if (ctrl) {
+      fetch('/api/security', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: id,
+          severity: ctrl.enabled ? 'info' : 'warning',
+        }),
+      }).catch(() => {})
+    }
   }
 
   const addZone = () => {
@@ -183,10 +215,10 @@ export default function SecurityModule() {
   }
 
   const filteredEvents = eventFilter === 'all'
-    ? EVENTS
-    : EVENTS.filter(e => e.type === eventFilter)
+    ? events
+    : events.filter(e => e.type === eventFilter)
 
-  const statusBadge = (status: SecurityEvent['status']) => {
+  const statusBadge = (status: ApiSecurityEvent['status']) => {
     const map = {
       confirmed: { label: 'Confirmé', cls: 'bg-emerald-500/20 text-emerald-400' },
       resolved: { label: 'Résolu', cls: 'bg-slate-500/20 text-slate-400' },
@@ -408,7 +440,7 @@ export default function SecurityModule() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {EVENTS.map((event, i) => (
+                        {events.map((event, i) => (
                           <motion.tr
                             key={event.id}
                             className="border-slate-800 hover:bg-slate-800/50 transition-colors"
@@ -418,7 +450,7 @@ export default function SecurityModule() {
                           >
                             <TableCell className="py-3">
                               <div className="flex items-center gap-2">
-                                <span className={event.color}>{event.icon}</span>
+                                <span className={event.color}>{eventIcon(event.type)}</span>
                                 <span className="text-white text-sm">{event.event}</span>
                               </div>
                             </TableCell>
@@ -623,7 +655,7 @@ export default function SecurityModule() {
                         event.status === 'resolved' ? 'bg-slate-800' :
                         'bg-yellow-500/10'
                       }`}>
-                        <span className={event.color}>{event.icon}</span>
+                        <span className={event.color}>{eventIcon(event.type)}</span>
                       </div>
                     </div>
 
