@@ -8,20 +8,25 @@ async function getDemoUser() {
 
 // ─── GET: list reviews for a listing ─────────────────────
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const listingId = searchParams.get('listingId')
+  try {
+    const { searchParams } = new URL(request.url)
+    const listingId = searchParams.get('listingId')
 
-  if (!listingId) {
-    return NextResponse.json({ success: false, error: 'listingId requis' }, { status: 400 })
+    if (!listingId) {
+      return NextResponse.json({ success: false, error: 'listingId requis' }, { status: 400 })
+    }
+
+    const reviews = await db.listingReview.findMany({
+      where: { listingId },
+      orderBy: { createdAt: 'desc' },
+      include: { user: { select: { id: true, name: true } } },
+    })
+
+    return NextResponse.json({ success: true, data: reviews })
+  } catch (error) {
+    console.error('[GET /api/marketplace/reviews] Error:', error)
+    return NextResponse.json({ success: false, error: 'Erreur interne' }, { status: 500 })
   }
-
-  const reviews = await db.listingReview.findMany({
-    where: { listingId },
-    orderBy: { createdAt: 'desc' },
-    include: { user: { select: { id: true, name: true } } },
-  })
-
-  return NextResponse.json({ success: true, data: reviews })
 }
 
 // ─── POST: create a review ──────────────────────────────

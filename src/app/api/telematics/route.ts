@@ -11,16 +11,17 @@ async function getDemoUser() {
 
 // ─── GET ───────────────────────────────────────────────────
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const type = searchParams.get('type')
+  try {
+    const { searchParams } = new URL(request.url)
+    const type = searchParams.get('type')
 
-  const user = await getDemoUser()
-  if (!user) {
-    return NextResponse.json({ success: true, data: [], message: 'Aucun utilisateur' })
-  }
+    const user = await getDemoUser()
+    if (!user) {
+      return NextResponse.json({ success: true, data: [], message: 'Aucun utilisateur' })
+    }
 
-  // ── type=trips: return real trip records ──
-  if (type === 'trips') {
+    // ── type=trips: return real trip records ──
+    if (type === 'trips') {
     const trips = await db.telematicsTrip.findMany({
       where: { userId: user.id },
       orderBy: { startTime: 'desc' },
@@ -140,14 +141,18 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  // Default: return both
-  const trips = await db.telematicsTrip.findMany({
-    where: { userId: user.id },
-    orderBy: { startTime: 'desc' },
-    take: 50,
-  })
+    // Default: return both
+    const trips = await db.telematicsTrip.findMany({
+      where: { userId: user.id },
+      orderBy: { startTime: 'desc' },
+      take: 50,
+    })
 
-  return NextResponse.json({ success: true, data: { trips } })
+    return NextResponse.json({ success: true, data: { trips } })
+  } catch (error) {
+    console.error('[GET /api/telematics] Error:', error)
+    return NextResponse.json({ success: false, error: 'Erreur interne' }, { status: 500 })
+  }
 }
 
 // ─── POST: create a new trip ────────────────────────────────

@@ -1,0 +1,598 @@
+     1→'use client'
+     2→
+     3→import { useState, useMemo, useEffect, useCallback } from 'react'
+     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→import {
+     6→  Search,
+     7→  Star,
+     8→  Heart,
+     9→  MessageCircle,
+    10→  MapPin,
+    11→  Wrench,
+    12→  Car,
+    13→  Shield,
+    14→  ClipboardCheck,
+    15→  Truck,
+    16→  Package,
+    17→  Cog,
+    18→  Building2,
+    19→  SlidersHorizontal,
+    20→  X,
+    21→  Filter,
+    22→} from 'lucide-react'
+    23→import {
+    24→  Card,
+    25→  CardContent,
+    26→  CardHeader,
+    27→  CardTitle,
+    28→} from '@/components/ui/card'
+    29→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+    30→import { Badge } from '@/components/ui/badge'
+    31→import { Button } from '@/components/ui/button'
+    32→import { Input } from '@/components/ui/input'
+    33→import {
+    34→  Select,
+    35→  SelectContent,
+    36→  SelectItem,
+    37→  SelectTrigger,
+    38→  SelectValue,
+    39→} from '@/components/ui/select'
+    40→import { Separator } from '@/components/ui/separator'
+    41→
+    42→// ─── Types ───────────────────────────────────────────────────
+    43→interface Service {
+    44→  id: string
+    45→  title: string
+    46→  category: Category
+    47→  categoryKey?: string
+    48→  rating: number
+    49→  reviews: number
+    50→  price: string
+    51→  location: string
+    52→  icon: React.ReactNode
+    53→  gradient: string
+    54→}
+    55→
+    56→type Category =
+    57→  | 'Tous'
+    58→  | 'Garages'
+    59→  | 'Mécaniciens'
+    60→  | 'Pièces détachées'
+    61→  | 'Dépannage'
+    62→  | 'Assurances'
+    63→  | 'Contrôle technique'
+    64→  | 'Location'
+    65→  | 'Accessoires'
+    66→
+    67→// ─── Categories ──────────────────────────────────────────────
+    68→const CATEGORIES: Category[] = [
+    69→  'Tous', 'Garages', 'Mécaniciens', 'Pièces détachées',
+    70→  'Dépannage', 'Assurances', 'Contrôle technique', 'Location', 'Accessoires',
+    71→]
+    72→
+    73→const CATEGORY_ICONS: Record<string, React.ReactNode> = {
+    74→  'Tous': <Package className="h-4 w-4" />,
+    75→  'Garages': <Building2 className="h-4 w-4" />,
+    76→  'Mécaniciens': <Wrench className="h-4 w-4" />,
+    77→  'Pièces détachées': <Cog className="h-4 w-4" />,
+    78→  'Dépannage': <Truck className="h-4 w-4" />,
+    79→  'Assurances': <Shield className="h-4 w-4" />,
+    80→  'Contrôle technique': <ClipboardCheck className="h-4 w-4" />,
+    81→  'Location': <Car className="h-4 w-4" />,
+    82→  'Accessoires': <Package className="h-4 w-4" />,
+    83→}
+    84→
+    85→// ─── Icon resolver for categories ──────────────────────────────
+    86→function categoryIcon(category: string): React.ReactNode {
+    87→  const map: Record<string, React.ReactNode> = {
+    88→    'Garages': <Building2 className="h-8 w-8" />,
+    89→    'Mécaniciens': <Wrench className="h-8 w-8" />,
+    90→    'Pièces détachées': <Cog className="h-8 w-8" />,
+    91→    'Dépannage': <Truck className="h-8 w-8" />,
+    92→    'Assurances': <Shield className="h-8 w-8" />,
+    93→    'Contrôle technique': <ClipboardCheck className="h-8 w-8" />,
+    94→    'Location': <Car className="h-8 w-8" />,
+    95→    'Accessoires': <Package className="h-8 w-8" />,
+    96→  }
+    97→  return map[category] || <Package className="h-8 w-8" />
+    98→}
+    99→
+   100→// ─── Mock Service Data (fallback) ───────────────────────────
+   101→const FALLBACK_SERVICES: Service[] = [
+   102→  { id: '1', title: 'Garage Central Bamako', category: 'Garages', rating: 4.8, reviews: 124, price: 'Sur devis', location: 'Bamako, ACI 2000', icon: <Building2 className="h-8 w-8" />, gradient: 'from-emerald-600/20 to-emerald-800/20' },
+   103→  { id: '2', title: 'Mamadou Mécanique', category: 'Mécaniciens', rating: 4.6, reviews: 89, price: '15 000 FCFA/h', location: 'Bamako, Badalabougou', icon: <Wrench className="h-8 w-8" />, gradient: 'from-blue-600/20 to-blue-800/20' },
+   104→  { id: '3', title: 'Auto Parts Mali', category: 'Pièces détachées', rating: 4.3, reviews: 56, price: 'Variable', location: 'Bamako, Baco Djicoroni', icon: <Cog className="h-8 w-8" />, gradient: 'from-orange-600/20 to-orange-800/20' },
+   105→  { id: '4', title: 'Dépannage 24/7', category: 'Dépannage', rating: 4.9, reviews: 201, price: '25 000 FCFA', location: 'Bamako — toute la ville', icon: <Truck className="h-8 w-8" />, gradient: 'from-red-600/20 to-red-800/20' },
+   106→  { id: '5', title: 'NSIA Assurance Auto', category: 'Assurances', rating: 4.2, reviews: 67, price: 'À partir de 35 000 FCFA/an', location: 'Bamako, Hamdallaye', icon: <Shield className="h-8 w-8" />, gradient: 'from-purple-600/20 to-purple-800/20' },
+   107→  { id: '6', title: 'Centre de Contrôle Technique', category: 'Contrôle technique', rating: 4.5, reviews: 143, price: '10 000 FCFA', location: 'Bamako, Kalaban-Coura', icon: <ClipboardCheck className="h-8 w-8" />, gradient: 'from-yellow-600/20 to-yellow-800/20' },
+   108→  { id: '7', title: 'Location Voitures Mali', category: 'Location', rating: 4.7, reviews: 92, price: '15 000 FCFA/jour', location: 'Bamako, Lafiabougou', icon: <Car className="h-8 w-8" />, gradient: 'from-teal-600/20 to-teal-800/20' },
+   109→  { id: '8', title: 'Accessoires Auto Plus', category: 'Accessoires', rating: 4.4, reviews: 78, price: 'Variable', location: 'Bamako, Sébenikoro', icon: <Package className="h-8 w-8" />, gradient: 'from-pink-600/20 to-pink-800/20' },
+   110→]
+   111→
+   112→// ─── Animation wrapper ───────────────────────────────────────
+   113→const fadeUp = {
+   114→  initial: { opacity: 0, y: 20 },
+   115→  animate: { opacity: 1, y: 0 },
+   116→  transition: { duration: 0.4 },
+   117→}
+   118→
+   119→// ─── Stars component ─────────────────────────────────────────
+   120→function Stars({ rating }: { rating: number }) {
+   121→  return (
+   122→    <div className="flex items-center gap-0.5">
+   123→      {[1, 2, 3, 4, 5].map(star => (
+   124→        <Star
+   125→          key={star}
+   126→          className={`h-3.5 w-3.5 ${
+   127→            star <= Math.round(rating)
+   128→              ? 'text-yellow-400 fill-yellow-400'
+   129→              : 'text-slate-700'
+   130→          }`}
+   131→        />
+   132→      ))}
+   133→      <span className="text-slate-400 text-xs ml-1">({rating})</span>
+   134→    </div>
+   135→  )
+   136→}
+   137→
+   138→// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   139→// MAIN COMPONENT
+   140→// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   141→export default function MarketplaceModule() {
+   142→  const [searchQuery, setSearchQuery] = useState('')
+   143→  const [selectedCategory, setSelectedCategory] = useState<Category>('Tous')
+   144→  const [tab, setTab] = useState('marketplace')
+   145→  const [favorites, setFavorites] = useState<string[]>([])
+   146→  const [services, setServices] = useState<Service[]>(FALLBACK_SERVICES)
+   147→  const [searchFilters, setSearchFilters] = useState({
+   148→    category: 'Tous' as Category,
+   149→    priceMin: '',
+   150→    priceMax: '',
+   151→    ratingMin: '0',
+   152→  })
+   153→
+   154→  // Fetch listings from API on mount
+   155→  const fetchListings = useCallback((search = '', category = 'Tous') => {
+   156→    const params = new URLSearchParams()
+   157→    if (search) params.set('search', search)
+   158→    if (category !== 'Tous') params.set('category', category)
+   159→    const qs = params.toString() ? `?${params.toString()}` : ''
+   160→    fetch(`/api/marketplace${qs}`)
+   161→      .then(r => r.json())
+   162→      .then(res => {
+   163→        if (res.success && res.data.length > 0) {
+   164→          const mapped: Service[] = res.data.map((l: Record<string, unknown>) => ({
+   165→            id: l.id as string,
+   166→            title: l.title as string,
+   167→            category: l.category as Category,
+   168→            categoryKey: l.categoryKey as string | undefined,
+   169→            rating: l.rating as number,
+   170→            reviews: l.reviews as number,
+   171→            price: l.price as string,
+   172→            location: l.location as string,
+   173→            icon: categoryIcon(l.category as string),
+   174→            gradient: (l.gradient as string) || 'from-emerald-600/20 to-emerald-800/20',
+   175→          }))
+   176→          setServices(mapped)
+   177→        }
+   178→      })
+   179→      .catch(() => { /* keep fallback */ })
+   180→  }, [])
+   181→
+   182→  useEffect(() => {
+   183→    fetchListings()
+   184→  }, [fetchListings])
+   185→
+   186→  // Re-fetch when search/category changes (debounced by API)
+   187→  useEffect(() => {
+   188→    fetchListings(searchQuery, selectedCategory)
+   189→  }, [searchQuery, selectedCategory, fetchListings])
+   190→
+   191→  const toggleFavorite = (id: string) => {
+   192→    setFavorites(prev =>
+   193→      prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]
+   194→    )
+   195→  }
+   196→
+   197→  // Filtered services for marketplace tab (client-side filter on top of API)
+   198→  const filteredByCategory = useMemo(() => {
+   199→    return services.filter(s => {
+   200→      const matchCategory = selectedCategory === 'Tous' || s.category === selectedCategory
+   201→      const matchSearch = searchQuery === '' ||
+   202→        s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+   203→        s.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+   204→        s.location.toLowerCase().includes(searchQuery.toLowerCase())
+   205→      return matchCategory && matchSearch
+   206→    })
+   207→  }, [services, selectedCategory, searchQuery])
+   208→
+   209→  // Filtered for search tab
+   210→  const filteredByAdvanced = useMemo(() => {
+   211→    return services.filter(s => {
+   212→      const matchCategory = searchFilters.category === 'Tous' || s.category === searchFilters.category
+   213→      const matchSearch = searchQuery === '' ||
+   214→        s.title.toLowerCase().includes(searchQuery.toLowerCase())
+   215→      const matchRating = s.rating >= parseInt(searchFilters.ratingMin)
+   216→      return matchCategory && matchSearch && matchRating
+   217→    })
+   218→  }, [services, searchFilters, searchQuery])
+   219→
+   220→  const favoriteServices = useMemo(() => {
+   221→    return services.filter(s => favorites.includes(s.id))
+   222→  }, [services, favorites])
+   223→
+   224→  return (
+   225→    <div className="pt-16 min-h-screen bg-slate-950">
+   226→      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+   227→        {/* ── HEADER ──────────────────────────────────────── */}
+   228→        <motion.div {...fadeUp} className="mb-6">
+   229→          <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">
+   230→            <Package className="h-8 w-8 text-emerald-500" />
+   231→            Marketplace
+   232→          </h1>
+   233→          <p className="text-slate-400 mt-1">Trouvez les meilleurs services automobiles près de chez vous</p>
+   234→        </motion.div>
+   235→
+   236→        {/* ── SEARCH BAR ──────────────────────────────────── */}
+   237→        <motion.div {...fadeUp} className="mb-6">
+   238→          <div className="flex flex-col sm:flex-row gap-3">
+   239→            <div className="relative flex-1">
+   240→              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+   241→              <Input
+   242→                value={searchQuery}
+   243→                onChange={e => setSearchQuery(e.target.value)}
+   244→                placeholder="Rechercher un service, garage, mécanicien..."
+   245→                className="pl-10 bg-slate-900 border-slate-800 text-white placeholder:text-slate-600 h-11"
+   246→              />
+   247→              {searchQuery && (
+   248→                <button
+   249→                  onClick={() => setSearchQuery('')}
+   250→                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+   251→                >
+   252→                  <X className="h-4 w-4" />
+   253→                </button>
+   254→              )}
+   255→            </div>
+   256→            <Select value={selectedCategory} onValueChange={(v: string) => setSelectedCategory(v as Category)}>
+   257→              <SelectTrigger className="w-full sm:w-52 bg-slate-900 border-slate-800 text-white h-11">
+   258→                <SlidersHorizontal className="h-4 w-4 mr-2 text-emerald-500" />
+   259→                <SelectValue />
+   260→              </SelectTrigger>
+   261→              <SelectContent className="bg-slate-900 border-slate-800 max-h-80 overflow-y-auto">
+   262→                {CATEGORIES.map(cat => (
+   263→                  <SelectItem key={cat} value={cat} className="text-slate-200 focus:bg-slate-800 focus:text-white">
+   264→                    {cat}
+   265→                  </SelectItem>
+   266→                ))}
+   267→              </SelectContent>
+   268→            </Select>
+   269→          </div>
+   270→        </motion.div>
+   271→
+   272→        {/* ── MAIN TABS ───────────────────────────────────── */}
+   273→        <Tabs value={tab} onValueChange={setTab} className="space-y-6">
+   274→          <TabsList className="bg-slate-900 border border-slate-800 p-1 h-auto flex flex-wrap gap-1">
+   275→            <TabsTrigger value="marketplace" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-slate-400 gap-1.5">
+   276→              <Package className="h-4 w-4" /> Marketplace
+   277→            </TabsTrigger>
+   278→            <TabsTrigger value="recherche" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-slate-400 gap-1.5">
+   279→              <Filter className="h-4 w-4" /> Recherche
+   280→            </TabsTrigger>
+   281→            <TabsTrigger value="favoris" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-slate-400 gap-1.5 relative">
+   282→              <Heart className="h-4 w-4" /> Favoris
+   283→              {favorites.length > 0 && (
+   284→                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-[10px] text-white flex items-center justify-center font-bold">
+   285→                  {favorites.length}
+   286→                </span>
+   287→              )}
+   288→            </TabsTrigger>
+   289→          </TabsList>
+   290→
+   291→          {/* ── TAB: MARKETPLACE ──────────────────────────── */}
+   292→          <TabsContent value="marketplace">
+   293→            <motion.div {...fadeUp}>
+   294→              {/* Category pills for mobile-friendly selection */}
+   295→              <div className="flex gap-2 overflow-x-auto pb-3 mb-6 scrollbar-none">
+   296→                {CATEGORIES.map(cat => (
+   297→                  <button
+   298→                    key={cat}
+   299→                    onClick={() => setSelectedCategory(cat)}
+   300→                    className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+   301→                      selectedCategory === cat
+   302→                        ? 'bg-emerald-600 text-white'
+   303→                        : 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700'
+   304→                    }`}
+   305→                  >
+   306→                    {CATEGORY_ICONS[cat]}
+   307→                    {cat}
+   308→                  </button>
+   309→                ))}
+   310→              </div>
+   311→
+   312→              {/* Service count */}
+   313→              <p className="text-slate-500 text-sm mb-4">
+   314→                {filteredByCategory.length} service{filteredByCategory.length !== 1 ? 's' : ''} trouvé{filteredByCategory.length !== 1 ? 's' : ''}
+   315→              </p>
+   316→
+   317→              {/* Service grid */}
+   318→              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+   319→                <AnimatePresence mode="popLayout">
+   320→                  {filteredByCategory.map((service, i) => (
+   321→                    <motion.div
+   322→                      key={service.id}
+   323→                      layout
+   324→                      initial={{ opacity: 0, scale: 0.95 }}
+   325→                      animate={{ opacity: 1, scale: 1 }}
+   326→                      exit={{ opacity: 0, scale: 0.95 }}
+   327→                      transition={{ delay: i * 0.04, duration: 0.3 }}
+   328→                    >
+   329→                      <ServiceCard
+   330→                        service={service}
+   331→                        isFavorite={favorites.includes(service.id)}
+   332→                        onToggleFavorite={() => toggleFavorite(service.id)}
+   333→                      />
+   334→                    </motion.div>
+   335→                  ))}
+   336→                </AnimatePresence>
+   337→              </div>
+   338→
+   339→              {filteredByCategory.length === 0 && (
+   340→                <div className="text-center py-16">
+   341→                  <Search className="h-10 w-10 text-slate-700 mx-auto mb-3" />
+   342→                  <p className="text-slate-500">Aucun service trouvé</p>
+   343→                  <p className="text-slate-600 text-sm mt-1">Essayez de modifier vos critères de recherche</p>
+   344→                </div>
+   345→              )}
+   346→            </motion.div>
+   347→          </TabsContent>
+   348→
+   349→          {/* ── TAB: RECHERCHE ────────────────────────────── */}
+   350→          <TabsContent value="recherche">
+   351→            <motion.div {...fadeUp} className="space-y-6">
+   352→              {/* Advanced filters */}
+   353→              <Card className="bg-slate-900 border-slate-800">
+   354→                <CardHeader className="pb-3">
+   355→                  <CardTitle className="text-white flex items-center gap-2">
+   356→                    <SlidersHorizontal className="h-5 w-5 text-emerald-500" />
+   357→                    Filtres avancés
+   358→                  </CardTitle>
+   359→                </CardHeader>
+   360→                <CardContent>
+   361→                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+   362→                    <div className="space-y-1.5">
+   363→                      <label className="text-slate-400 text-xs">Catégorie</label>
+   364→                      <Select value={searchFilters.category} onValueChange={(v: string) => setSearchFilters(p => ({ ...p, category: v as Category }))}>
+   365→                        <SelectTrigger className="bg-slate-800 border-slate-700 text-slate-200">
+   366→                          <SelectValue />
+   367→                        </SelectTrigger>
+   368→                        <SelectContent className="bg-slate-800 border-slate-700">
+   369→                          {CATEGORIES.map(cat => (
+   370→                            <SelectItem key={cat} value={cat} className="text-slate-200">{cat}</SelectItem>
+   371→                          ))}
+   372→                        </SelectContent>
+   373→                      </Select>
+   374→                    </div>
+   375→                    <div className="space-y-1.5">
+   376→                      <label className="text-slate-400 text-xs">Note minimum</label>
+   377→                      <Select value={searchFilters.ratingMin} onValueChange={v => setSearchFilters(p => ({ ...p, ratingMin: v }))}>
+   378→                        <SelectTrigger className="bg-slate-800 border-slate-700 text-slate-200">
+   379→                          <SelectValue />
+   380→                        </SelectTrigger>
+   381→                        <SelectContent className="bg-slate-800 border-slate-700">
+   382→                          <SelectItem value="0" className="text-slate-200">Toutes les notes</SelectItem>
+   383→                          <SelectItem value="3" className="text-slate-200">3+ étoiles</SelectItem>
+   384→                          <SelectItem value="4" className="text-slate-200">4+ étoiles</SelectItem>
+   385→                          <SelectItem value="4.5" className="text-slate-200">4.5+ étoiles</SelectItem>
+   386→                        </SelectContent>
+   387→                      </Select>
+   388→                    </div>
+   389→                    <div className="space-y-1.5">
+   390→                      <label className="text-slate-400 text-xs">Prix min (FCFA)</label>
+   391→                      <Input
+   392→                        value={searchFilters.priceMin}
+   393→                        onChange={e => setSearchFilters(p => ({ ...p, priceMin: e.target.value }))}
+   394→                        placeholder="0"
+   395→                        type="number"
+   396→                        className="bg-slate-800 border-slate-700 text-white"
+   397→                      />
+   398→                    </div>
+   399→                    <div className="space-y-1.5">
+   400→                      <label className="text-slate-400 text-xs">Prix max (FCFA)</label>
+   401→                      <Input
+   402→                        value={searchFilters.priceMax}
+   403→                        onChange={e => setSearchFilters(p => ({ ...p, priceMax: e.target.value }))}
+   404→                        placeholder="Pas de limite"
+   405→                        type="number"
+   406→                        className="bg-slate-800 border-slate-700 text-white"
+   407→                      />
+   408→                    </div>
+   409→                  </div>
+   410→                </CardContent>
+   411→              </Card>
+   412→
+   413→              {/* Results count */}
+   414→              <p className="text-slate-500 text-sm">
+   415→                {filteredByAdvanced.length} résultat{filteredByAdvanced.length !== 1 ? 's' : ''}
+   416→              </p>
+   417→
+   418→              {/* Results list */}
+   419→              <div className="space-y-3">
+   420→                {filteredByAdvanced.map((service, i) => (
+   421→                  <motion.div
+   422→                    key={service.id}
+   423→                    initial={{ opacity: 0, y: 10 }}
+   424→                    animate={{ opacity: 1, y: 0 }}
+   425→                    transition={{ delay: i * 0.05 }}
+   426→                  >
+   427→                    <Card className="bg-slate-900 border-slate-800 hover:border-slate-700 transition-colors">
+   428→                      <CardContent className="py-4 px-5">
+   429→                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+   430→                          {/* Icon */}
+   431→                          <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${service.gradient} flex items-center justify-center text-emerald-400 shrink-0`}>
+   432→                            {service.icon}
+   433→                          </div>
+   434→
+   435→                          {/* Info */}
+   436→                          <div className="flex-1 min-w-0">
+   437→                            <div className="flex items-center gap-2 mb-1">
+   438→                              <h3 className="text-white font-medium text-sm truncate">{service.title}</h3>
+   439→                              <Badge className="bg-emerald-500/10 text-emerald-400 border-0 text-[10px] shrink-0" variant="outline">
+   440→                                {service.category}
+   441→                              </Badge>
+   442→                            </div>
+   443→                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+   444→                              <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {service.location}</span>
+   445→                              <span className="flex items-center gap-1"><Star className="h-3 w-3 text-yellow-400" /> {service.rating} ({service.reviews} avis)</span>
+   446→                              <span className="text-emerald-400 font-medium">{service.price}</span>
+   447→                            </div>
+   448→                          </div>
+   449→
+   450→                          {/* Actions */}
+   451→                          <div className="flex items-center gap-2 shrink-0">
+   452→                            <Button
+   453→                              size="sm"
+   454→                              variant="outline"
+   455→                              className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white gap-1"
+   456→                            >
+   457→                              <MessageCircle className="h-3.5 w-3.5" /> Contacter
+   458→                            </Button>
+   459→                            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1">
+   460→                              Voir
+   461→                            </Button>
+   462→                          </div>
+   463→                        </div>
+   464→                      </CardContent>
+   465→                    </Card>
+   466→                  </motion.div>
+   467→                ))}
+   468→              </div>
+   469→
+   470→              {filteredByAdvanced.length === 0 && (
+   471→                <div className="text-center py-16">
+   472→                  <Filter className="h-10 w-10 text-slate-700 mx-auto mb-3" />
+   473→                  <p className="text-slate-500">Aucun résultat trouvé</p>
+   474→                  <p className="text-slate-600 text-sm mt-1">Ajustez vos filtres pour trouver un service</p>
+   475→                </div>
+   476→              )}
+   477→            </motion.div>
+   478→          </TabsContent>
+   479→
+   480→          {/* ── TAB: FAVORIS ──────────────────────────────── */}
+   481→          <TabsContent value="favoris">
+   482→            <motion.div {...fadeUp}>
+   483→              <p className="text-slate-500 text-sm mb-6">
+   484→                {favoriteServices.length} service{favoriteServices.length !== 1 ? 's' : ''} en favori{favoriteServices.length !== 1 ? 's' : ''}
+   485→              </p>
+   486→
+   487→              {favoriteServices.length > 0 ? (
+   488→                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+   489→                  <AnimatePresence mode="popLayout">
+   490→                    {favoriteServices.map((service, i) => (
+   491→                      <motion.div
+   492→                        key={service.id}
+   493→                        layout
+   494→                        initial={{ opacity: 0, scale: 0.95 }}
+   495→                        animate={{ opacity: 1, scale: 1 }}
+   496→                        exit={{ opacity: 0, scale: 0.95 }}
+   497→                        transition={{ delay: i * 0.04, duration: 0.3 }}
+   498→                      >
+   499→                        <ServiceCard
+   500→                          service={service}
+   501→                          isFavorite={true}
+   502→                          onToggleFavorite={() => toggleFavorite(service.id)}
+   503→                        />
+   504→                      </motion.div>
+   505→                    ))}
+   506→                  </AnimatePresence>
+   507→                </div>
+   508→              ) : (
+   509→                <div className="text-center py-20">
+   510→                  <div className="w-20 h-20 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto mb-4">
+   511→                    <Heart className="h-8 w-8 text-slate-700" />
+   512→                  </div>
+   513→                  <h3 className="text-white font-medium mb-1">Aucun favori</h3>
+   514→                  <p className="text-slate-500 text-sm max-w-sm mx-auto">
+   515→                    Explorez le marketplace et ajoutez des services à vos favoris pour les retrouver facilement.
+   516→                  </p>
+   517→                  <Button
+   518→                    onClick={() => setTab('marketplace')}
+   519→                    className="mt-6 bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+   520→                  >
+   521→                    <Search className="h-4 w-4" /> Explorer le marketplace
+   522→                  </Button>
+   523→                </div>
+   524→              )}
+   525→            </motion.div>
+   526→          </TabsContent>
+   527→        </Tabs>
+   528→      </div>
+   529→    </div>
+   530→  )
+   531→}
+   532→
+   533→// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   534→// SERVICE CARD COMPONENT
+   535→// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   536→function ServiceCard({ service, isFavorite, onToggleFavorite }: {
+   537→  service: Service
+   538→  isFavorite: boolean
+   539→  onToggleFavorite: () => void
+   540→}) {
+   541→  return (
+   542→    <Card className="bg-slate-900 border-slate-800 hover:border-slate-700 transition-all overflow-hidden group">
+   543→      {/* Image placeholder with gradient */}
+   544→      <div className={`relative h-32 bg-gradient-to-br ${service.gradient} flex items-center justify-center`}>
+   545→        <div className="text-emerald-400/60 group-hover:text-emerald-400 transition-colors">
+   546→          {service.icon}
+   547→        </div>
+   548→        {/* Favorite button */}
+   549→        <button
+   550→          onClick={onToggleFavorite}
+   551→          className="absolute top-2.5 right-2.5 p-1.5 rounded-full bg-slate-900/60 backdrop-blur-sm hover:bg-slate-900/80 transition-colors"
+   552→          aria-label={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+   553→        >
+   554→          <Heart className={`h-4 w-4 transition-colors ${isFavorite ? 'text-red-400 fill-red-400' : 'text-slate-400'}`} />
+   555→        </button>
+   556→      </div>
+   557→
+   558→      <CardContent className="p-4 space-y-3">
+   559→        <div>
+   560→          <h3 className="text-white font-medium text-sm truncate">{service.title}</h3>
+   561→          <Badge className="mt-1.5 bg-emerald-500/10 text-emerald-400 border-0 text-[10px]" variant="outline">
+   562→            {service.category}
+   563→          </Badge>
+   564→        </div>
+   565→
+   566→        <Stars rating={service.rating} />
+   567→
+   568→        <div className="flex items-center gap-1.5 text-slate-500 text-xs">
+   569→          <MapPin className="h-3 w-3 shrink-0" />
+   570→          <span className="truncate">{service.location}</span>
+   571→        </div>
+   572→
+   573→        <div className="flex items-center justify-between">
+   574→          <span className="text-emerald-400 font-semibold text-sm">{service.price}</span>
+   575→        </div>
+   576→
+   577→        <Separator className="bg-slate-800" />
+   578→
+   579→        <div className="flex gap-2">
+   580→          <Button
+   581→            size="sm"
+   582→            variant="outline"
+   583→            className="flex-1 border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white gap-1 h-8 text-xs"
+   584→          >
+   585→            <MessageCircle className="h-3 w-3" /> Contacter
+   586→          </Button>
+   587→          <Button
+   588→            size="sm"
+   589→            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white h-8 text-xs"
+   590→          >
+   591→            Voir
+   592→          </Button>
+   593→        </div>
+   594→      </CardContent>
+   595→    </Card>
+   596→  )
+   597→}
+   598→

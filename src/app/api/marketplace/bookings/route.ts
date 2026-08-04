@@ -8,30 +8,35 @@ async function getDemoUser() {
 
 // ─── GET: list bookings ──────────────────────────────────
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const userId = searchParams.get('userId')
-  const listingId = searchParams.get('listingId')
+  try {
+    const { searchParams } = new URL(request.url)
+    const userId = searchParams.get('userId')
+    const listingId = searchParams.get('listingId')
 
-  const where: Record<string, unknown> = {}
+    const where: Record<string, unknown> = {}
 
-  if (listingId) {
-    where.listingId = listingId
-  } else {
-    // Default to demo user
-    const user = await getDemoUser()
-    if (user) where.userId = user.id
+    if (listingId) {
+      where.listingId = listingId
+    } else {
+      // Default to demo user
+      const user = await getDemoUser()
+      if (user) where.userId = user.id
+    }
+
+    const bookings = await db.bookingRecord.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        listing: { select: { id: true, title: true, category: true, location: true } },
+      },
+      take: 50,
+    })
+
+    return NextResponse.json({ success: true, data: bookings })
+  } catch (error) {
+    console.error('[GET /api/marketplace/bookings] Error:', error)
+    return NextResponse.json({ success: false, error: 'Erreur interne' }, { status: 500 })
   }
-
-  const bookings = await db.bookingRecord.findMany({
-    where,
-    orderBy: { createdAt: 'desc' },
-    include: {
-      listing: { select: { id: true, title: true, category: true, location: true } },
-    },
-    take: 50,
-  })
-
-  return NextResponse.json({ success: true, data: bookings })
 }
 
 // ─── POST: create a booking ─────────────────────────────

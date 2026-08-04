@@ -40,53 +40,58 @@ async function getDemoUser() {
 
 // ─── GET: list marketplace listings ──────────────────────
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const search = searchParams.get('search')
-  const category = searchParams.get('category')
+  try {
+    const { searchParams } = new URL(request.url)
+    const search = searchParams.get('search')
+    const category = searchParams.get('category')
 
-  const where: Record<string, unknown> = { status: 'active' }
+    const where: Record<string, unknown> = { status: 'active' }
 
-  if (search) {
-    where.OR = [
-      { title: { contains: search } },
-      { description: { contains: search } },
-      { category: { contains: search } },
-    ]
+    if (search) {
+      where.OR = [
+        { title: { contains: search } },
+        { description: { contains: search } },
+        { category: { contains: search } },
+      ]
+    }
+
+    if (category && category !== 'Tous') {
+      // Reverse map French label → DB key
+      const dbCategory = Object.entries(CATEGORY_LABELS).find(([, v]) => v === category)?.[0] || category
+      where.category = dbCategory
+    }
+
+    const listings = await db.marketplaceListing.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        _count: { select: { reviews: true, bookings: true } },
+      },
+      take: 100,
+    })
+
+    const formatted = listings.map(l => ({
+      id: l.id,
+      title: l.title,
+      description: l.description,
+      category: CATEGORY_LABELS[l.category] || l.category,
+      categoryKey: l.category,
+      rating: Number(l.rating),
+      reviews: l._count.reviews,
+      price: l.price ? `${Math.round(l.price).toLocaleString('fr-FR')} ${l.priceUnit === 'hourly' ? 'FCFA/h' : l.priceUnit === 'daily' ? 'FCFA/jour' : l.priceUnit === 'monthly' ? 'FCFA/mois' : l.priceUnit === 'per_service' ? 'FCFA/service' : 'FCFA'}` : 'Sur devis',
+      location: l.location,
+      city: l.city,
+      contactPhone: l.contactPhone,
+      contactEmail: l.contactEmail,
+      contactWebsite: l.contactWebsite,
+      gradient: CATEGORY_GRADIENTS[l.category] || 'from-emerald-600/20 to-emerald-800/20',
+    }))
+
+    return NextResponse.json({ success: true, data: formatted })
+  } catch (error) {
+    console.error('[GET /api/marketplace] Error:', error)
+    return NextResponse.json({ success: false, error: 'Erreur interne' }, { status: 500 })
   }
-
-  if (category && category !== 'Tous') {
-    // Reverse map French label → DB key
-    const dbCategory = Object.entries(CATEGORY_LABELS).find(([, v]) => v === category)?.[0] || category
-    where.category = dbCategory
-  }
-
-  const listings = await db.marketplaceListing.findMany({
-    where,
-    orderBy: { createdAt: 'desc' },
-    include: {
-      _count: { select: { reviews: true, bookings: true } },
-    },
-    take: 100,
-  })
-
-  const formatted = listings.map(l => ({
-    id: l.id,
-    title: l.title,
-    description: l.description,
-    category: CATEGORY_LABELS[l.category] || l.category,
-    categoryKey: l.category,
-    rating: Number(l.rating),
-    reviews: l._count.reviews,
-    price: l.price ? `${Math.round(l.price).toLocaleString('fr-FR')} ${l.priceUnit === 'hourly' ? 'FCFA/h' : l.priceUnit === 'daily' ? 'FCFA/jour' : l.priceUnit === 'monthly' ? 'FCFA/mois' : l.priceUnit === 'per_service' ? 'FCFA/service' : 'FCFA'}` : 'Sur devis',
-    location: l.location,
-    city: l.city,
-    contactPhone: l.contactPhone,
-    contactEmail: l.contactEmail,
-    contactWebsite: l.contactWebsite,
-    gradient: CATEGORY_GRADIENTS[l.category] || 'from-emerald-600/20 to-emerald-800/20',
-  }))
-
-  return NextResponse.json({ success: true, data: formatted })
 }
 
 // ─── POST: create a new listing ──────────────────────────

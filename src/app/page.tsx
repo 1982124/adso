@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { useViewStore } from '@/stores/view-store';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import ViewErrorBoundary from '@/components/ViewErrorBoundary';
 
 // ═══════════════════════════════════════════════════════════
 // HOME VIEW — Existing sections (statically imported for instant load)
@@ -110,19 +111,21 @@ export default function Home() {
     <>
       <Navbar />
       <main role="main" aria-label="ADSO — Auto Drive School Online">
-        {currentView === 'home' && <HomeView />}
-        {currentView === 'learning' && <LearningPlatform />}
-        {currentView === 'driving' && <AIDrivingModule />}
-        {currentView === 'mechanic' && <MechanicModule />}
-        {currentView === 'scanner' && <ScannerModule />}
-        {currentView === 'telematics' && <TelematicsModule />}
-        {currentView === 'security' && <SecurityModule />}
-        {currentView === 'marketplace' && <MarketplaceModule />}
-        {currentView === "insurance" && <InsuranceModule />}
-        {currentView === 'fleet' && <FleetModule />}
-        {currentView === 'government' && <GovernmentModule />}
-        {currentView === 'enterprise' && <EnterpriseModule />}
-        {currentView === 'blueprint' && <BlueprintView />}
+        <ViewErrorBoundary>
+          {currentView === 'home' && <HomeView />}
+          {currentView === 'learning' && <LearningPlatform />}
+          {currentView === 'driving' && <AIDrivingModule />}
+          {currentView === 'mechanic' && <MechanicModule />}
+          {currentView === 'scanner' && <ScannerModule />}
+          {currentView === 'telematics' && <TelematicsModule />}
+          {currentView === 'security' && <SecurityModule />}
+          {currentView === 'marketplace' && <MarketplaceModule />}
+          {currentView === "insurance" && <InsuranceModule />}
+          {currentView === 'fleet' && <FleetModule />}
+          {currentView === 'government' && <GovernmentModule />}
+          {currentView === 'enterprise' && <EnterpriseModule />}
+          {currentView === 'blueprint' && <BlueprintView />}
+        </ViewErrorBoundary>
       </main>
       <Footer />
     </>

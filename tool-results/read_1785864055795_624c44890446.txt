@@ -1,0 +1,1785 @@
+     1→'use client';
+     2→
+     3→import React, { useState, useEffect, useCallback, useMemo } from 'react';
+     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→import { countries, type Country } from '@/data/countries';
+     6→import { licenseTypes, type LicenseType } from '@/data/licenses';
+     7→import { quizQuestions, type QuizQuestion } from '@/data/quiz-questions';
+     8→
+     9→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+    10→import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+    11→import { Badge } from '@/components/ui/badge';
+    12→import { Button } from '@/components/ui/button';
+    13→import { Progress } from '@/components/ui/progress';
+    14→import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+    15→import { Skeleton } from '@/components/ui/skeleton';
+    16→import { ScrollArea } from '@/components/ui/scroll-area';
+    17→import { Separator } from '@/components/ui/separator';
+    18→import { Input } from '@/components/ui/input';
+    19→import ExamPlatform from '@/components/modules/learning/ExamPlatform';
+    20→import ProgressDashboard from '@/components/modules/learning/ProgressDashboard';
+    21→import {
+    22→  Globe, Car, Bike, Truck, Bus, Search, Clock, Star, Trophy,
+    23→  ShieldAlert, TriangleAlert, CircleDot, Info, TrafficCone, ArrowRightLeft,
+    24→  ChevronRight, PlayCircle, CheckCircle2, XCircle, Timer,
+    25→  Award, BookOpen, Target, Flame, TrendingUp, GraduationCap,
+    26→  MapPin, CreditCard, Languages, ArrowLeft, Eye, Ban,
+    27→  CircleAlert, OctagonAlert, SquareParking, Cross, Route,
+    28→  AlertTriangle, Circle, ArrowDown, ArrowUp, MoveHorizontal,
+    29→  PersonStanding, Minus, ParkingCircle, Hospital, Waypoints,
+    30→  CircleOff, BanIcon, Hand, Pause, Sparkles, Lock, TrainFront
+    31→} from 'lucide-react';
+    32→
+    33→// ─── Types ───────────────────────────────────────────────────────────────
+    34→
+    35→type CourseFromAPI = {
+    36→  id: string;
+    37→  title: string;
+    38→  description: string;
+    39→  category: string;
+    40→  level: string;
+    41→  duration: number;
+    42→  order: number;
+    43→  icon: string | null;
+    44→  isPremium: boolean;
+    45→  modules: CourseModuleFromAPI[];
+    46→  studentProgress?: {
+    47→    id: string;
+    48→    progress: number;
+    49→    status: string;
+    50→    lastAccess: string | null;
+    51→  } | null;
+    52→};
+    53→
+    54→type CourseModuleFromAPI = {
+    55→  id: string;
+    56→  courseId: string;
+    57→  title: string;
+    58→  content: string;
+    59→  type: string;
+    60→  order: number;
+    61→  duration: number;
+    62→};
+    63→
+    64→type RoadSignCategory = {
+    65→  id: string;
+    66→  name: string;
+    67→  description: string;
+    68→  color: string;
+    69→  bgColor: string;
+    70→  borderColor: string;
+    71→  signs: RoadSign[];
+    72→};
+    73→
+    74→type RoadSign = {
+    75→  name: string;
+    76→  description: string;
+    77→  whenToObey: string;
+    78→  shape: 'circle' | 'triangle' | 'square' | 'octagon' | 'rectangle' | 'diamond';
+    79→  icon: React.ReactNode;
+    80→  signColor: string;
+    81→};
+    82→
+    83→type ExamState = 'idle' | 'running' | 'finished';
+    84→
+    85→// ─── Road Signs Data ─────────────────────────────────────────────────────
+    86→
+    87→const roadSignCategories: RoadSignCategory[] = [
+    88→  {
+    89→    id: 'interdiction',
+    90→    name: 'Panneaux d\'interdiction',
+    91→    description: 'Signes rouges ronds indiquant ce qui est interdit',
+    92→    color: 'text-red-400',
+    93→    bgColor: 'bg-red-950/40',
+    94→    borderColor: 'border-red-800/50',
+    95→    signs: [
+    96→      {
+    97→        name: 'STOP',
+    98→        description: 'Arrêt obligatoire. Le conducteur doit marquer un temps d\'arrêt avant de s\'engager.',
+    99→        whenToObey: 'À chaque intersection où ce panneau est présent, même en l\'absence de trafic.',
+   100→        shape: 'octagon',
+   101→        signColor: 'bg-red-600',
+   102→        icon: <OctagonAlert className="h-8 w-8 text-white" />,
+   103→      },
+   104→      {
+   105→        name: 'Sens interdit',
+   106→        description: 'Interdiction de circuler dans le sens indiqué par le panneau.',
+   107→        whenToObey: 'Dès que le panneau est visible, ne pas s\'engager dans cette direction.',
+   108→        shape: 'circle',
+   109→        signColor: 'bg-red-600',
+   110→        icon: <BanIcon className="h-8 w-8 text-white" />,
+   111→      },
+   112→      {
+   113→        name: 'Interdiction de tourner à droite',
+   114→        description: 'Il est interdit de tourner à droite à l\'intersection suivante.',
+   115→        whenToObey: 'À l\'approche de l\'intersection concernée.',
+   116→        shape: 'circle',
+   117→        signColor: 'bg-red-600',
+   118→        icon: <div className="flex h-8 w-8 items-center justify-center"><ArrowRightLeft className="h-6 w-6 text-white rotate-[-45deg]" /></div>,
+   119→      },
+   120→      {
+   121→        name: 'Interdiction de tourner à gauche',
+   122→        description: 'Il est interdit de tourner à gauche à l\'intersection suivante.',
+   123→        whenToObey: 'À l\'approche de l\'intersection concernée.',
+   124→        shape: 'circle',
+   125→        signColor: 'bg-red-600',
+   126→        icon: <div className="flex h-8 w-8 items-center justify-center"><ArrowRightLeft className="h-6 w-6 text-white rotate-45" /></div>,
+   127→      },
+   128→      {
+   129→        name: 'Limite de vitesse 30 km/h',
+   130→        description: 'La vitesse maximale autorisée est de 30 km/h dans cette zone.',
+   131→        whenToObey: 'Dès l\'entrée de la zone et jusqu\'au panneau de fin de limitation.',
+   132→        shape: 'circle',
+   133→        signColor: 'bg-red-600',
+   134→        icon: <div className="flex h-8 w-8 items-center justify-center text-white font-bold text-xs">30</div>,
+   135→      },
+   136→      {
+   137→        name: 'Limite de vitesse 50 km/h',
+   138→        description: 'La vitesse maximale autorisée est de 50 km/h (vitesse par défaut en agglomération).',
+   139→        whenToObey: 'En agglomération ou dès que le panneau est en place.',
+   140→        shape: 'circle',
+   141→        signColor: 'bg-red-600',
+   142→        icon: <div className="flex h-8 w-8 items-center justify-center text-white font-bold text-xs">50</div>,
+   143→      },
+   144→      {
+   145→        name: 'Limite de vitesse 90 km/h',
+   146→        description: 'La vitesse maximale autorisée est de 90 km/h sur route.',
+   147→        whenToObey: 'Sur routes à deux voies en dehors des agglomérations.',
+   148→        shape: 'circle',
+   149→        signColor: 'bg-red-600',
+   150→        icon: <div className="flex h-8 w-8 items-center justify-center text-white font-bold text-xs">90</div>,
+   151→      },
+   152→      {
+   153→        name: 'Limite de vitesse 130 km/h',
+   154→        description: 'La vitesse maximale autorisée est de 130 km/h sur autoroute par temps sec.',
+   155→        whenToObey: 'Sur autoroute, réduite à 110 km/h par temps de pluie.',
+   156→        shape: 'circle',
+   157→        signColor: 'bg-red-600',
+   158→        icon: <div className="flex h-8 w-8 items-center justify-center text-white font-bold text-[10px]">130</div>,
+   159→      },
+   160→      {
+   161→        name: 'Interdiction de dépasser',
+   162→        description: 'Il est interdit de dépasser les véhicules circulant dans le même sens.',
+   163→        whenToObey: 'Sur toute la section de route concernée par le panneau.',
+   164→        shape: 'circle',
+   165→        signColor: 'bg-red-600',
+   166→        icon: <div className="flex h-8 w-8 items-center justify-center"><MoveHorizontal className="h-6 w-6 text-white" /></div>,
+   167→      },
+   168→      {
+   169→        name: 'Circulation interdite aux piétons',
+   170→        description: 'Les piétons ne sont pas autorisés à circuler sur cette voie.',
+   171→        whenToObey: 'Piétons doivent utiliser les trottoirs ou passages prévus.',
+   172→        shape: 'circle',
+   173→        signColor: 'bg-red-600',
+   174→        icon: <PersonStanding className="h-8 w-8 text-white" />,
+   175→      },
+   176→    ],
+   177→  },
+   178→  {
+   179→    id: 'obligation',
+   180→    name: 'Panneaux d\'obligation',
+   181→    description: 'Signes bleus ronds imposant une direction ou une action',
+   182→    color: 'text-blue-400',
+   183→    bgColor: 'bg-blue-950/40',
+   184→    borderColor: 'border-blue-800/50',
+   185→    signs: [
+   186→      {
+   187→        name: 'Sens obligatoire (tout droit)',
+   188→        description: 'Le conducteur doit poursuivre tout droit. Tout autre direction est interdite.',
+   189→        whenToObey: 'À l\'approche de l\'intersection, suivre uniquement la direction indiquée.',
+   190→        shape: 'circle',
+   191→        signColor: 'bg-blue-600',
+   192→        icon: <ArrowUp className="h-8 w-8 text-white" />,
+   193→      },
+   194→      {
+   195→        name: 'Tourner à droite obligatoire',
+   196→        description: 'Le conducteur est obligé de tourner à droite à la prochaine intersection.',
+   197→        whenToObey: 'À l\'intersection, prendre uniquement la direction droite.',
+   198→        shape: 'circle',
+   199→        signColor: 'bg-blue-600',
+   200→        icon: <div className="flex h-8 w-8 items-center justify-center"><ChevronRight className="h-7 w-7 text-white" /></div>,
+   201→      },
+   202→      {
+   203→        name: 'Tourner à gauche obligatoire',
+   204→        description: 'Le conducteur est obligé de tourner à gauche à la prochaine intersection.',
+   205→        whenToObey: 'À l\'intersection, prendre uniquement la direction gauche.',
+   206→        shape: 'circle',
+   207→        signColor: 'bg-blue-600',
+   208→        icon: <div className="flex h-8 w-8 items-center justify-center"><ChevronRight className="h-7 w-7 text-white rotate-180" /></div>,
+   209→      },
+   210→      {
+   211→        name: 'Contournement obligatoire par la droite',
+   212→        description: 'Le conducteur doit contourner l\'obstacle en passant par la droite.',
+   213→        whenToObey: 'En présence d\'un obstacle sur la chaussée.',
+   214→        shape: 'circle',
+   215→        signColor: 'bg-blue-600',
+   216→        icon: <ArrowRightLeft className="h-7 w-7 text-white" />,
+   217→      },
+   218→      {
+   219→        name: 'Contournement obligatoire par la gauche',
+   220→        description: 'Le conducteur doit contourner l\'obstacle en passant par la gauche.',
+   221→        whenToObey: 'En présence d\'un obstacle sur la chaussée.',
+   222→        shape: 'circle',
+   223→        signColor: 'bg-blue-600',
+   224→        icon: <ArrowRightLeft className="h-7 w-7 text-white rotate-180" />,
+   225→      },
+   226→      {
+   227→        name: 'Piste cyclable obligatoire',
+   228→        description: 'Les cyclistes doivent utiliser la piste cyclable.',
+   229→        whenToObey: 'Dès que la piste est disponible, les cyclistes doivent l\'emprunter.',
+   230→        shape: 'circle',
+   231→        signColor: 'bg-blue-600',
+   232→        icon: <Bike className="h-7 w-7 text-white" />,
+   233→      },
+   234→    ],
+   235→  },
+   236→  {
+   237→    id: 'danger',
+   238→    name: 'Panneaux de danger',
+   239→    description: 'Signes triangulaires avertissant d\'un danger potentiel',
+   240→    color: 'text-amber-400',
+   241→    bgColor: 'bg-amber-950/40',
+   242→    borderColor: 'border-amber-800/50',
+   243→    signs: [
+   244→      {
+   245→        name: 'Virage dangereux à droite',
+   246→        description: 'Avertissement d\'un virage serré à droite. Réduisez votre vitesse.',
+   247→        whenToObey: 'Avant le virage, ralentir et adapter sa trajectoire.',
+   248→        shape: 'triangle',
+   249→        signColor: 'bg-amber-500',
+   250→        icon: <div className="flex h-8 w-8 items-center justify-center"><ChevronRight className="h-7 w-7 text-white rotate-[-30deg]" /></div>,
+   251→      },
+   252→      {
+   253→        name: 'Virage dangereux à gauche',
+   254→        description: 'Avertissement d\'un virage serré à gauche. Réduisez votre vitesse.',
+   255→        whenToObey: 'Avant le virage, ralentir et adapter sa trajectoire.',
+   256→        shape: 'triangle',
+   257→        signColor: 'bg-amber-500',
+   258→        icon: <div className="flex h-8 w-8 items-center justify-center"><ChevronRight className="h-7 w-7 text-white rotate-210" /></div>,
+   259→      },
+   260→      {
+   261→        name: 'Cédez le passage',
+   262→        description: 'Le conducteur doit céder le passage aux véhicules sur la route prioritaire.',
+   263→        whenToObey: 'Ralentir et s\'arrêter si nécessaire avant l\'intersection.',
+   264→        shape: 'triangle',
+   265→        signColor: 'bg-amber-500',
+   266→        icon: <TriangleAlert className="h-8 w-8 text-white" />,
+   267→      },
+   268→      {
+   269→        name: 'Rétrécissement de la chaussée',
+   270→        description: 'La chaussée se rétrécit. Les véhicules doivent se serrer.',
+   271→        whenToObey: 'Ralentir et laisser passer les véhicules en sens inverse.',
+   272→        shape: 'triangle',
+   273→        signColor: 'bg-amber-500',
+   274→        icon: <MoveHorizontal className="h-7 w-7 text-white" />,
+   275→      },
+   276→      {
+   277→        name: 'Passage à niveau sans barrière',
+   278→        description: 'Un passage à niveau sans barrières se trouve à proximité.',
+   279→        whenToObey: 'Ralentir, regarder des deux côtés et s\'arrêter si un train approche.',
+   280→        shape: 'triangle',
+   281→        signColor: 'bg-amber-500',
+   282→        icon: <TrainFront className="h-7 w-7 text-white" />,
+   283→      },
+   284→      {
+   285→        name: 'Danger (générique)',
+   286→        description: 'Panonceau de danger générique indiquant un risque non spécifié.',
+   287→        whenToObey: 'Redoubler de vigilance dans la zone signalée.',
+   288→        shape: 'triangle',
+   289→        signColor: 'bg-amber-500',
+   290→        icon: <AlertTriangle className="h-8 w-8 text-white" />,
+   291→      },
+   292→      {
+   293→        name: 'Glissement de terrain',
+   294→        description: 'Risque de chutes de pierres ou glissement de terrain.',
+   295→        whenToObey: 'Ne pas s\'arrêter et circuler à vitesse réduite.',
+   296→        shape: 'triangle',
+   297→        signColor: 'bg-amber-500',
+   298→        icon: <TrendingUp className="h-7 w-7 text-white rotate-90" />,
+   299→      },
+   300→      {
+   301→        name: 'Travaux',
+   302→        description: 'Travaux en cours sur la chaussée. Circulation perturbée.',
+   303→        whenToObey: 'Ralentir, respecter les signalisations temporaires.',
+   304→        shape: 'triangle',
+   305→        signColor: 'bg-amber-500',
+   306→        icon: <TrafficCone className="h-7 w-7 text-white" />,
+   307→      },
+   308→    ],
+   309→  },
+   310→  {
+   311→    id: 'indication',
+   312→    name: 'Panneaux d\'indication',
+   313→    description: 'Signes rectangulaires fournissant des informations utiles',
+   314→    color: 'text-emerald-400',
+   315→    bgColor: 'bg-emerald-950/40',
+   316→    borderColor: 'border-emerald-800/50',
+   317→    signs: [
+   318→      {
+   319→        name: 'Parking',
+   320→        description: 'Indique un parking disponible à proximité.',
+   321→        whenToObey: 'Respecter les règles de stationnement du parking.',
+   322→        shape: 'square',
+   323→        signColor: 'bg-blue-600',
+   324→        icon: <SquareParking className="h-8 w-8 text-white" />,
+   325→      },
+   326→      {
+   327→        name: 'Hôpital',
+   328→        description: 'Indique la proximité d\'un hôpital ou d\'un service d\'urgence.',
+   329→        whenToObey: 'Pas de klaxon, circuler lentement à proximité.',
+   330→        shape: 'square',
+   331→        signColor: 'bg-blue-600',
+   332→        icon: <Hospital className="h-8 w-8 text-white" />,
+   333→      },
+   334→      {
+   335→        name: 'Route prioritaire',
+   336→        description: 'Indique que la route sur laquelle on circule est prioritaire.',
+   337→        whenToObey: 'Bénéficiez de la priorité aux intersections suivantes.',
+   338→        shape: 'square',
+   339→        signColor: 'bg-emerald-600',
+   340→        icon: <Route className="h-8 w-8 text-white" />,
+   341→      },
+   342→      {
+   343→        name: 'Fin de route prioritaire',
+   344→        description: 'La route prioritaire se termine. La règle de priorité à droite s\'applique.',
+   345→        whenToObey: 'Céder le passage aux véhicules venant de la droite.',
+   346→        shape: 'square',
+   347→        signColor: 'bg-slate-500',
+   348→        icon: <Route className="h-8 w-8 text-white" />,
+   349→      },
+   350→      {
+   351→        name: 'Passage piéton',
+   352→        description: 'Indique un passage pour piétons.',
+   353→        whenToObey: 'Céder le passage aux piétons qui s\'engagent ou sont sur le passage.',
+   354→        shape: 'square',
+   355→        signColor: 'bg-blue-600',
+   356→        icon: <PersonStanding className="h-8 w-8 text-white" />,
+   357→      },
+   358→      {
+   359→        name: 'Zone de rencontre',
+   360→        description: 'Zone où piétons et véhicules partagent l\'espace. Vitesse limitée à 20 km/h.',
+   361→        whenToObey: 'Circuler à 20 km/h max et céder le passage aux piétons.',
+   362→        shape: 'rectangle',
+   363→        signColor: 'bg-blue-600',
+   364→        icon: <PersonStanding className="h-8 w-8 text-white" />,
+   365→      },
+   366→      {
+   367→        name: 'Autoroute',
+   368→        description: 'Indique l\'accès à une autoroute.',
+   369→        whenToObey: 'Respecter les règles spécifiques de l\'autoroute.',
+   370→        shape: 'rectangle',
+   371→        signColor: 'bg-emerald-600',
+   372→        icon: <Waypoints className="h-8 w-8 text-white" />,
+   373→      },
+   374→      {
+   375→        name: 'Fin d\'autoroute',
+   376→        description: 'Indique la sortie d\'autoroute.',
+   377→        whenToObey: 'Adapter sa vitesse aux règles de la route ordinaire.',
+   378→        shape: 'rectangle',
+   379→        signColor: 'bg-slate-500',
+   380→        icon: <Waypoints className="h-8 w-8 text-white" />,
+   381→      },
+   382→    ],
+   383→  },
+   384→  {
+   385→    id: 'feux',
+   386→    name: 'Feux tricolores',
+   387→    description: 'Signalisation lumineuse régulant le trafic aux intersections',
+   388→    color: 'text-purple-400',
+   389→    bgColor: 'bg-purple-950/40',
+   390→    borderColor: 'border-purple-800/50',
+   391→    signs: [
+   392→      {
+   393→        name: 'Feu rouge — Stop',
+   394→        description: 'L\'arrêt est obligatoire. Aucun véhicule ne peut franchir la ligne d\'arrêt.',
+   395→        whenToObey: 'Toujours. L\'arrêt doit être complet devant la ligne d\'arrêt.',
+   396→        shape: 'circle',
+   397→        signColor: 'bg-red-600',
+   398→        icon: <Circle className="h-8 w-8 text-white fill-white" />,
+   399→      },
+   400→      {
+   401→        name: 'Feu orange — Alerte',
+   402→        description: 'Le conducteur doit s\'arrêter sauf si son véhicule est trop proche pour s\'arrêter en sécurité.',
+   403→        whenToObey: 'Ralentir et se préparer à s\'arrêter. Ne pas accélérer.',
+   404→        shape: 'circle',
+   405→        signColor: 'bg-amber-500',
+   406→        icon: <Circle className="h-8 w-8 text-amber-200 fill-amber-200" />,
+   407→      },
+   408→      {
+   409→        name: 'Feu vert — Passage',
+   410→        description: 'Le passage est autorisé. Le conducteur peut s\'engager dans l\'intersection.',
+   411→        whenToObey: 'Vérifier que l\'intersection est dégagée avant de s\'engager.',
+   412→        shape: 'circle',
+   413→        signColor: 'bg-emerald-500',
+   414→        icon: <Circle className="h-8 w-8 text-white fill-white" />,
+   415→      },
+   416→    ],
+   417→  },
+   418→  {
+   419→    id: 'marquages',
+   420→    name: 'Marquages au sol',
+   421→    description: 'Lignes et marquages peints sur la chaussée',
+   422→    color: 'text-slate-300',
+   423→    bgColor: 'bg-slate-800/40',
+   424→    borderColor: 'border-slate-600/50',
+   425→    signs: [
+   426→      {
+   427→        name: 'Ligne continue',
+   428→        description: 'Ligne blanche continue interdisant le dépassement et le franchissement.',
+   429→        whenToObey: 'Ne pas franchir la ligne. Ne pas dépasser.',
+   430→        shape: 'rectangle',
+   431→        signColor: 'bg-white',
+   432→        icon: <Minus className="h-8 w-8 text-slate-900" />,
+   433→      },
+   434→      {
+   435→        name: 'Ligne discontinue',
+   436→        description: 'Ligne blanche discontinue autorisant le dépassement.',
+   437→        whenToObey: 'Le dépassement est autorisé si la visibilité est suffisante.',
+   438→        shape: 'rectangle',
+   439→        signColor: 'bg-white',
+   440→        icon: <div className="flex flex-col gap-0.5"><Minus className="h-3 w-8 text-slate-900" /><Minus className="h-3 w-8 text-slate-900" /></div>,
+   441→      },
+   442→      {
+   443→        name: 'Passage piéton',
+   444→        description: 'Bande blanche sur la chaussée indiquant un passage protégé pour piétons.',
+   445→        whenToObey: 'Céder le passage aux piétons engagés sur le passage.',
+   446→        shape: 'rectangle',
+   447→        signColor: 'bg-white',
+   448→        icon: <PersonStanding className="h-8 w-8 text-slate-900" />,
+   449→      },
+   450→      {
+   451→        name: 'Ligne d\'arrêt (feu/STOP)',
+   452→        description: 'Ligne blanche continue indiquant où le véhicule doit s\'arrêter.',
+   453→        whenToObey: 'S\'arrêter avant cette ligne à un feu rouge ou STOP.',
+   454→        shape: 'rectangle',
+   455→        signColor: 'bg-white',
+   456→        icon: <div className="flex h-8 w-8 items-center justify-center"><ArrowDown className="h-6 w-6 text-slate-900" /></div>,
+   457→      },
+   458→      {
+   459→        name: 'Zebrage diagonal (voie d\'arrêt d\'urgence)',
+   460→        description: 'Zebrage indiquant une voie réservée aux véhicules d\'urgence.',
+   461→        whenToObey: 'Ne jamais circuler ni stationner sur un zèbre d\'urgence.',
+   462→        shape: 'rectangle',
+   463→        signColor: 'bg-white',
+   464→        icon: <div className="flex h-8 w-8 items-center justify-center text-slate-900 font-bold text-lg">E</div>,
+   465→      },
+   466→    ],
+   467→  },
+   468→];
+   469→
+   470→// ─── Mock Exam History ────────────────────────────────────────────────────
+   471→
+   472→const mockExamHistory = [
+   473→  { id: '1', date: '2025-01-15', score: 18, total: 20, passed: true, duration: '14:32' },
+   474→  { id: '2', date: '2025-01-12', score: 15, total: 20, passed: true, duration: '17:05' },
+   475→  { id: '3', date: '2025-01-10', score: 12, total: 20, passed: false, duration: '19:50' },
+   476→  { id: '4', date: '2025-01-08', score: 16, total: 20, passed: true, duration: '16:20' },
+   477→  { id: '5', date: '2025-01-05', score: 10, total: 20, passed: false, duration: '20:00' },
+   478→];
+   479→
+   480→// ─── Helpers ─────────────────────────────────────────────────────────────
+   481→
+   482→function shuffleArray<T>(arr: T[]): T[] {
+   483→  const shuffled = [...arr];
+   484→  for (let i = shuffled.length - 1; i > 0; i--) {
+   485→    const j = Math.floor(Math.random() * (i + 1));
+   486→    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+   487→  }
+   488→  return shuffled;
+   489→}
+   490→
+   491→function formatTime(seconds: number): string {
+   492→  const m = Math.floor(seconds / 60);
+   493→  const s = seconds % 60;
+   494→  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+   495→}
+   496→
+   497→function getLicenseIcon(iconName: string) {
+   498→  switch (iconName) {
+   499→    case 'Car': return <Car className="h-6 w-6" />;
+   500→    case 'Bike': return <Bike className="h-6 w-6" />;
+   501→    case 'Truck': return <Truck className="h-6 w-6" />;
+   502→    case 'Bus': return <Bus className="h-6 w-6" />;
+   503→    default: return <Car className="h-6 w-6" />;
+   504→  }
+   505→}
+   506→
+   507→function getCategoryLabel(category: string): string {
+   508→  const map: Record<string, string> = {
+   509→    theory: 'Théorie',
+   510→    practice: 'Pratique',
+   511→    safety: 'Sécurité',
+   512→    regulations: 'Réglementation',
+   513→    'eco-driving': 'Éco-conduite',
+   514→    highway: 'Autoroute',
+   515→  };
+   516→  return map[category] || category;
+   517→}
+   518→
+   519→function getLevelLabel(level: string): string {
+   520→  const map: Record<string, string> = {
+   521→    beginner: 'Débutant',
+   522→    intermediate: 'Intermédiaire',
+   523→    advanced: 'Avancé',
+   524→  };
+   525→  return map[level] || level;
+   526→}
+   527→
+   528→function getDifficultyColor(difficulty: string) {
+   529→  switch (difficulty) {
+   530→    case 'easy': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+   531→    case 'medium': return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+   532→    case 'hard': return 'bg-red-500/20 text-red-400 border-red-500/30';
+   533→    default: return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
+   534→  }
+   535→}
+   536→
+   537→// ─── Sign Shape Component ─────────────────────────────────────────────────
+   538→
+   539→function SignShape({ shape, signColor, children }: { shape: string; signColor: string; children: React.ReactNode }) {
+   540→  const baseClasses = 'flex items-center justify-center shrink-0';
+   541→  switch (shape) {
+   542→    case 'octagon':
+   543→      return (
+   544→        <div className={`${baseClasses} h-16 w-16 ${signColor} clip-octagon rounded-sm`}
+   545→          style={{ clipPath: 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)' }}>
+   546→          {children}
+   547→        </div>
+   548→      );
+   549→    case 'triangle':
+   550→      return (
+   551→        <div className={`${baseClasses} h-16 w-16 ${signColor} bg-transparent relative`}
+   552→          style={{ clipPath: 'polygon(50% 0%, 100% 100%, 0% 100%)' }}>
+   553→          <div className="absolute inset-0 bg-white/10" style={{ clipPath: 'polygon(50% 8%, 92% 92%, 8% 92%)' }} />
+   554→          <div className="relative z-10 pt-5">{children}</div>
+   555→        </div>
+   556→      );
+   557→    case 'circle':
+   558→      return (
+   559→        <div className={`${baseClasses} h-16 w-16 ${signColor} rounded-full`}>{children}</div>
+   560→      );
+   561→    case 'square':
+   562→      return (
+   563→        <div className={`${baseClasses} h-14 w-14 ${signColor} rounded-sm`}>{children}</div>
+   564→      );
+   565→    case 'rectangle':
+   566→      return (
+   567→        <div className={`${baseClasses} h-12 w-16 ${signColor} rounded-sm`}>{children}</div>
+   568→      );
+   569→    default:
+   570→      return (
+   571→        <div className={`${baseClasses} h-14 w-14 ${signColor} rounded-sm`}>{children}</div>
+   572→      );
+   573→  }
+   574→}
+   575→
+   576→// ─── Tab Animation Wrapper ────────────────────────────────────────────────
+   577→
+   578→function TabAnimation({ children, keyProp }: { children: React.ReactNode; keyProp: string }) {
+   579→  return (
+   580→    <AnimatePresence mode="wait">
+   581→      <motion.div
+   582→        key={keyProp}
+   583→        initial={{ opacity: 0, y: 12 }}
+   584→        animate={{ opacity: 1, y: 0 }}
+   585→        exit={{ opacity: 0, y: -12 }}
+   586→        transition={{ duration: 0.25, ease: 'easeOut' }}
+   587→      >
+   588→        {children}
+   589→      </motion.div>
+   590→    </AnimatePresence>
+   591→  );
+   592→}
+   593→
+   594→// ─── Main Component ───────────────────────────────────────────────────────
+   595→
+   596→export default function LearningPlatform() {
+   597→  const [activeTab, setActiveTab] = useState('explorer');
+   598→
+   599→  return (
+   600→    <div className="min-h-screen bg-slate-950 pt-16">
+   601→      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+   602→        {/* Header */}
+   603→        <motion.div
+   604→          initial={{ opacity: 0, y: -20 }}
+   605→          animate={{ opacity: 1, y: 0 }}
+   606→          transition={{ duration: 0.4 }}
+   607→          className="mb-8"
+   608→        >
+   609→          <div className="flex items-center gap-3 mb-2">
+   610→            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-600/20">
+   611→              <GraduationCap className="h-6 w-6 text-emerald-400" />
+   612→            </div>
+   613→            <h1 className="text-2xl font-bold text-white sm:text-3xl">
+   614→              Plateforme d&rsquo;apprentissage
+   615→            </h1>
+   616→          </div>
+   617→          <p className="text-slate-400 ml-[52px]">
+   618→            Explorez les pays, formations, signalisation et passez vos examens
+   619→          </p>
+   620→        </motion.div>
+   621→
+   622→        {/* Tabs */}
+   623→        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+   624→          <TabsList className="mb-6 flex h-auto w-full flex-wrap gap-1 rounded-xl bg-slate-900/80 p-1.5">
+   625→            {[
+   626→              { value: 'explorer', label: 'Explorer', icon: <Globe className="h-4 w-4" /> },
+   627→              { value: 'cours', label: 'Cours', icon: <BookOpen className="h-4 w-4" /> },
+   628→              { value: 'signalisation', label: 'Signalisation', icon: <ShieldAlert className="h-4 w-4" /> },
+   629→              { value: 'examens', label: 'Examens', icon: <Target className="h-4 w-4" /> },
+   630→              { value: 'progression', label: 'Progression', icon: <TrendingUp className="h-4 w-4" /> },
+   631→            ].map((tab) => (
+   632→              <TabsTrigger
+   633→                key={tab.value}
+   634→                value={tab.value}
+   635→                className="flex-1 min-w-[80px] flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-xs sm:text-sm font-medium data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-600/20 text-slate-400 transition-all"
+   636→              >
+   637→                {tab.icon}
+   638→                <span className="hidden sm:inline">{tab.label}</span>
+   639→              </TabsTrigger>
+   640→            ))}
+   641→          </TabsList>
+   642→
+   643→          <TabsContent value="explorer" className="mt-0">
+   644→            <TabAnimation keyProp="explorer">
+   645→              <ExplorerTab />
+   646→            </TabAnimation>
+   647→          </TabsContent>
+   648→
+   649→          <TabsContent value="cours" className="mt-0">
+   650→            <TabAnimation keyProp="cours">
+   651→              <CoursesTab />
+   652→            </TabAnimation>
+   653→          </TabsContent>
+   654→
+   655→          <TabsContent value="signalisation" className="mt-0">
+   656→            <TabAnimation keyProp="signalisation">
+   657→              <SignalisationTab />
+   658→            </TabAnimation>
+   659→          </TabsContent>
+   660→
+   661→          <TabsContent value="examens" className="mt-0">
+   662→            <TabAnimation keyProp="examens">
+   663→              <ExamPlatform />
+   664→            </TabAnimation>
+   665→          </TabsContent>
+   666→
+   667→          <TabsContent value="progression" className="mt-0">
+   668→            <TabAnimation keyProp="progression">
+   669→              <ProgressDashboard />
+   670→            </TabAnimation>
+   671→          </TabsContent>
+   672→        </Tabs>
+   673→      </div>
+   674→    </div>
+   675→  );
+   676→}
+   677→
+   678→// ─── Tab 1: Explorer ──────────────────────────────────────────────────────
+   679→
+   680→function ExplorerTab() {
+   681→  const [selectedRegion, setSelectedRegion] = useState<string>('Tous');
+   682→  const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
+   683→  const [searchQuery, setSearchQuery] = useState('');
+   684→
+   685→  const regions = useMemo(() => {
+   686→    const r = [...new Set(countries.map((c) => c.region))];
+   687→    return ['Tous', ...r];
+   688→  }, []);
+   689→
+   690→  const filteredCountries = useMemo(() => {
+   691→    return countries.filter((c) => {
+   692→      const matchRegion = selectedRegion === 'Tous' || c.region === selectedRegion;
+   693→      const matchSearch = searchQuery === '' ||
+   694→        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+   695→        c.code.toLowerCase().includes(searchQuery.toLowerCase());
+   696→      return matchRegion && matchSearch;
+   697→    });
+   698→  }, [selectedRegion, searchQuery]);
+   699→
+   700→  const countryLicenses = useMemo(() => {
+   701→    if (!selectedCountry) return [];
+   702→    return licenseTypes.filter((lt) => selectedCountry.licenseTypes.includes(lt.id));
+   703→  }, [selectedCountry]);
+   704→
+   705→  return (
+   706→    <div className="space-y-6">
+   707→      {/* Search & Filters */}
+   708→      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+   709→        <div className="relative flex-1">
+   710→          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+   711→          <Input
+   712→            placeholder="Rechercher un pays..."
+   713→            value={searchQuery}
+   714→            onChange={(e) => setSearchQuery(e.target.value)}
+   715→            className="border-slate-700 bg-slate-900 pl-9 text-white placeholder:text-slate-500 focus-visible:ring-emerald-500"
+   716→          />
+   717→        </div>
+   718→        <div className="flex flex-wrap gap-2">
+   719→          {regions.map((region) => (
+   720→            <Button
+   721→              key={region}
+   722→              variant={selectedRegion === region ? 'default' : 'outline'}
+   723→              size="sm"
+   724→              onClick={() => setSelectedRegion(region)}
+   725→              className={selectedRegion === region
+   726→                ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500'
+   727→                : 'border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white'
+   728→              }
+   729→            >
+   730→              {region}
+   731→            </Button>
+   732→          ))}
+   733→        </div>
+   734→      </div>
+   735→
+   736→      {/* Country Grid */}
+   737→      {!selectedCountry ? (
+   738→        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+   739→          {filteredCountries.map((country) => (
+   740→            <motion.button
+   741→              key={country.code}
+   742→              whileHover={{ scale: 1.03 }}
+   743→              whileTap={{ scale: 0.98 }}
+   744→              onClick={() => setSelectedCountry(country)}
+   745→              className="group rounded-xl border border-slate-800 bg-slate-900 p-4 text-left transition-colors hover:border-emerald-600/50 hover:bg-slate-800/80"
+   746→            >
+   747→              <div className="text-3xl mb-2">{country.flag}</div>
+   748→              <h3 className="text-sm font-semibold text-white group-hover:text-emerald-400 transition-colors truncate">
+   749→                {country.name}
+   750→              </h3>
+   751→              <p className="text-xs text-slate-500 mt-1">{country.region}</p>
+   752→            </motion.button>
+   753→          ))}
+   754→        </div>
+   755→      ) : (
+   756→        <div className="space-y-6">
+   757→          {/* Back button */}
+   758→          <Button
+   759→            variant="ghost"
+   760→            onClick={() => setSelectedCountry(null)}
+   761→            className="text-slate-400 hover:text-white hover:bg-slate-800"
+   762→          >
+   763→            <ArrowLeft className="h-4 w-4 mr-2" />
+   764→            Retour aux pays
+   765→          </Button>
+   766→
+   767→          {/* Country Details Card */}
+   768→          <Card className="border-slate-800 bg-slate-900 overflow-hidden">
+   769→            <CardHeader className="pb-4">
+   770→              <div className="flex items-center gap-4">
+   771→                <span className="text-5xl">{selectedCountry.flag}</span>
+   772→                <div>
+   773→                  <CardTitle className="text-xl text-white">{selectedCountry.name}</CardTitle>
+   774→                  <CardDescription className="text-slate-400">
+   775→                    {selectedCountry.region} · {selectedCountry.code}
+   776→                  </CardDescription>
+   777→                </div>
+   778→              </div>
+   779→            </CardHeader>
+   780→            <CardContent className="space-y-5">
+   781→              {/* Info Grid */}
+   782→              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   783→                <InfoItem
+   784→                  icon={<ArrowRightLeft className="h-4 w-4" />}
+   785→                  label="Côté de conduite"
+   786→                  value={selectedCountry.drivingSide === 'right' ? 'Droite' : 'Gauche'}
+   787→                />
+   788→                <InfoItem
+   789→                  icon={<CreditCard className="h-4 w-4" />}
+   790→                  label="Monnaie"
+   791→                  value={`${selectedCountry.currency.name} (${selectedCountry.currency.symbol})`}
+   792→                />
+   793→                <InfoItem
+   794→                  icon={<Languages className="h-4 w-4" />}
+   795→                  label="Langues"
+   796→                  value={selectedCountry.languages.join(', ')}
+   797→                />
+   798→                <InfoItem
+   799→                  icon={<CreditCard className="h-4 w-4" />}
+   800→                  label="Paiements"
+   801→                  value={selectedCountry.paymentProviders.join(', ')}
+   802→                />
+   803→              </div>
+   804→
+   805→              <Separator className="bg-slate-800" />
+   806→
+   807→              {/* License Types */}
+   808→              <div>
+   809→                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+   810→                  <Award className="h-5 w-5 text-emerald-400" />
+   811→                  Types de permis disponibles
+   812→                </h3>
+   813→                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+   814→                  {countryLicenses.map((license) => (
+   815→                    <LicenseCard key={license.id} license={license} />
+   816→                  ))}
+   817→                </div>
+   818→              </div>
+   819→            </CardContent>
+   820→          </Card>
+   821→        </div>
+   822→      )}
+   823→    </div>
+   824→  );
+   825→}
+   826→
+   827→function InfoItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+   828→  return (
+   829→    <div className="flex items-start gap-3 rounded-lg bg-slate-800/50 p-3">
+   830→      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-emerald-600/20 text-emerald-400">
+   831→        {icon}
+   832→      </div>
+   833→      <div className="min-w-0">
+   834→        <p className="text-xs text-slate-500 uppercase tracking-wide">{label}</p>
+   835→        <p className="text-sm text-slate-200 mt-0.5 break-words">{value}</p>
+   836→      </div>
+   837→    </div>
+   838→  );
+   839→}
+   840→
+   841→function LicenseCard({ license }: { license: LicenseType }) {
+   842→  const [expanded, setExpanded] = useState(false);
+   843→  const categoryColors = {
+   844→    automobile: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+   845→    motorcycle: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+   846→    heavy: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+   847→  };
+   848→  const categoryLabels = {
+   849→    automobile: 'Automobile',
+   850→    motorcycle: 'Moto',
+   851→    heavy: 'Poids lourd',
+   852→  };
+   853→
+   854→  return (
+   855→    <Card className="border-slate-800 bg-slate-900 hover:border-slate-700 transition-colors">
+   856→      <CardHeader className="pb-3">
+   857→        <div className="flex items-start justify-between gap-3">
+   858→          <div className="flex items-center gap-3">
+   859→            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-600/20 text-emerald-400">
+   860→              {getLicenseIcon(license.icon)}
+   861→            </div>
+   862→            <div>
+   863→              <CardTitle className="text-base text-white">{license.shortName}</CardTitle>
+   864→              <p className="text-xs text-slate-500 mt-0.5">
+   865→                Âge minimum : {license.minimumAge} ans
+   866→              </p>
+   867→            </div>
+   868→          </div>
+   869→          <Badge variant="outline" className={categoryColors[license.category]}>
+   870→            {categoryLabels[license.category]}
+   871→          </Badge>
+   872→        </div>
+   873→      </CardHeader>
+   874→      <CardContent className="pt-0 space-y-3">
+   875→        <p className="text-sm text-slate-400 line-clamp-2">{license.description}</p>
+   876→        <Button
+   877→          variant="ghost"
+   878→          size="sm"
+   879→          onClick={() => setExpanded(!expanded)}
+   880→          className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-600/10 w-full justify-between"
+   881→        >
+   882→          {expanded ? 'Masquer les exigences' : 'Voir les exigences'}
+   883→          <ChevronRight className={`h-4 w-4 transition-transform ${expanded ? 'rotate-90' : ''}`} />
+   884→        </Button>
+   885→        <AnimatePresence>
+   886→          {expanded && (
+   887→            <motion.div
+   888→              initial={{ opacity: 0, height: 0 }}
+   889→              animate={{ opacity: 1, height: 'auto' }}
+   890→              exit={{ opacity: 0, height: 0 }}
+   891→              className="overflow-hidden"
+   892→            >
+   893→              <div className="rounded-lg bg-slate-800/50 p-3 space-y-2">
+   894→                <p className="text-xs font-semibold text-slate-300 uppercase tracking-wide">Exigences :</p>
+   895→                {license.requirements.map((req, idx) => (
+   896→                  <div key={idx} className="flex items-start gap-2">
+   897→                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 mt-0.5 shrink-0" />
+   898→                    <span className="text-xs text-slate-400">{req}</span>
+   899→                  </div>
+   900→                ))}
+   901→              </div>
+   902→            </motion.div>
+   903→          )}
+   904→        </AnimatePresence>
+   905→      </CardContent>
+   906→    </Card>
+   907→  );
+   908→}
+   909→
+   910→// ─── Tab 2: Cours ─────────────────────────────────────────────────────────
+   911→
+   912→function CoursesTab() {
+   913→  const [courses, setCourses] = useState<CourseFromAPI[]>([]);
+   914→  const [loading, setLoading] = useState(true);
+   915→  const [error, setError] = useState<string | null>(null);
+   916→  const [expandedCourse, setExpandedCourse] = useState<string | null>(null);
+   917→  const [filterCategory, setFilterCategory] = useState('all');
+   918→
+   919→  useEffect(() => {
+   920→    async function fetchCourses() {
+   921→      try {
+   922→        const res = await fetch('/api/courses?userId=demo@adso.com');
+   923→        if (!res.ok) throw new Error('Erreur lors du chargement');
+   924→        const data = await res.json();
+   925→        setCourses(data);
+   926→      } catch (err) {
+   927→        setError(err instanceof Error ? err.message : 'Erreur inconnue');
+   928→      } finally {
+   929→        setLoading(false);
+   930→      }
+   931→    }
+   932→    fetchCourses();
+   933→  }, []);
+   934→
+   935→  const categories = useMemo(() => {
+   936→    const cats = [...new Set(courses.map((c) => c.category))];
+   937→    return ['all', ...cats];
+   938→  }, [courses]);
+   939→
+   940→  const categoryLabels: Record<string, string> = {
+   941→    all: 'Tous',
+   942→    theory: 'Théorie',
+   943→    practice: 'Pratique',
+   944→    safety: 'Sécurité',
+   945→    regulations: 'Réglementation',
+   946→    'eco-driving': 'Éco-conduite',
+   947→    highway: 'Autoroute',
+   948→  };
+   949→
+   950→  const filteredCourses = useMemo(() => {
+   951→    if (filterCategory === 'all') return courses;
+   952→    return courses.filter((c) => c.category === filterCategory);
+   953→  }, [courses, filterCategory]);
+   954→
+   955→  if (loading) {
+   956→    return (
+   957→      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+   958→        {Array.from({ length: 6 }).map((_, i) => (
+   959→          <Card key={i} className="border-slate-800 bg-slate-900">
+   960→            <CardHeader className="pb-3">
+   961→              <Skeleton className="h-5 w-3/4 bg-slate-800" />
+   962→              <Skeleton className="h-3 w-full bg-slate-800 mt-2" />
+   963→            </CardHeader>
+   964→            <CardContent>
+   965→              <Skeleton className="h-4 w-1/2 bg-slate-800 mb-3" />
+   966→              <Skeleton className="h-2 w-full bg-slate-800" />
+   967→            </CardContent>
+   968→          </Card>
+   969→        ))}
+   970→      </div>
+   971→    );
+   972→  }
+   973→
+   974→  if (error) {
+   975→    return (
+   976→      <Card className="border-red-800/50 bg-red-950/20">
+   977→        <CardContent className="py-8 text-center">
+   978→          <XCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />
+   979→          <p className="text-red-300">{error}</p>
+   980→        </CardContent>
+   981→      </Card>
+   982→    );
+   983→  }
+   984→
+   985→  return (
+   986→    <div className="space-y-6">
+   987→      {/* Category Filters */}
+   988→      <div className="flex flex-wrap gap-2">
+   989→        {categories.map((cat) => (
+   990→          <Button
+   991→            key={cat}
+   992→            variant={filterCategory === cat ? 'default' : 'outline'}
+   993→            size="sm"
+   994→            onClick={() => setFilterCategory(cat)}
+   995→            className={filterCategory === cat
+   996→              ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500'
+   997→              : 'border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white'
+   998→            }
+   999→          >
+  1000→            {categoryLabels[cat] || cat}
+  1001→          </Button>
+  1002→        ))}
+  1003→      </div>
+  1004→
+  1005→      {/* Course Grid */}
+  1006→      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  1007→        {filteredCourses.map((course) => {
+  1008→          const isExpanded = expandedCourse === course.id;
+  1009→          const progress = course.studentProgress?.progress ?? 0;
+  1010→          const status = course.studentProgress?.status ?? 'not_started';
+  1011→
+  1012→          return (
+  1013→            <motion.div
+  1014→              key={course.id}
+  1015→              layout
+  1016→              className={isExpanded ? 'md:col-span-2 lg:col-span-3' : ''}
+  1017→            >
+  1018→              <Card className="border-slate-800 bg-slate-900 hover:border-slate-700 transition-colors overflow-hidden">
+  1019→                <CardHeader className="pb-3">
+  1020→                  <div className="flex items-start justify-between gap-2">
+  1021→                    <div className="flex-1 min-w-0">
+  1022→                      <div className="flex items-center gap-2 flex-wrap mb-1">
+  1023→                        <CardTitle className="text-base text-white truncate">{course.title}</CardTitle>
+  1024→                        {course.isPremium && (
+  1025→                          <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 hover:bg-amber-500/30">
+  1026→                            <Sparkles className="h-3 w-3 mr-1" />
+  1027→                            Premium
+  1028→                          </Badge>
+  1029→                        )}
+  1030→                      </div>
+  1031→                      <CardDescription className="text-sm text-slate-400 line-clamp-2">
+  1032→                        {course.description}
+  1033→                      </CardDescription>
+  1034→                    </div>
+  1035→                  </div>
+  1036→                  <div className="flex items-center gap-2 mt-3 flex-wrap">
+  1037→                    <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+  1038→                      {getCategoryLabel(course.category)}
+  1039→                    </Badge>
+  1040→                    <Badge variant="outline" className="bg-slate-500/10 text-slate-400 border-slate-500/20">
+  1041→                      {getLevelLabel(course.level)}
+  1042→                    </Badge>
+  1043→                    <Badge variant="outline" className="bg-slate-500/10 text-slate-400 border-slate-500/20">
+  1044→                      <BookOpen className="h-3 w-3 mr-1" />
+  1045→                      {course.modules.length} modules
+  1046→                    </Badge>
+  1047→                    <Badge variant="outline" className="bg-slate-500/10 text-slate-400 border-slate-500/20">
+  1048→                      <Clock className="h-3 w-3 mr-1" />
+  1049→                      {course.duration} min
+  1050→                    </Badge>
+  1051→                  </div>
+  1052→                </CardHeader>
+  1053→                <CardContent className="pt-0 space-y-3">
+  1054→                  {/* Progress */}
+  1055→                  {status !== 'not_started' && (
+  1056→                    <div className="space-y-1.5">
+  1057→                      <div className="flex items-center justify-between text-xs">
+  1058→                        <span className="text-slate-400">
+  1059→                          {status === 'completed' ? 'Terminé' : 'En cours'}
+  1060→                        </span>
+  1061→                        <span className="text-emerald-400 font-medium">{Math.round(progress)}%</span>
+  1062→                      </div>
+  1063→                      <Progress value={progress} className="h-1.5 bg-slate-800 [&>div]:bg-emerald-500" />
+  1064→                    </div>
+  1065→                  )}
+  1066→
+  1067→                  {status === 'not_started' && !course.isPremium && (
+  1068→                    <Button
+  1069→                      size="sm"
+  1070→                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+  1071→                    >
+  1072→                      <PlayCircle className="h-4 w-4 mr-2" />
+  1073→                      Commencer
+  1074→                    </Button>
+  1075→                  )}
+  1076→
+  1077→                  {course.isPremium && status === 'not_started' && (
+  1078→                    <Button
+  1079→                      size="sm"
+  1080→                      variant="outline"
+  1081→                      className="w-full border-amber-600/50 text-amber-400 hover:bg-amber-600/10"
+  1082→                    >
+  1083→                      <Lock className="h-4 w-4 mr-2" />
+  1084→                      Débloquer (Premium)
+  1085→                    </Button>
+  1086→                  )}
+  1087→
+  1088→                  {/* Expand/Collapse Modules */}
+  1089→                  <Button
+  1090→                    variant="ghost"
+  1091→                    size="sm"
+  1092→                    onClick={() => setExpandedCourse(isExpanded ? null : course.id)}
+  1093→                    className="text-slate-400 hover:text-white hover:bg-slate-800 w-full justify-between"
+  1094→                  >
+  1095→                    {isExpanded ? 'Masquer les modules' : 'Voir les modules'}
+  1096→                    <ChevronRight className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+  1097→                  </Button>
+  1098→
+  1099→                  <AnimatePresence>
+  1100→                    {isExpanded && (
+  1101→                      <motion.div
+  1102→                        initial={{ opacity: 0, height: 0 }}
+  1103→                        animate={{ opacity: 1, height: 'auto' }}
+  1104→                        exit={{ opacity: 0, height: 0 }}
+  1105→                        className="overflow-hidden"
+  1106→                      >
+  1107→                        <Accordion type="single" collapsible className="w-full">
+  1108→                          {course.modules.map((mod, idx) => (
+  1109→                            <AccordionItem
+  1110→                              key={mod.id}
+  1111→                              value={mod.id}
+  1112→                              className="border-slate-800"
+  1113→                            >
+  1114→                              <AccordionTrigger className="text-sm text-slate-300 hover:text-white hover:no-underline py-3">
+  1115→                                <div className="flex items-center gap-3 text-left">
+  1116→                                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-medium text-slate-400">
+  1117→                                    {idx + 1}
+  1118→                                  </div>
+  1119→                                  <span className="flex-1 truncate">{mod.title}</span>
+  1120→                                  <Badge variant="outline" className="bg-slate-800 text-slate-400 border-slate-700 text-[10px] ml-2">
+  1121→                                    {mod.type === 'video' ? '🎬' : mod.type === 'quiz' ? '❓' : mod.type === 'interactive' ? '🎮' : '📖'}
+  1122→                                    {' '}{mod.duration} min
+  1123→                                  </Badge>
+  1124→                                </div>
+  1125→                              </AccordionTrigger>
+  1126→                              <AccordionContent className="text-sm text-slate-400 pl-10 pb-3">
+  1127→                                <p className="line-clamp-4">{mod.content}</p>
+  1128→                              </AccordionContent>
+  1129→                            </AccordionItem>
+  1130→                          ))}
+  1131→                        </Accordion>
+  1132→                      </motion.div>
+  1133→                    )}
+  1134→                  </AnimatePresence>
+  1135→                </CardContent>
+  1136→              </Card>
+  1137→            </motion.div>
+  1138→          );
+  1139→        })}
+  1140→      </div>
+  1141→
+  1142→      {filteredCourses.length === 0 && !loading && (
+  1143→        <div className="py-12 text-center">
+  1144→          <BookOpen className="h-10 w-10 text-slate-600 mx-auto mb-3" />
+  1145→          <p className="text-slate-500">Aucun cours trouvé dans cette catégorie.</p>
+  1146→        </div>
+  1147→      )}
+  1148→    </div>
+  1149→  );
+  1150→}
+  1151→
+  1152→// ─── Tab 3: Signalisation ─────────────────────────────────────────────────
+  1153→
+  1154→function SignalisationTab() {
+  1155→  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  1156→
+  1157→  return (
+  1158→    <div className="space-y-6">
+  1159→      {/* Category Overview */}
+  1160→      {!selectedCategory ? (
+  1161→        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  1162→          {roadSignCategories.map((cat) => (
+  1163→            <motion.button
+  1164→              key={cat.id}
+  1165→              whileHover={{ scale: 1.02 }}
+  1166→              whileTap={{ scale: 0.98 }}
+  1167→              onClick={() => setSelectedCategory(cat.id)}
+  1168→              className={`text-left rounded-xl border p-5 transition-colors ${cat.bgColor} ${cat.borderColor} hover:border-opacity-80`}
+  1169→            >
+  1170→              <div className="flex items-center gap-3 mb-3">
+  1171→                <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${cat.bgColor} border ${cat.borderColor}`}>
+  1172→                  <ShieldAlert className={`h-5 w-5 ${cat.color}`} />
+  1173→                </div>
+  1174→                <div>
+  1175→                  <h3 className={`font-semibold ${cat.color}`}>{cat.name}</h3>
+  1176→                  <p className="text-xs text-slate-500 mt-0.5">{cat.signs.length} signes</p>
+  1177→                </div>
+  1178→              </div>
+  1179→              <p className="text-xs text-slate-400">{cat.description}</p>
+  1180→            </motion.button>
+  1181→          ))}
+  1182→        </div>
+  1183→      ) : (
+  1184→        <div className="space-y-6">
+  1185→          {/* Back button */}
+  1186→          <Button
+  1187→            variant="ghost"
+  1188→            onClick={() => setSelectedCategory(null)}
+  1189→            className="text-slate-400 hover:text-white hover:bg-slate-800"
+  1190→          >
+  1191→            <ArrowLeft className="h-4 w-4 mr-2" />
+  1192→            Retour aux catégories
+  1193→          </Button>
+  1194→
+  1195→          {/* Category Header */}
+  1196→          {(() => {
+  1197→            const cat = roadSignCategories.find((c) => c.id === selectedCategory);
+  1198→            if (!cat) return null;
+  1199→            return (
+  1200→              <>
+  1201→                <div className="flex items-center gap-3">
+  1202→                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${cat.bgColor} border ${cat.borderColor}`}>
+  1203→                    <ShieldAlert className={`h-5 w-5 ${cat.color}`} />
+  1204→                  </div>
+  1205→                  <div>
+  1206→                    <h2 className={`text-xl font-bold ${cat.color}`}>{cat.name}</h2>
+  1207→                    <p className="text-sm text-slate-400">{cat.description}</p>
+  1208→                  </div>
+  1209→                </div>
+  1210→
+  1211→                {/* Signs Grid */}
+  1212→                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  1213→                  {cat.signs.map((sign, idx) => (
+  1214→                    <motion.div
+  1215→                      key={`${cat.id}-${idx}`}
+  1216→                      initial={{ opacity: 0, y: 10 }}
+  1217→                      animate={{ opacity: 1, y: 0 }}
+  1218→                      transition={{ delay: idx * 0.05 }}
+  1219→                    >
+  1220→                      <Card className="border-slate-800 bg-slate-900 hover:border-slate-700 transition-colors">
+  1221→                        <CardContent className="p-4">
+  1222→                          <div className="flex gap-4">
+  1223→                            <SignShape shape={sign.shape} signColor={sign.signColor}>
+  1224→                              {sign.icon}
+  1225→                            </SignShape>
+  1226→                            <div className="flex-1 min-w-0">
+  1227→                              <h3 className="text-sm font-semibold text-white mb-1">{sign.name}</h3>
+  1228→                              <p className="text-xs text-slate-400 mb-2">{sign.description}</p>
+  1229→                              <div className="flex items-start gap-1.5">
+  1230→                                <Eye className="h-3 w-3 text-emerald-500 mt-0.5 shrink-0" />
+  1231→                                <p className="text-[11px] text-emerald-400/80 italic">{sign.whenToObey}</p>
+  1232→                              </div>
+  1233→                            </div>
+  1234→                          </div>
+  1235→                        </CardContent>
+  1236→                      </Card>
+  1237→                    </motion.div>
+  1238→                  ))}
+  1239→                </div>
+  1240→              </>
+  1241→            );
+  1242→          })()}
+  1243→        </div>
+  1244→      )}
+  1245→    </div>
+  1246→  );
+  1247→}
+  1248→
+  1249→// ─── Tab 4: Examens ───────────────────────────────────────────────────────
+  1250→
+  1251→function ExamensTab() {
+  1252→  const [examState, setExamState] = useState<ExamState>('idle');
+  1253→  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  1254→  const [currentIndex, setCurrentIndex] = useState(0);
+  1255→  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  1256→  const [answers, setAnswers] = useState<(number | null)[]>([]);
+  1257→  const [showExplanation, setShowExplanation] = useState(false);
+  1258→  const [timeLeft, setTimeLeft] = useState(20 * 60); // 20 minutes
+  1259→
+  1260→  const startExam = useCallback(() => {
+  1261→    const shuffled = shuffleArray(quizQuestions).slice(0, 20);
+  1262→    setQuestions(shuffled);
+  1263→    setAnswers(new Array(20).fill(null));
+  1264→    setCurrentIndex(0);
+  1265→    setSelectedAnswer(null);
+  1266→    setShowExplanation(false);
+  1267→    setTimeLeft(20 * 60);
+  1268→    setExamState('running');
+  1269→  }, []);
+  1270→
+  1271→  // Timer
+  1272→  useEffect(() => {
+  1273→    if (examState !== 'running' || timeLeft <= 0) return;
+  1274→    const interval = setInterval(() => {
+  1275→      setTimeLeft((prev) => {
+  1276→        if (prev <= 1) {
+  1277→          setExamState('finished');
+  1278→          return 0;
+  1279→        }
+  1280→        return prev - 1;
+  1281→      });
+  1282→    }, 1000);
+  1283→    return () => clearInterval(interval);
+  1284→  }, [examState, timeLeft]);
+  1285→
+  1286→  const handleAnswer = (optionIndex: number) => {
+  1287→    if (selectedAnswer !== null) return;
+  1288→    setSelectedAnswer(optionIndex);
+  1289→    setShowExplanation(true);
+  1290→    const newAnswers = [...answers];
+  1291→    newAnswers[currentIndex] = optionIndex;
+  1292→    setAnswers(newAnswers);
+  1293→  };
+  1294→
+  1295→  const nextQuestion = () => {
+  1296→    if (currentIndex < questions.length - 1) {
+  1297→      setCurrentIndex((prev) => prev + 1);
+  1298→      setSelectedAnswer(null);
+  1299→      setShowExplanation(false);
+  1300→    } else {
+  1301→      setExamState('finished');
+  1302→    }
+  1303→  };
+  1304→
+  1305→  const score = useMemo(() => {
+  1306→    return answers.reduce<number>((acc, ans, idx) => {
+  1307→      if (ans !== null && questions[idx]?.correctIndex === ans) return acc + 1;
+  1308→      return acc;
+  1309→    }, 0);
+  1310→  }, [answers, questions]);
+  1311→
+  1312→  const passed = score >= 16; // 16/20 needed to pass
+  1313→  const timePercentage = (timeLeft / (20 * 60)) * 100;
+  1314→
+  1315→  // Idle State
+  1316→  if (examState === 'idle') {
+  1317→    return (
+  1318→      <div className="space-y-6">
+  1319→        {/* Start Exam Card */}
+  1320→        <Card className="border-slate-800 bg-slate-900 overflow-hidden">
+  1321→          <CardContent className="py-10">
+  1322→            <div className="text-center max-w-md mx-auto">
+  1323→              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-600/20 mx-auto mb-4">
+  1324→                <Target className="h-8 w-8 text-emerald-400" />
+  1325→              </div>
+  1326→              <h2 className="text-xl font-bold text-white mb-2">Examen blanc</h2>
+  1327→              <p className="text-slate-400 mb-6">
+  1328→                Testez vos connaissances avec 20 questions aléatoires.
+  1329→                Vous disposez de 20 minutes. Score minimum requis : 16/20.
+  1330→              </p>
+  1331→              <div className="flex flex-wrap justify-center gap-4 mb-6">
+  1332→                <div className="flex items-center gap-2 text-sm text-slate-400">
+  1333→                  <CircleDot className="h-4 w-4 text-emerald-400" />
+  1334→                  20 questions
+  1335→                </div>
+  1336→                <div className="flex items-center gap-2 text-sm text-slate-400">
+  1337→                  <Timer className="h-4 w-4 text-emerald-400" />
+  1338→                  20 minutes
+  1339→                </div>
+  1340→                <div className="flex items-center gap-2 text-sm text-slate-400">
+  1341→                  <Trophy className="h-4 w-4 text-emerald-400" />
+  1342→                  Seuil : 16/20
+  1343→                </div>
+  1344→              </div>
+  1345→              <Button
+  1346→                size="lg"
+  1347→                onClick={startExam}
+  1348→                className="bg-emerald-600 hover:bg-emerald-700 text-white px-8"
+  1349→              >
+  1350→                <PlayCircle className="h-5 w-5 mr-2" />
+  1351→                Commencer l\'examen
+  1352→              </Button>
+  1353→            </div>
+  1354→          </CardContent>
+  1355→        </Card>
+  1356→
+  1357→        {/* Exam History */}
+  1358→        <div>
+  1359→          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+  1360→            <Clock className="h-5 w-5 text-slate-400" />
+  1361→            Historique des examens
+  1362→          </h3>
+  1363→          <div className="space-y-3">
+  1364→            {mockExamHistory.map((exam) => (
+  1365→              <Card key={exam.id} className="border-slate-800 bg-slate-900">
+  1366→                <CardContent className="py-3 px-4">
+  1367→                  <div className="flex items-center justify-between gap-4">
+  1368→                    <div className="flex items-center gap-3">
+  1369→                      <div className={`flex h-9 w-9 items-center justify-center rounded-full ${exam.passed ? 'bg-emerald-600/20' : 'bg-red-600/20'}`}>
+  1370→                        {exam.passed
+  1371→                          ? <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+  1372→                          : <XCircle className="h-5 w-5 text-red-400" />
+  1373→                        }
+  1374→                      </div>
+  1375→                      <div>
+  1376→                        <p className="text-sm font-medium text-white">
+  1377→                          {exam.score}/{exam.total}
+  1378→                          <span className={`ml-2 text-xs ${exam.passed ? 'text-emerald-400' : 'text-red-400'}`}>
+  1379→                            {exam.passed ? 'Réussi' : 'Échoué'}
+  1380→                          </span>
+  1381→                        </p>
+  1382→                        <p className="text-xs text-slate-500">{exam.date}</p>
+  1383→                      </div>
+  1384→                    </div>
+  1385→                    <div className="flex items-center gap-1.5 text-xs text-slate-500">
+  1386→                      <Timer className="h-3.5 w-3.5" />
+  1387→                      {exam.duration}
+  1388→                    </div>
+  1389→                  </div>
+  1390→                </CardContent>
+  1391→              </Card>
+  1392→            ))}
+  1393→          </div>
+  1394→        </div>
+  1395→      </div>
+  1396→    );
+  1397→  }
+  1398→
+  1399→  // Finished State
+  1400→  if (examState === 'finished') {
+  1401→    const percentage = Math.round((score / Math.max(questions.length, 1)) * 100);
+  1402→    return (
+  1403→      <div className="space-y-6">
+  1404→        <Card className={`border-2 overflow-hidden ${passed ? 'border-emerald-500/50 bg-emerald-950/20' : 'border-red-500/50 bg-red-950/20'}`}>
+  1405→          <CardContent className="py-10">
+  1406→            <div className="text-center max-w-md mx-auto">
+  1407→              <div className={`flex h-20 w-20 items-center justify-center rounded-full mx-auto mb-4 ${passed ? 'bg-emerald-600/20' : 'bg-red-600/20'}`}>
+  1408→                {passed
+  1409→                  ? <Trophy className="h-10 w-10 text-emerald-400" />
+  1410→                  : <XCircle className="h-10 w-10 text-red-400" />
+  1411→                }
+  1412→              </div>
+  1413→              <h2 className={`text-2xl font-bold mb-2 ${passed ? 'text-emerald-400' : 'text-red-400'}`}>
+  1414→                {passed ? 'Félicitations !' : 'Pas encore...'}
+  1415→              </h2>
+  1416→              <p className="text-slate-400 mb-6">
+  1417→                {passed
+  1418→                  ? 'Vous avez réussi l\'examen avec succès !'
+  1419→                  : 'Le score minimum requis est de 16/20. Révisez et réessayez.'
+  1420→                }
+  1421→              </p>
+  1422→
+  1423→              <div className={`text-5xl font-bold mb-2 ${passed ? 'text-emerald-400' : 'text-red-400'}`}>
+  1424→                {score}/{questions.length}
+  1425→              </div>
+  1426→              <p className="text-slate-500 mb-6">{percentage}% de bonnes réponses</p>
+  1427→
+  1428→              <div className="grid grid-cols-2 gap-3 mb-6">
+  1429→                <div className="rounded-lg bg-slate-900/80 p-3">
+  1430→                  <p className="text-xs text-slate-500">Correctes</p>
+  1431→                  <p className="text-lg font-bold text-emerald-400">{score}</p>
+  1432→                </div>
+  1433→                <div className="rounded-lg bg-slate-900/80 p-3">
+  1434→                  <p className="text-xs text-slate-500">Incorrectes</p>
+  1435→                  <p className="text-lg font-bold text-red-400">{Math.max(0, questions.length - score)}</p>
+  1436→                </div>
+  1437→                <div className="rounded-lg bg-slate-900/80 p-3">
+  1438→                  <p className="text-xs text-slate-500">Temps utilisé</p>
+  1439→                  <p className="text-lg font-bold text-white">{formatTime(20 * 60 - timeLeft)}</p>
+  1440→                </div>
+  1441→                <div className="rounded-lg bg-slate-900/80 p-3">
+  1442→                  <p className="text-xs text-slate-500">Résultat</p>
+  1443→                  <p className={`text-lg font-bold ${passed ? 'text-emerald-400' : 'text-red-400'}`}>
+  1444→                    {passed ? 'Réussi' : 'Échoué'}
+  1445→                  </p>
+  1446→                </div>
+  1447→              </div>
+  1448→
+  1449→              <Button
+  1450→                size="lg"
+  1451→                onClick={startExam}
+  1452→                className="bg-emerald-600 hover:bg-emerald-700 text-white px-8"
+  1453→              >
+  1454→                <PlayCircle className="h-5 w-5 mr-2" />
+  1455→                Refaire un examen
+  1456→              </Button>
+  1457→            </div>
+  1458→          </CardContent>
+  1459→        </Card>
+  1460→      </div>
+  1461→    );
+  1462→  }
+  1463→
+  1464→  // Running State
+  1465→  const currentQ = questions[currentIndex];
+  1466→  if (!currentQ) return null;
+  1467→
+  1468→  return (
+  1469→    <div className="space-y-4">
+  1470→      {/* Timer & Progress Bar */}
+  1471→      <div className="space-y-2">
+  1472→        <div className="flex items-center justify-between">
+  1473→          <div className="flex items-center gap-3">
+  1474→            <Badge variant="outline" className="bg-slate-800 text-slate-300 border-slate-700">
+  1475→              Question {currentIndex + 1}/{questions.length}
+  1476→            </Badge>
+  1477→            <Badge variant="outline" className={getDifficultyColor(currentQ.difficulty)}>
+  1478→              {currentQ.difficulty === 'easy' ? 'Facile' : currentQ.difficulty === 'medium' ? 'Moyen' : 'Difficile'}
+  1479→            </Badge>
+  1480→          </div>
+  1481→          <div className={`flex items-center gap-1.5 text-sm font-mono font-medium ${timeLeft < 120 ? 'text-red-400' : 'text-slate-300'}`}>
+  1482→            <Timer className={`h-4 w-4 ${timeLeft < 120 ? 'text-red-400' : 'text-slate-500'}`} />
+  1483→            {formatTime(timeLeft)}
+  1484→          </div>
+  1485→        </div>
+  1486→        <Progress
+  1487→          value={timePercentage}
+  1488→          className={`h-1.5 bg-slate-800 [&>div]:${timeLeft < 120 ? 'bg-red-500' : 'bg-emerald-500'}`}
+  1489→        />
+  1490→        <Progress
+  1491→          value={((currentIndex + 1) / questions.length) * 100}
+  1492→          className="h-1 bg-slate-800 [&>div]:bg-slate-500"
+  1493→        />
+  1494→      </div>
+  1495→
+  1496→      {/* Question */}
+  1497→      <Card className="border-slate-800 bg-slate-900">
+  1498→        <CardContent className="py-6">
+  1499→          <h2 className="text-lg font-semibold text-white mb-6 leading-relaxed">
+  1500→            {currentQ.question}
+  1501→          </h2>
+  1502→
+  1503→          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+  1504→            {currentQ.options.map((option, idx) => {
+  1505→              const isCorrect = idx === currentQ.correctIndex;
+  1506→              const isSelected = selectedAnswer === idx;
+  1507→              const showResult = selectedAnswer !== null;
+  1508→
+  1509→              let optionBtnClass = 'border-slate-700 hover:border-slate-600 hover:bg-slate-800/50';
+  1510→              if (showResult) {
+  1511→                if (isCorrect) optionBtnClass = 'border-emerald-500 bg-emerald-600/10';
+  1512→                else if (isSelected && !isCorrect) optionBtnClass = 'border-red-500 bg-red-600/10';
+  1513→                else optionBtnClass = 'border-slate-800 opacity-60';
+  1514→              }
+  1515→
+  1516→              let circleClass = 'border-slate-600 text-slate-400';
+  1517→              if (showResult) {
+  1518→                if (isCorrect) circleClass = 'border-emerald-500 bg-emerald-500 text-white';
+  1519→                else if (isSelected && !isCorrect) circleClass = 'border-red-500 bg-red-500 text-white';
+  1520→                else circleClass = 'border-slate-700 text-slate-500';
+  1521→              }
+  1522→
+  1523→              const letterOrIcon = showResult && isCorrect
+  1524→                ? <CheckCircle2 className="h-4 w-4" />
+  1525→                : showResult && isSelected && !isCorrect
+  1526→                  ? <XCircle className="h-4 w-4" />
+  1527→                  : String.fromCharCode(65 + idx);
+  1528→
+  1529→              const textColor = showResult
+  1530→                ? (isCorrect ? 'text-emerald-300' : 'text-slate-400')
+  1531→                : 'text-slate-200';
+  1532→
+  1533→              return (
+  1534→                <button
+  1535→                  key={idx}
+  1536→                  onClick={() => handleAnswer(idx)}
+  1537→                  disabled={selectedAnswer !== null}
+  1538→                  className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${optionBtnClass}`}
+  1539→                >
+  1540→                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-sm font-medium ${circleClass}`}>
+  1541→                    {letterOrIcon}
+  1542→                  </div>
+  1543→                  <span className={`text-sm ${textColor}`}>{option}</span>
+  1544→                </button>
+  1545→              );
+  1546→            })}
+  1547→          </div>
+  1548→
+  1549→          {/* Explanation */}
+  1550→          <AnimatePresence>
+  1551→            {showExplanation && (
+  1552→              <motion.div
+  1553→                initial={{ opacity: 0, y: 10 }}
+  1554→                animate={{ opacity: 1, y: 0 }}
+  1555→                exit={{ opacity: 0 }}
+  1556→                className={`mt-4 rounded-lg border p-4 ${selectedAnswer === currentQ.correctIndex ? 'border-emerald-800/50 bg-emerald-950/30' : 'border-amber-800/50 bg-amber-950/30'}`}
+  1557→              >
+  1558→                <p className={`text-sm ${selectedAnswer === currentQ.correctIndex ? 'text-emerald-300' : 'text-amber-300'}`}>
+  1559→                  {currentQ.explanation}
+  1560→                </p>
+  1561→              </motion.div>
+  1562→            )}
+  1563→          </AnimatePresence>
+  1564→        </CardContent>
+  1565→      </Card>
+  1566→
+  1567→      {/* Next Button */}
+  1568→      {selectedAnswer !== null && (
+  1569→        <motion.div
+  1570→          initial={{ opacity: 0, y: 10 }}
+  1571→          animate={{ opacity: 1, y: 0 }}
+  1572→        >
+  1573→          <Button
+  1574→            onClick={nextQuestion}
+  1575→            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+  1576→            size="lg"
+  1577→          >
+  1578→            {currentIndex < questions.length - 1 ? 'Question suivante' : 'Voir le résultat'}
+  1579→            <ChevronRight className="h-4 w-4 ml-2" />
+  1580→          </Button>
+  1581→        </motion.div>
+  1582→      )}
+  1583→    </div>
+  1584→  );
+  1585→}
+  1586→
+  1587→// ─── Tab 5: Progression ───────────────────────────────────────────────────
+  1588→
+  1589→function ProgressionTab() {
+  1590→  // Mock progress data (in production, this would come from API)
+  1591→  const overallProgress = 42;
+  1592→  const coursesStarted = 8;
+  1593→  const coursesCompleted = 3;
+  1594→  const totalCourses = 14;
+  1595→  const quizAverage = 78;
+  1596→  const quizBest = 95;
+  1597→  const studyStreak = 7;
+  1598→  const certificates = [
+  1599→    { id: '1', name: 'Théorie du code', date: '2025-01-10', icon: '📋' },
+  1600→    { id: '2', name: 'Signalisation routière', date: '2025-01-08', icon: '🚦' },
+  1601→  ];
+  1602→
+  1603→  const weeklyData = [
+  1604→    { day: 'Lun', hours: 1.5 },
+  1605→    { day: 'Mar', hours: 2.0 },
+  1606→    { day: 'Mer', hours: 0.5 },
+  1607→    { day: 'Jeu', hours: 1.0 },
+  1608→    { day: 'Ven', hours: 2.5 },
+  1609→    { day: 'Sam', hours: 3.0 },
+  1610→    { day: 'Dim', hours: 1.0 },
+  1611→  ];
+  1612→  const maxHours = Math.max(...weeklyData.map((d) => d.hours));
+  1613→
+  1614→  const statCards = [
+  1615→    {
+  1616→      label: 'Cours commencés',
+  1617→      value: `${coursesStarted}/${totalCourses}`,
+  1618→      icon: <BookOpen className="h-5 w-5" />,
+  1619→      color: 'text-blue-400',
+  1620→      bgColor: 'bg-blue-500/10',
+  1621→    },
+  1622→    {
+  1623→      label: 'Cours terminés',
+  1624→      value: coursesCompleted.toString(),
+  1625→      icon: <CheckCircle2 className="h-5 w-5" />,
+  1626→      color: 'text-emerald-400',
+  1627→      bgColor: 'bg-emerald-500/10',
+  1628→    },
+  1629→    {
+  1630→      label: 'Score moyen quiz',
+  1631→      value: `${quizAverage}%`,
+  1632→      icon: <Star className="h-5 w-5" />,
+  1633→      color: 'text-amber-400',
+  1634→      bgColor: 'bg-amber-500/10',
+  1635→    },
+  1636→    {
+  1637→      label: 'Meilleur score',
+  1638→      value: `${quizBest}%`,
+  1639→      icon: <Trophy className="h-5 w-5" />,
+  1640→      color: 'text-purple-400',
+  1641→      bgColor: 'bg-purple-500/10',
+  1642→    },
+  1643→  ];
+  1644→
+  1645→  return (
+  1646→    <div className="space-y-6">
+  1647→      {/* Overall Progress Hero */}
+  1648→      <Card className="border-slate-800 bg-slate-900 overflow-hidden relative">
+  1649→        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/10 via-transparent to-emerald-600/5" />
+  1650→        <CardContent className="py-8 relative z-10">
+  1651→          <div className="flex flex-col sm:flex-row items-center gap-6">
+  1652→            <div className="relative">
+  1653→              <div className="flex h-28 w-28 items-center justify-center rounded-full border-4 border-emerald-500/30">
+  1654→                <span className="text-3xl font-bold text-emerald-400">{overallProgress}%</span>
+  1655→              </div>
+  1656→              <div className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-white">
+  1657→                <TrendingUp className="h-4 w-4" />
+  1658→              </div>
+  1659→            </div>
+  1660→            <div className="text-center sm:text-left">
+  1661→              <h2 className="text-xl font-bold text-white mb-1">Progression globale</h2>
+  1662→              <p className="text-slate-400 text-sm mb-3">
+  1663→                Vous avez complété {overallProgress}% de votre parcours d&rsquo;apprentissage
+  1664→              </p>
+  1665→              <Progress value={overallProgress} className="h-2.5 bg-slate-800 w-64 [&>div]:bg-emerald-500" />
+  1666→            </div>
+  1667→          </div>
+  1668→        </CardContent>
+  1669→      </Card>
+  1670→
+  1671→      {/* Stat Cards */}
+  1672→      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+  1673→        {statCards.map((stat) => (
+  1674→          <Card key={stat.label} className="border-slate-800 bg-slate-900">
+  1675→            <CardContent className="py-4 px-4">
+  1676→              <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${stat.bgColor} ${stat.color} mb-3`}>
+  1677→                {stat.icon}
+  1678→              </div>
+  1679→              <p className="text-2xl font-bold text-white">{stat.value}</p>
+  1680→              <p className="text-xs text-slate-500 mt-0.5">{stat.label}</p>
+  1681→            </CardContent>
+  1682→          </Card>
+  1683→        ))}
+  1684→      </div>
+  1685→
+  1686→      {/* Study Streak & Weekly Activity */}
+  1687→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  1688→        {/* Streak */}
+  1689→        <Card className="border-slate-800 bg-slate-900">
+  1690→          <CardContent className="py-5">
+  1691→            <div className="flex items-center gap-3 mb-4">
+  1692→              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/10">
+  1693→                <Flame className="h-5 w-5 text-orange-400" />
+  1694→              </div>
+  1695→              <div>
+  1696→                <h3 className="text-base font-semibold text-white">Série d&rsquo;étude</h3>
+  1697→                <p className="text-xs text-slate-500">Jours consécutifs d&rsquo;apprentissage</p>
+  1698→              </div>
+  1699→            </div>
+  1700→            <div className="flex items-baseline gap-2">
+  1701→              <span className="text-4xl font-bold text-orange-400">{studyStreak}</span>
+  1702→              <span className="text-slate-400">jours</span>
+  1703→            </div>
+  1704→            <div className="flex gap-1 mt-3">
+  1705→              {Array.from({ length: 7 }).map((_, i) => (
+  1706→                <div
+  1707→                  key={i}
+  1708→                  className={`flex-1 h-8 rounded-md flex items-center justify-center text-[10px] font-medium ${
+  1709→                    i < studyStreak ? 'bg-orange-500/20 text-orange-400' : 'bg-slate-800 text-slate-600'
+  1710→                  }`}
+  1711→                >
+  1712→                  {['L', 'M', 'M', 'J', 'V', 'S', 'D'][i]}
+  1713→                </div>
+  1714→              ))}
+  1715→            </div>
+  1716→          </CardContent>
+  1717→        </Card>
+  1718→
+  1719→        {/* Weekly Activity Chart */}
+  1720→        <Card className="border-slate-800 bg-slate-900">
+  1721→          <CardContent className="py-5">
+  1722→            <div className="flex items-center gap-3 mb-4">
+  1723→              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
+  1724→                <TrendingUp className="h-5 w-5 text-emerald-400" />
+  1725→              </div>
+  1726→              <div>
+  1727→                <h3 className="text-base font-semibold text-white">Activité hebdomadaire</h3>
+  1728→                <p className="text-xs text-slate-500">Heures d&rsquo;étude cette semaine</p>
+  1729→              </div>
+  1730→            </div>
+  1731→            <div className="flex items-end gap-2 h-32 mt-2">
+  1732→              {weeklyData.map((d, i) => (
+  1733→                <div key={i} className="flex-1 flex flex-col items-center gap-1">
+  1734→                  <span className="text-[10px] text-slate-500">{d.hours}h</span>
+  1735→                  <div
+  1736→                    className="w-full rounded-t-md bg-emerald-500/80 transition-all"
+  1737→                    style={{ height: `${(d.hours / maxHours) * 80}px` }}
+  1738→                  />
+  1739→                  <span className="text-[10px] text-slate-500">{d.day}</span>
+  1740→                </div>
+  1741→              ))}
+  1742→            </div>
+  1743→          </CardContent>
+  1744→        </Card>
+  1745→      </div>
+  1746→
+  1747→      {/* Certificates */}
+  1748→      <div>
+  1749→        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+  1750→          <Award className="h-5 w-5 text-emerald-400" />
+  1751→          Certificats obtenus
+  1752→        </h3>
+  1753→        {certificates.length > 0 ? (
+  1754→          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+  1755→            {certificates.map((cert) => (
+  1756→              <Card key={cert.id} className="border-slate-800 bg-slate-900">
+  1757→                <CardContent className="py-4 px-4">
+  1758→                  <div className="flex items-center gap-3">
+  1759→                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-600/10 text-2xl">
+  1760→                      {cert.icon}
+  1761→                    </div>
+  1762→                    <div className="flex-1 min-w-0">
+  1763→                      <h4 className="text-sm font-semibold text-white truncate">{cert.name}</h4>
+  1764→                      <p className="text-xs text-slate-500">Obtenu le {cert.date}</p>
+  1765→                    </div>
+  1766→                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/10">
+  1767→                      <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+  1768→                    </div>
+  1769→                  </div>
+  1770→                </CardContent>
+  1771→              </Card>
+  1772→            ))}
+  1773→          </div>
+  1774→        ) : (
+  1775→          <Card className="border-slate-800 bg-slate-900">
+  1776→            <CardContent className="py-8 text-center">
+  1777→              <Award className="h-10 w-10 text-slate-600 mx-auto mb-3" />
+  1778→              <p className="text-slate-500">Aucun certificat obtenu pour le moment.</p>
+  1779→            </CardContent>
+  1780→          </Card>
+  1781→        )}
+  1782→      </div>
+  1783→    </div>
+  1784→  );
+  1785→}

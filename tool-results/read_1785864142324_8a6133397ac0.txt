@@ -1,0 +1,849 @@
+     1→'use client';
+     2→
+     3→import { useState, useEffect, useCallback, useRef } from 'react';
+     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→import { cn } from '@/lib/utils';
+     6→import {
+     7→  Bluetooth,
+     8→  Wifi,
+     9→  Usb,
+    10→  Plug,
+    11→  Link2,
+    12→  Unplug,
+    13→  Loader2,
+    14→  MonitorSmartphone,
+    15→  Activity,
+    16→  AlertTriangle,
+    17→  CheckCircle2,
+    18→  XCircle,
+    19→  Gauge,
+    20→  RotateCcw,
+    21→  Signal,
+    22→  Car,
+    23→  Cpu,
+    24→  ThermometerSun,
+    25→  Wind,
+    26→  Fuel,
+    27→  Zap,
+    28→  Droplets,
+    29→  Mountain,
+    30→} from 'lucide-react';
+    31→import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+    32→import { Button } from '@/components/ui/button';
+    33→import { Badge } from '@/components/ui/badge';
+    34→import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+    35→import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+    36→import { Separator } from '@/components/ui/separator';
+    37→import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+    38→import {
+    39→  Table,
+    40→  TableBody,
+    41→  TableCell,
+    42→  TableHead,
+    43→  TableHeader,
+    44→  TableRow,
+    45→} from '@/components/ui/table';
+    46→import {
+    47→  LineChart,
+    48→  Line,
+    49→  XAxis,
+    50→  YAxis,
+    51→  CartesianGrid,
+    52→  Tooltip,
+    53→  ResponsiveContainer,
+    54→} from 'recharts';
+    55→
+    56→// ═══════════════════════════════════════════════════════════
+    57→// Types
+    58→// ═══════════════════════════════════════════════════════════
+    59→
+    60→type ConnectionType = 'bluetooth' | 'wifi' | 'usb' | 'obd2';
+    61→type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
+    62→
+    63→interface SensorData {
+    64→  speed: number;
+    65→  rpm: number;
+    66→  engineTemp: number;
+    67→  intakeTemp: number;
+    68→  fuelPressure: number;
+    69→  maf: number;
+    70→  batteryVoltage: number;
+    71→  consumption: number;
+    72→  oilPressure: number;
+    73→  engineLoad: number;
+    74→}
+    75→
+    76→interface DTCCode {
+    77→  code: string;
+    78→  description: string;
+    79→  severity: 'low' | 'medium' | 'high';
+    80→}
+    81→
+    82→interface ChartDataPoint {
+    83→  time: string;
+    84→  speed: number;
+    85→  rpm: number;
+    86→}
+    87→
+    88→// ═══════════════════════════════════════════════════════════
+    89→// Constants
+    90→// ═══════════════════════════════════════════════════════════
+    91→
+    92→const CONNECTION_TYPES: Record<ConnectionType, { label: string; icon: React.ReactNode }> = {
+    93→  bluetooth: { label: 'Bluetooth', icon: <Bluetooth className='w-4 h-4' /> },
+    94→  wifi: { label: 'WiFi', icon: <Wifi className='w-4 h-4' /> },
+    95→  usb: { label: 'USB', icon: <Usb className='w-4 h-4' /> },
+    96→  obd2: { label: 'OBD-II', icon: <Plug className='w-4 h-4' /> },
+    97→};
+    98→
+    99→const VEHICLE_MAKES = [
+   100→  'Peugeot', 'Renault', 'Citroen', 'BMW', 'Mercedes-Benz', 'Volkswagen',
+   101→  'Audi', 'Ford', 'Toyota', 'Nissan', 'Hyundai', 'Kia',
+   102→  'Opel', 'Fiat', 'Dacia', 'Volvo', 'Skoda', 'Seat',
+   103→];
+   104→
+   105→const VEHICLE_MODELS: Record<string, string[]> = {
+   106→  'Peugeot': ['208', '308', '508', '2008', '3008', '5008'],
+   107→  'Renault': ['Clio', 'Megane', 'Captur', 'Kadjar', 'Talisman', 'Zoe'],
+   108→  'Citroen': ['C3', 'C4', 'C5', 'C3 Aircross', 'Berlingo'],
+   109→  'BMW': ['Serie 1', 'Serie 3', 'Serie 5', 'X1', 'X3', 'X5'],
+   110→  'Mercedes-Benz': ['Classe A', 'Classe B', 'Classe C', 'Classe E', 'GLA', 'GLC'],
+   111→  'Volkswagen': ['Golf', 'Polo', 'Tiguan', 'Passat', 'T-Roc', 'ID.3'],
+   112→  'Audi': ['A1', 'A3', 'A4', 'A5', 'Q3', 'Q5'],
+   113→  'Ford': ['Fiesta', 'Focus', 'Puma', 'Kuga', 'Mustang'],
+   114→  'Toyota': ['Yaris', 'Corolla', 'RAV4', 'C-HR', 'Hilux'],
+   115→  'Nissan': ['Micra', 'Qashqai', 'Juke', 'Leaf', 'X-Trail'],
+   116→  'Hyundai': ['i10', 'i20', 'i30', 'Tucson', 'Kona'],
+   117→  'Kia': ['Picanto', 'Ceed', 'Sportage', 'Niro', 'EV6'],
+   118→  'Opel': ['Corsa', 'Astra', 'Mokka', 'Grandland', 'Zafira'],
+   119→  'Fiat': ['500', 'Panda', 'Tipo', '500X', 'Doblò'],
+   120→  'Dacia': ['Sandero', 'Duster', 'Logan', 'Spring', 'Jogger'],
+   121→  'Volvo': ['V40', 'V60', 'XC40', 'XC60', 'XC90'],
+   122→  'Skoda': ['Fabia', 'Octavia', 'Kamiq', 'Kodiaq', 'Superb'],
+   123→  'Seat': ['Ibiza', 'Leon', 'Ateca', 'Arona', 'Tarraco'],
+   124→};
+   125→
+   126→const YEARS = Array.from({ length: 30 }, (_, i) => String(2026 - i));
+   127→
+   128→const DTC_CODES: DTCCode[] = [
+   129→  { code: 'P0300', description: 'Ratés d\'allumage détectés (cylindres multiples)', severity: 'high' },
+   130→  { code: 'P0301', description: 'Raté d\'allumage détecté - Cylindre 1', severity: 'high' },
+   131→  { code: 'P0302', description: 'Raté d\'allumage détecté - Cylindre 2', severity: 'high' },
+   132→  { code: 'P0303', description: 'Raté d\'allumage détecté - Cylindre 3', severity: 'high' },
+   133→  { code: 'P0304', description: 'Raté d\'allumage détecté - Cylindre 4', severity: 'high' },
+   134→  { code: 'P0171', description: 'Système trop pauvre (Banque 1)', severity: 'medium' },
+   135→  { code: 'P0172', description: 'Système trop riche (Banque 1)', severity: 'medium' },
+   136→  { code: 'P0174', description: 'Système trop pauvre (Banque 2)', severity: 'medium' },
+   137→  { code: 'P0420', description: 'Efficacité du catalyseur sous le seuil (Banque 1)', severity: 'medium' },
+   138→  { code: 'P0442', description: 'Fuite détectée dans le système EVAP (petite)', severity: 'low' },
+   139→  { code: 'P0455', description: 'Fuite détectée dans le système EVAP (grosse)', severity: 'medium' },
+   140→  { code: 'P0128', description: 'Température du liquide de refroidissement sous le seuil', severity: 'medium' },
+   141→  { code: 'P0131', description: 'Tension basse du capteur O2 (Banque 1, Sond 1)', severity: 'medium' },
+   142→  { code: 'P0135', description: 'Circuit de chauffage capteur O2 (Banque 1, Sond 1)', severity: 'medium' },
+   143→  { code: 'P0401', description: 'Débit d\'EGR insuffisant détecté', severity: 'low' },
+   144→  { code: 'P0410', description: 'Système d\'injection d\'air secondaire défectueux', severity: 'low' },
+   145→  { code: 'P0480', description: 'Circuit de commande du ventilateur 1', severity: 'medium' },
+   146→  { code: 'P0500', description: 'Capteur de vitesse du véhicule défectueux', severity: 'high' },
+   147→  { code: 'P0700', description: 'Système de commande de transmission (MIL demandée)', severity: 'high' },
+   148→  { code: 'P0715', description: 'Circuit du capteur de vitesse turbine/entrée', severity: 'high' },
+   149→  { code: 'P0562', description: 'Tension du système basse', severity: 'medium' },
+   150→  { code: 'P0101', description: 'Plage/performance du débitmètre MAF', severity: 'medium' },
+   151→  { code: 'P0113', description: 'Tension élevée du capteur de température air admission', severity: 'low' },
+   152→];
+   153→
+   154→const INITIAL_SENSOR_DATA: SensorData = {
+   155→  speed: 0,
+   156→  rpm: 800,
+   157→  engineTemp: 85,
+   158→  intakeTemp: 25,
+   159→  fuelPressure: 300,
+   160→  maf: 5,
+   161→  batteryVoltage: 12.8,
+   162→  consumption: 7.5,
+   163→  oilPressure: 300,
+   164→  engineLoad: 25,
+   165→};
+   166→
+   167→const SENSOR_CONFIG = [
+   168→  { key: 'speed' as const, label: 'Vitesse', unit: 'km/h', min: 0, max: 180, icon: Gauge, normalRange: [0, 130] },
+   169→  { key: 'rpm' as const, label: 'Régime moteur', unit: 'tr/min', min: 800, max: 7000, icon: Activity, normalRange: [800, 3500] },
+   170→  { key: 'engineTemp' as const, label: 'Temp. moteur', unit: '°C', min: 70, max: 110, icon: ThermometerSun, normalRange: [80, 100] },
+   171→  { key: 'intakeTemp' as const, label: 'Temp. air admission', unit: '°C', min: 10, max: 50, icon: Wind, normalRange: [15, 40] },
+   172→  { key: 'fuelPressure' as const, label: 'Pression carburant', unit: 'kPa', min: 200, max: 400, icon: Fuel, normalRange: [250, 380] },
+   173→  { key: 'maf' as const, label: 'Débit air (MAF)', unit: 'g/s', min: 2, max: 15, icon: Wind, normalRange: [3, 12] },
+   174→  { key: 'batteryVoltage' as const, label: 'Tension batterie', unit: 'V', min: 11.5, max: 14.5, icon: Zap, normalRange: [12.5, 14.2] },
+   175→  { key: 'consumption' as const, label: 'Consommation', unit: 'L/100km', min: 3, max: 15, icon: Droplets, normalRange: [4, 10] },
+   176→  { key: 'oilPressure' as const, label: 'Pression huile', unit: 'kPa', min: 100, max: 500, icon: Droplets, normalRange: [150, 450] },
+   177→  { key: 'engineLoad' as const, label: 'Charge moteur', unit: '%', min: 0, max: 100, icon: Mountain, normalRange: [15, 75] },
+   178→];
+   179→
+   180→// ═══════════════════════════════════════════════════════════
+   181→// Helpers
+   182→// ═══════════════════════════════════════════════════════════
+   183→
+   184→function clamp(val: number, min: number, max: number) {
+   185→  return Math.min(max, Math.max(min, val));
+   186→}
+   187→
+   188→function getStatus(value: number, normalRange: [number, number]): 'normal' | 'warning' | 'critical' {
+   189→  if (value >= normalRange[0] && value <= normalRange[1]) return 'normal';
+   190→  const distLow = normalRange[0] - value;
+   191→  const distHigh = value - normalRange[1];
+   192→  const dist = Math.max(distLow, distHigh);
+   193→  const range = normalRange[1] - normalRange[0];
+   194→  return dist > range * 0.5 ? 'critical' : 'warning';
+   195→}
+   196→
+   197→function getStatusColor(status: 'normal' | 'warning' | 'critical') {
+   198→  switch (status) {
+   199→    case 'normal': return 'bg-emerald-500';
+   200→    case 'warning': return 'bg-amber-500';
+   201→    case 'critical': return 'bg-red-500';
+   202→  }
+   203→}
+   204→
+   205→function getStatusTextColor(status: 'normal' | 'warning' | 'critical') {
+   206→  switch (status) {
+   207→    case 'normal': return 'text-emerald-400';
+   208→    case 'warning': return 'text-amber-400';
+   209→    case 'critical': return 'text-red-400';
+   210→  }
+   211→}
+   212→
+   213→function getDTCSeverityBadge(severity: string) {
+   214→  switch (severity) {
+   215→    case 'high':
+   216→      return <Badge className='bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30'>Critique</Badge>;
+   217→    case 'medium':
+   218→      return <Badge className='bg-amber-500/20 text-amber-400 border-amber-500/30 hover:bg-amber-500/30'>Modéré</Badge>;
+   219→    case 'low':
+   220→      return <Badge className='bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30'>Mineur</Badge>;
+   221→    default:
+   222→      return <Badge variant='outline'>{severity}</Badge>;
+   223→  }
+   224→}
+   225→
+   226→// ═══════════════════════════════════════════════════════════
+   227→// Component
+   228→// ═══════════════════════════════════════════════════════════
+   229→
+   230→export default function ScannerModule() {
+   231→  const [activeTab, setActiveTab] = useState('connect');
+   232→  const [connectionType, setConnectionType] = useState<ConnectionType>('bluetooth');
+   233→  const [vehicleMake, setVehicleMake] = useState('');
+   234→  const [vehicleModel, setVehicleModel] = useState('');
+   235→  const [vehicleYear, setVehicleYear] = useState('2024');
+   236→  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
+   237→  const [sensorData, setSensorData] = useState<SensorData>(INITIAL_SENSOR_DATA);
+   238→  const [dtcCodes, setDtcCodes] = useState<DTCCode[]>([]);
+   239→  const [isReadingCodes, setIsReadingCodes] = useState(false);
+   240→  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+   241→
+   242→  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+   243→
+   244→  const models = vehicleMake ? VEHICLE_MODELS[vehicleMake] || [] : [];
+   245→
+   246→  const simulateSensorUpdate = useCallback((prev: SensorData): SensorData => {
+   247→    const variation = (val: number, range: number) =>
+   248→      clamp(val + (Math.random() - 0.5) * range, 0, 9999);
+   249→
+   250→    return {
+   251→      speed: Math.round(clamp(variation(prev.speed, 8), 0, 180)),
+   252→      rpm: Math.round(clamp(variation(prev.rpm, 150), 800, 7000)),
+   253→      engineTemp: Math.round(variation(prev.engineTemp, 1) * 10) / 10,
+   254→      intakeTemp: Math.round(variation(prev.intakeTemp, 2) * 10) / 10,
+   255→      fuelPressure: Math.round(variation(prev.fuelPressure, 10)),
+   256→      maf: Math.round(variation(prev.maf, 0.8) * 10) / 10,
+   257→      batteryVoltage: Math.round(variation(prev.batteryVoltage, 0.2) * 10) / 10,
+   258→      consumption: Math.round(variation(prev.consumption, 0.5) * 10) / 10,
+   259→      oilPressure: Math.round(variation(prev.oilPressure, 15)),
+   260→      engineLoad: Math.round(clamp(variation(prev.engineLoad, 5), 0, 100)),
+   261→    };
+   262→  }, []);
+   263→
+   264→  // Start/stop live data updates
+   265→  useEffect(() => {
+   266→    if (connectionStatus === 'connected') {
+   267→      intervalRef.current = setInterval(() => {
+   268→        setSensorData((prev) => simulateSensorUpdate(prev));
+   269→      }, 2000);
+   270→    } else {
+   271→      if (intervalRef.current) {
+   272→        clearInterval(intervalRef.current);
+   273→        intervalRef.current = null;
+   274→      }
+   275→    }
+   276→    return () => {
+   277→      if (intervalRef.current) {
+   278→        clearInterval(intervalRef.current);
+   279→      }
+   280→    };
+   281→  }, [connectionStatus, simulateSensorUpdate]);
+   282→
+   283→  // Accumulate chart data
+   284→  useEffect(() => {
+   285→    if (connectionStatus !== 'connected') return;
+   286→
+   287→    const chartInterval = setInterval(() => {
+   288→      setSensorData((prev) => {
+   289→        const now = new Date();
+   290→        const timeStr = `${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+   291→
+   292→        setChartData((cd) => {
+   293→          const newPoint = { time: timeStr, speed: prev.speed, rpm: prev.rpm };
+   294→          const updated = [...cd, newPoint];
+   295→          // Keep last 30 data points
+   296→          return updated.length > 30 ? updated.slice(-30) : updated;
+   297→        });
+   298→
+   299→        return simulateSensorUpdate(prev);
+   300→      });
+   301→    }, 2000);
+   302→
+   303→    return () => clearInterval(chartInterval);
+   304→  }, [connectionStatus, simulateSensorUpdate]);
+   305→
+   306→  const handleConnect = () => {
+   307→    if (connectionStatus === 'connected') {
+   308→      setConnectionStatus('disconnected');
+   309→      setSensorData(INITIAL_SENSOR_DATA);
+   310→      setDtcCodes([]);
+   311→      setChartData([]);
+   312→      return;
+   313→    }
+   314→    setConnectionStatus('connecting');
+   315→    setTimeout(() => {
+   316→      setConnectionStatus('connected');
+   317→      setActiveTab('livedata');
+   318→    }, 2000);
+   319→  };
+   320→
+   321→  const handleReadCodes = () => {
+   322→    setIsReadingCodes(true);
+   323→    setTimeout(() => {
+   324→      const count = 3 + Math.floor(Math.random() * 4);
+   325→      const shuffled = [...DTC_CODES].sort(() => Math.random() - 0.5);
+   326→      setDtcCodes(shuffled.slice(0, count));
+   327→      setIsReadingCodes(false);
+   328→    }, 1500);
+   329→  };
+   330→
+   331→  const handleClearCodes = () => {
+   332→    setDtcCodes([]);
+   333→  };
+   334→
+   335→  const isFormValid = vehicleMake && vehicleModel && vehicleYear;
+   336→
+   337→  return (
+   338→    <div className='pt-16 min-h-screen bg-slate-950'>
+   339→      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
+   340→        {/* Header */}
+   341→        <motion.div
+   342→          initial={{ opacity: 0, y: -20 }}
+   343→          animate={{ opacity: 1, y: 0 }}
+   344→          className='mb-6'
+   345→        >
+   346→          <div className='flex items-center justify-between flex-wrap gap-4'>
+   347→            <div className='flex items-center gap-3'>
+   348→              <div className='p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20'>
+   349→                <Cpu className='w-6 h-6 text-emerald-500' />
+   350→              </div>
+   351→              <div>
+   352→                <h1 className='text-2xl sm:text-3xl font-bold text-white'>Scanner OBD-II</h1>
+   353→                <p className='text-slate-400 text-sm'>Diagnostic vehicule en temps reel</p>
+   354→              </div>
+   355→            </div>
+   356→            {/* Connection Status Badge */}
+   357→            <div className='flex items-center gap-2'>
+   358→              <div className={`w-2.5 h-2.5 rounded-full ${
+   359→                connectionStatus === 'connected' ? 'bg-emerald-500 animate-pulse' :
+   360→                connectionStatus === 'connecting' ? 'bg-amber-500 animate-pulse' :
+   361→                'bg-slate-600'
+   362→              }`} />
+   363→              <span className={`text-sm font-medium ${
+   364→                connectionStatus === 'connected' ? 'text-emerald-400' :
+   365→                connectionStatus === 'connecting' ? 'text-amber-400' :
+   366→                'text-slate-500'
+   367→              }`}>
+   368→                {connectionStatus === 'connected' ? 'Connecté' :
+   369→                 connectionStatus === 'connecting' ? 'Connexion...' :
+   370→                 'Déconnecté'}
+   371→              </span>
+   372→            </div>
+   373→          </div>
+   374→        </motion.div>
+   375→
+   376→        <Tabs value={activeTab} onValueChange={setActiveTab}>
+   377→          <TabsList className='bg-slate-900 border border-slate-800'>
+   378→            <TabsTrigger value='connect' className='data-[state=active]:bg-emerald-600 data-[state=active]:text-white'>
+   379→              <Link2 className='w-4 h-4 mr-1.5' />
+   380→              <span className='hidden sm:inline'>Connexion</span>
+   381→            </TabsTrigger>
+   382→            <TabsTrigger
+   383→              value='livedata'
+   384→              disabled={connectionStatus !== 'connected'}
+   385→              className='data-[state=active]:bg-emerald-600 data-[state=active]:text-white disabled:opacity-40'
+   386→            >
+   387→              <MonitorSmartphone className='w-4 h-4 mr-1.5' />
+   388→              <span className='hidden sm:inline'>Données live</span>
+   389→            </TabsTrigger>
+   390→            <TabsTrigger
+   391→              value='dtc'
+   392→              disabled={connectionStatus !== 'connected'}
+   393→              className='data-[state=active]:bg-emerald-600 data-[state=active]:text-white disabled:opacity-40'
+   394→            >
+   395→              <AlertTriangle className='w-4 h-4 mr-1.5' />
+   396→              <span className='hidden sm:inline'>Codes DTC</span>
+   397→            </TabsTrigger>
+   398→            <TabsTrigger
+   399→              value='charts'
+   400→              disabled={connectionStatus !== 'connected'}
+   401→              className='data-[state=active]:bg-emerald-600 data-[state=active]:text-white disabled:opacity-40'
+   402→            >
+   403→              <Activity className='w-4 h-4 mr-1.5' />
+   404→              <span className='hidden sm:inline'>Graphiques</span>
+   405→            </TabsTrigger>
+   406→          </TabsList>
+   407→
+   408→          {/* ═══════════════════════════════════════════════ */}
+   409→          {/* CONNECTION PANEL */}
+   410→          {/* ═══════════════════════════════════════════════ */}
+   411→          <TabsContent value='connect'>
+   412→            <motion.div
+   413→              initial={{ opacity: 0, y: 20 }}
+   414→              animate={{ opacity: 1, y: 0 }}
+   415→              className='mt-6 max-w-2xl mx-auto'
+   416→            >
+   417→              <Card className='bg-slate-900 border-slate-800'>
+   418→                <CardHeader>
+   419→                  <CardTitle className='text-white flex items-center gap-2'>
+   420→                    <Signal className='w-5 h-5 text-emerald-500' />
+   421→                    Connexion au vehicule
+   422→                  </CardTitle>
+   423→                  <CardDescription className='text-slate-400'>
+   424→                    Configurez et connectez votre scanner OBD-II
+   425→                  </CardDescription>
+   426→                </CardHeader>
+   427→                <CardContent className='space-y-5'>
+   428→                  {/* Connection Type */}
+   429→                  <div className='space-y-2'>
+   430→                    <label className='text-sm font-medium text-slate-300'>Type de connexion</label>
+   431→                    <div className='grid grid-cols-2 sm:grid-cols-4 gap-3'>
+   432→                      {(Object.entries(CONNECTION_TYPES) as [ConnectionType, typeof CONNECTION_TYPES[ConnectionType]][]).map(([key, ct]) => (
+   433→                        <button
+   434→                          key={key}
+   435→                          onClick={() => setConnectionType(key)}
+   436→                          className={connectionType === key
+   437→                            ? 'flex flex-col items-center gap-2 p-3 rounded-lg border transition-all duration-200 bg-emerald-500/10 border-emerald-500/50 text-emerald-400'
+   438→                            : 'flex flex-col items-center gap-2 p-3 rounded-lg border transition-all duration-200 bg-slate-800/50 border-slate-700 text-slate-400 hover:border-slate-600'
+   439→                          }
+   440→                        >
+   441→                          {ct.icon}
+   442→                          <span className='text-xs font-medium'>{ct.label}</span>
+   443→                        </button>
+   444→                      ))}
+   445→                    </div>
+   446→                  </div>
+   447→
+   448→                  <Separator className='bg-slate-800' />
+   449→
+   450→                  {/* Vehicle Info */}
+   451→                  <div className='space-y-2'>
+   452→                    <label className='text-sm font-medium text-slate-300 flex items-center gap-2'>
+   453→                      <Car className='w-4 h-4' />
+   454→                      Informations du vehicule
+   455→                    </label>
+   456→                    <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
+   457→                      <Select value={vehicleMake} onValueChange={(v) => { setVehicleMake(v); setVehicleModel(''); }}>
+   458→                        <SelectTrigger className='bg-slate-800 border-slate-700 text-white'>
+   459→                          <SelectValue placeholder='Marque' />
+   460→                        </SelectTrigger>
+   461→                        <SelectContent className='bg-slate-800 border-slate-700 max-h-60'>
+   462→                          {VEHICLE_MAKES.map((make) => (
+   463→                            <SelectItem key={make} value={make} className='text-slate-200 focus:bg-slate-700 focus:text-white'>
+   464→                              {make}
+   465→                            </SelectItem>
+   466→                          ))}
+   467→                        </SelectContent>
+   468→                      </Select>
+   469→
+   470→                      <Select value={vehicleModel} onValueChange={setVehicleModel} disabled={!vehicleMake}>
+   471→                        <SelectTrigger className='bg-slate-800 border-slate-700 text-white'>
+   472→                          <SelectValue placeholder={vehicleMake ? 'Modele' : 'Marque requise'} />
+   473→                        </SelectTrigger>
+   474→                        <SelectContent className='bg-slate-800 border-slate-700 max-h-60'>
+   475→                          {models.map((model) => (
+   476→                            <SelectItem key={model} value={model} className='text-slate-200 focus:bg-slate-700 focus:text-white'>
+   477→                              {model}
+   478→                            </SelectItem>
+   479→                          ))}
+   480→                        </SelectContent>
+   481→                      </Select>
+   482→
+   483→                      <Select value={vehicleYear} onValueChange={setVehicleYear}>
+   484→                        <SelectTrigger className='bg-slate-800 border-slate-700 text-white'>
+   485→                          <SelectValue placeholder='Année' />
+   486→                        </SelectTrigger>
+   487→                        <SelectContent className='bg-slate-800 border-slate-700 max-h-60'>
+   488→                          {YEARS.map((year) => (
+   489→                            <SelectItem key={year} value={year} className='text-slate-200 focus:bg-slate-700 focus:text-white'>
+   490→                              {year}
+   491→                            </SelectItem>
+   492→                          ))}
+   493→                        </SelectContent>
+   494→                      </Select>
+   495→                    </div>
+   496→                  </div>
+   497→
+   498→                  <Separator className='bg-slate-800' />
+   499→
+   500→                  {/* Connect Button */}
+   501→                  <Button
+   502→                    onClick={handleConnect}
+   503→                    disabled={!isFormValid && connectionStatus === 'disconnected'}
+   504→                    className={connectionStatus === 'connected'
+   505→                      ? 'w-full bg-red-600 hover:bg-red-700 text-white'
+   506→                      : 'w-full bg-emerald-600 hover:bg-emerald-700 text-white'
+   507→                    }
+   508→                  >
+   509→                    {connectionStatus === 'disconnected' && (
+   510→                      <>
+   511→                        <Link2 className='w-4 h-4 mr-2' />
+   512→                        Connecter
+   513→                      </>
+   514→                    )}
+   515→                    {connectionStatus === 'connecting' && (
+   516→                      <>
+   517→                        <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+   518→                        Connexion en cours...
+   519→                      </>
+   520→                    )}
+   521→                    {connectionStatus === 'connected' && (
+   522→                      <>
+   523→                        <Unplug className='w-4 h-4 mr-2' />
+   524→                        Déconnecter
+   525→                      </>
+   526→                    )}
+   527→                  </Button>
+   528→
+   529→                  {/* Status info */}
+   530→                  <AnimatePresence>
+   531→                    {connectionStatus === 'connected' && (
+   532→                      <motion.div
+   533→                        initial={{ opacity: 0, height: 0 }}
+   534→                        animate={{ opacity: 1, height: 'auto' }}
+   535→                        exit={{ opacity: 0, height: 0 }}
+   536→                      >
+   537→                        <Alert className='bg-emerald-500/10 border-emerald-500/30'>
+   538→                          <CheckCircle2 className='h-4 w-4 text-emerald-400' />
+   539→                          <AlertTitle className='text-emerald-400'>Connecté avec succès</AlertTitle>
+   540→                          <AlertDescription className='text-emerald-300/80'>
+   541→                            Scanner connecté à {vehicleMake} {vehicleModel} ({vehicleYear}) via {CONNECTION_TYPES[connectionType].label}.
+   542→                            Accédez aux données en temps réel via les onglets ci-dessus.
+   543→                          </AlertDescription>
+   544→                        </Alert>
+   545→                      </motion.div>
+   546→                    )}
+   547→                    {connectionStatus === 'connecting' && (
+   548→                      <motion.div
+   549→                        initial={{ opacity: 0, height: 0 }}
+   550→                        animate={{ opacity: 1, height: 'auto' }}
+   551→                        exit={{ opacity: 0, height: 0 }}
+   552→                      >
+   553→                        <Alert className='bg-amber-500/10 border-amber-500/30'>
+   554→                          <Loader2 className='h-4 w-4 text-amber-400 animate-spin' />
+   555→                          <AlertTitle className='text-amber-400'>Connexion en cours</AlertTitle>
+   556→                          <AlertDescription className='text-amber-300/80'>
+   557→                            Tentative de connexion au scanner OBD-II... Veuillez patienter.
+   558→                          </AlertDescription>
+   559→                        </Alert>
+   560→                      </motion.div>
+   561→                    )}
+   562→                  </AnimatePresence>
+   563→                </CardContent>
+   564→              </Card>
+   565→            </motion.div>
+   566→          </TabsContent>
+   567→
+   568→          {/* ═══════════════════════════════════════════════ */}
+   569→          {/* LIVE DATA DASHBOARD */}
+   570→          {/* ═══════════════════════════════════════════════ */}
+   571→          <TabsContent value='livedata'>
+   572→            <motion.div
+   573→              initial={{ opacity: 0 }}
+   574→              animate={{ opacity: 1 }}
+   575→              className='mt-6'
+   576→            >
+   577→              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4'>
+   578→                {SENSOR_CONFIG.map((sensor, i) => {
+   579→                  const value = sensorData[sensor.key];
+   580→                  const status = getStatus(value, sensor.normalRange as [number, number]);
+   581→                  const Icon = sensor.icon;
+   582→                  return (
+   583→                    <motion.div
+   584→                      key={sensor.key}
+   585→                      initial={{ opacity: 0, y: 20 }}
+   586→                      animate={{ opacity: 1, y: 0 }}
+   587→                      transition={{ delay: i * 0.05 }}
+   588→                    >
+   589→                      <Card className='bg-slate-900 border-slate-800 hover:border-slate-700 transition-colors'>
+   590→                        <CardContent className='pt-6 pb-5'>
+   591→                          <div className='flex items-center justify-between mb-3'>
+   592→                            <div className='flex items-center gap-2'>
+   593→                              <div className={cn(
+   594→                                'p-1.5 rounded-md',
+   595→                                status === 'normal' ? 'bg-emerald-500/10' :
+   596→                                status === 'warning' ? 'bg-amber-500/10' :
+   597→                                'bg-red-500/10'
+   598→                              )}>
+   599→                                <Icon className={cn('w-3.5 h-3.5', getStatusTextColor(status))} />
+   600→                              </div>
+   601→                              <span className='text-xs text-slate-400 font-medium'>{sensor.label}</span>
+   602→                            </div>
+   603→                            <div className={cn('w-2 h-2 rounded-full', getStatusColor(status))} />
+   604→                          </div>
+   605→                          <div className='flex items-baseline gap-1.5'>
+   606→                            <motion.span
+   607→                              key={sensor.key + '-' + value}
+   608→                              initial={{ opacity: 0.6, y: -4 }}
+   609→                              animate={{ opacity: 1, y: 0 }}
+   610→                              className={cn('text-2xl font-bold font-mono', getStatusTextColor(status))}
+   611→                            >
+   612→                              {typeof value === 'number' && !Number.isInteger(value)
+   613→                                ? value.toFixed(1)
+   614→                                : value}
+   615→                            </motion.span>
+   616→                            <span className='text-xs text-slate-500'>{sensor.unit}</span>
+   617→                          </div>
+   618→                          <div className='mt-2 flex items-center gap-1.5'>
+   619→                            <div className='flex-1 h-1 rounded-full bg-slate-800'>
+   620→                              <div
+   621→                                className={cn('h-1 rounded-full transition-all duration-500', getStatusColor(status))}
+   622→                                style={{
+   623→                                  width: ((value - sensor.min) / (sensor.max - sensor.min)) * 100 + '%',
+   624→                                }}
+   625→                              />
+   626→                            </div>
+   627→                          </div>
+   628→                        </CardContent>
+   629→                      </Card>
+   630→                    </motion.div>
+   631→                  );
+   632→                })}
+   633→              </div>
+   634→            </motion.div>
+   635→          </TabsContent>
+   636→
+   637→          {/* ═══════════════════════════════════════════════ */}
+   638→          {/* DTC CODES PANEL */}
+   639→          {/* ═══════════════════════════════════════════════ */}
+   640→          <TabsContent value='dtc'>
+   641→            <motion.div
+   642→              initial={{ opacity: 0 }}
+   643→              animate={{ opacity: 1 }}
+   644→              className='mt-6'
+   645→            >
+   646→              <Card className='bg-slate-900 border-slate-800'>
+   647→                <CardHeader>
+   648→                  <div className='flex items-center justify-between flex-wrap gap-4'>
+   649→                    <div>
+   650→                      <CardTitle className='text-white flex items-center gap-2'>
+   651→                        <AlertTriangle className='w-5 h-5 text-amber-500' />
+   652→                        Codes de defaut (DTC)
+   653→                      </CardTitle>
+   654→                      <CardDescription className='text-slate-400 mt-1'>
+   655→                        Lecture et effacement des codes d\'erreur OBD-II
+   656→                      </CardDescription>
+   657→                    </div>
+   658→                    <div className='flex gap-2'>
+   659→                      <Button
+   660→                        onClick={handleReadCodes}
+   661→                        disabled={isReadingCodes}
+   662→                        className='bg-emerald-600 hover:bg-emerald-700 text-white'
+   663→                      >
+   664→                        {isReadingCodes ? (
+   665→                          <>
+   666→                            <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+   667→                            Lecture...
+   668→                          </>
+   669→                        ) : (
+   670→                          <>
+   671→                            <Activity className='w-4 h-4 mr-2' />
+   672→                            Lire les codes
+   673→                          </>
+   674→                        )}
+   675→                      </Button>
+   676→                      <Button
+   677→                        onClick={handleClearCodes}
+   678→                        disabled={dtcCodes.length === 0}
+   679→                        variant='outline'
+   680→                        className='bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white'
+   681→                      >
+   682→                        <RotateCcw className='w-4 h-4 mr-2' />
+   683→                        Effacer
+   684→                      </Button>
+   685→                    </div>
+   686→                  </div>
+   687→                </CardHeader>
+   688→                <CardContent>
+   689→                  {dtcCodes.length === 0 && !isReadingCodes && (
+   690→                    <div className='text-center py-12'>
+   691→                      <div className='p-4 rounded-full bg-slate-800 mx-auto mb-4 w-fit'>
+   692→                        <CheckCircle2 className='w-10 h-10 text-emerald-500' />
+   693→                      </div>
+   694→                      <h3 className='text-lg font-semibold text-slate-300 mb-1'>Aucun code de defaut</h3>
+   695→                      <p className='text-sm text-slate-500'>Cliquez sur &quot;Lire les codes&quot; pour scanner les codes DTC.</p>
+   696→                    </div>
+   697→                  )}
+   698→
+   699→                  {dtcCodes.length > 0 && (
+   700→                    <div className='max-h-96 overflow-y-auto rounded-lg'>
+   701→                      <Table>
+   702→                        <TableHeader>
+   703→                          <TableRow className='border-slate-800 hover:bg-transparent'>
+   704→                            <TableHead className='text-slate-400 w-28'>Code</TableHead>
+   705→                            <TableHead className='text-slate-400'>Description</TableHead>
+   706→                            <TableHead className='text-slate-400 text-center w-28'>Severité</TableHead>
+   707→                          </TableRow>
+   708→                        </TableHeader>
+   709→                        <TableBody>
+   710→                          {dtcCodes.map((dtc, i) => (
+   711→                            <motion.tr
+   712→                              key={dtc.code}
+   713→                              initial={{ opacity: 0, x: -10 }}
+   714→                              animate={{ opacity: 1, x: 0 }}
+   715→                              transition={{ delay: i * 0.08 }}
+   716→                              className='border-b border-slate-800 hover:bg-slate-800/50'
+   717→                            >
+   718→                              <td className='p-2'>
+   719→                                <span className='font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-1 rounded'>
+   720→                                  {dtc.code}
+   721→                                </span>
+   722→                              </td>
+   723→                              <td className='p-2 text-slate-300 text-sm'>{dtc.description}</td>
+   724→                              <td className='p-2 text-center'>{getDTCSeverityBadge(dtc.severity)}</td>
+   725→                            </motion.tr>
+   726→                          ))}
+   727→                        </TableBody>
+   728→                      </Table>
+   729→                    </div>
+   730→                  )}
+   731→                </CardContent>
+   732→              </Card>
+   733→            </motion.div>
+   734→          </TabsContent>
+   735→
+   736→          {/* ═══════════════════════════════════════════════ */}
+   737→          {/* SENSOR CHARTS */}
+   738→          {/* ═══════════════════════════════════════════════ */}
+   739→          <TabsContent value='charts'>
+   740→            <motion.div
+   741→              initial={{ opacity: 0 }}
+   742→              animate={{ opacity: 1 }}
+   743→              className='mt-6 space-y-6'
+   744→            >
+   745→              {/* Speed Chart */}
+   746→              <Card className='bg-slate-900 border-slate-800'>
+   747→                <CardHeader>
+   748→                  <CardTitle className='text-white flex items-center gap-2'>
+   749→                    <Gauge className='w-5 h-5 text-emerald-500' />
+   750→                    Vitesse (km/h) — Temps reel
+   751→                  </CardTitle>
+   752→                </CardHeader>
+   753→                <CardContent>
+   754→                  <div className='h-64'>
+   755→                    <ResponsiveContainer width='100%' height='100%'>
+   756→                      <LineChart data={chartData}>
+   757→                        <CartesianGrid strokeDasharray='3 3' stroke='#334155' />
+   758→                        <XAxis
+   759→                          dataKey='time'
+   760→                          stroke='#64748b'
+   761→                          fontSize={12}
+   762→                          tickLine={false}
+   763→                        />
+   764→                        <YAxis
+   765→                          stroke='#64748b'
+   766→                          fontSize={12}
+   767→                          tickLine={false}
+   768→                          domain={[0, 180]}
+   769→                        />
+   770→                        <Tooltip
+   771→                          contentStyle={{
+   772→                            backgroundColor: '#1e293b',
+   773→                            border: '1px solid #334155',
+   774→                            borderRadius: '8px',
+   775→                            color: '#e2e8f0',
+   776→                            fontSize: '12px',
+   777→                          }}
+   778→                        />
+   779→                        <Line
+   780→                          type='monotone'
+   781→                          dataKey='speed'
+   782→                          stroke='#10b981'
+   783→                          strokeWidth={2}
+   784→                          dot={false}
+   785→                          activeDot={{ r: 4, fill: '#10b981' }}
+   786→                          animationDuration={300}
+   787→                        />
+   788→                      </LineChart>
+   789→                    </ResponsiveContainer>
+   790→                  </div>
+   791→                </CardContent>
+   792→              </Card>
+   793→
+   794→              {/* RPM Chart */}
+   795→              <Card className='bg-slate-900 border-slate-800'>
+   796→                <CardHeader>
+   797→                  <CardTitle className='text-white flex items-center gap-2'>
+   798→                    <Activity className='w-5 h-5 text-emerald-500' />
+   799→                    Régime moteur (tr/min) — Temps reel
+   800→                  </CardTitle>
+   801→                </CardHeader>
+   802→                <CardContent>
+   803→                  <div className='h-64'>
+   804→                    <ResponsiveContainer width='100%' height='100%'>
+   805→                      <LineChart data={chartData}>
+   806→                        <CartesianGrid strokeDasharray='3 3' stroke='#334155' />
+   807→                        <XAxis
+   808→                          dataKey='time'
+   809→                          stroke='#64748b'
+   810→                          fontSize={12}
+   811→                          tickLine={false}
+   812→                        />
+   813→                        <YAxis
+   814→                          stroke='#64748b'
+   815→                          fontSize={12}
+   816→                          tickLine={false}
+   817→                          domain={[0, 7000]}
+   818→                        />
+   819→                        <Tooltip
+   820→                          contentStyle={{
+   821→                            backgroundColor: '#1e293b',
+   822→                            border: '1px solid #334155',
+   823→                            borderRadius: '8px',
+   824→                            color: '#e2e8f0',
+   825→                            fontSize: '12px',
+   826→                          }}
+   827→                        />
+   828→                        <Line
+   829→                          type='monotone'
+   830→                          dataKey='rpm'
+   831→                          stroke='#f59e0b'
+   832→                          strokeWidth={2}
+   833→                          dot={false}
+   834→                          activeDot={{ r: 4, fill: '#f59e0b' }}
+   835→                          animationDuration={300}
+   836→                        />
+   837→                      </LineChart>
+   838→                    </ResponsiveContainer>
+   839→                  </div>
+   840→                </CardContent>
+   841→              </Card>
+   842→            </motion.div>
+   843→          </TabsContent>
+   844→        </Tabs>
+   845→      </div>
+   846→    </div>
+   847→  );
+   848→}
+   849→

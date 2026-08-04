@@ -27,7 +27,7 @@ export async function GET() {
       }).length
 
       // Newer vehicles = lower risk, lower mileage = lower risk
-      const yearFactor = Math.max(0, Math.min(50, (2024 - avgYear) * 3))
+      const yearFactor = Math.max(0, Math.min(50, (new Date().getFullYear() - avgYear) * 3))
       const mileageFactor = Math.min(30, avgMileage / 5000)
       const serviceFactor = (1 - servicedRecently / vehicles.length) * 20
 

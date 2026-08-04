@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } });
     if (!user) {
-      return NextResponse.json({ erreur: 'Utilisateur introuvable' }, { status: 404 });
+      return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('[GET /api/collaboration] Erreur :', error);
-    return NextResponse.json({ erreur: 'Erreur serveur' }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
 
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
   try {
     const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } });
     if (!user) {
-      return NextResponse.json({ erreur: 'Utilisateur introuvable' }, { status: 404 });
+      return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 });
     }
 
     const body = await request.json();
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     if (!triggerModule || !eventType || !description) {
       return NextResponse.json(
-        { erreur: 'triggerModule, eventType et description sont requis' },
+        { error: 'triggerModule, eventType et description sont requis' },
         { status: 400 },
       );
     }
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('[POST /api/collaboration] Erreur :', error);
-    return NextResponse.json({ erreur: 'Erreur serveur' }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
 
@@ -78,7 +78,7 @@ export async function PATCH(request: NextRequest) {
     const { id, actions } = body;
 
     if (!id) {
-      return NextResponse.json({ erreur: 'Identifiant requis' }, { status: 400 });
+      return NextResponse.json({ error: 'Identifiant requis' }, { status: 400 });
     }
 
     const event = await db.collaborationEvent.update({
@@ -95,6 +95,6 @@ export async function PATCH(request: NextRequest) {
     });
   } catch (error) {
     console.error('[PATCH /api/collaboration] Erreur :', error);
-    return NextResponse.json({ erreur: 'Erreur serveur' }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

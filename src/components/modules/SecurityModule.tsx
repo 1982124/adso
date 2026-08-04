@@ -19,7 +19,6 @@ import {
   ChevronRight,
   Share2,
   Target,
-  Circle,
   Eye,
   EyeOff,
   AlertTriangle,

@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } });
     if (!user) {
-      return NextResponse.json({ erreur: 'Utilisateur introuvable' }, { status: 404 });
+      return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       });
 
       if (!twin) {
-        return NextResponse.json({ erreur: 'Jumeau numérique introuvable' }, { status: 404 });
+        return NextResponse.json({ error: 'Jumeau numérique introuvable' }, { status: 404 });
       }
 
       return NextResponse.json({ jumeau: twin });
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ jumeaux: twins, total: twins.length });
   } catch (error) {
     console.error('[GET /api/vehicle-twin] Erreur :', error);
-    return NextResponse.json({ erreur: 'Erreur serveur' }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
 
@@ -48,14 +48,14 @@ export async function POST(request: NextRequest) {
   try {
     const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } });
     if (!user) {
-      return NextResponse.json({ erreur: 'Utilisateur introuvable' }, { status: 404 });
+      return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 });
     }
 
     const body = await request.json();
     const { vehicleProfileId, registration, vin } = body;
 
     if (!vehicleProfileId) {
-      return NextResponse.json({ erreur: 'vehicleProfileId requis' }, { status: 400 });
+      return NextResponse.json({ error: 'vehicleProfileId requis' }, { status: 400 });
     }
 
     // Vérifier que le profil véhicule existe
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!vehicleProfile) {
-      return NextResponse.json({ erreur: 'Profil véhicule introuvable' }, { status: 404 });
+      return NextResponse.json({ error: 'Profil véhicule introuvable' }, { status: 404 });
     }
 
     // Calculer les métriques depuis les données télémétriques
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('[POST /api/vehicle-twin] Erreur :', error);
-    return NextResponse.json({ erreur: 'Erreur serveur' }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
 
@@ -157,7 +157,7 @@ export async function PATCH(request: NextRequest) {
     const { id, ...updateData } = body;
 
     if (!id) {
-      return NextResponse.json({ erreur: 'Identifiant requis' }, { status: 400 });
+      return NextResponse.json({ error: 'Identifiant requis' }, { status: 400 });
     }
 
     // Filtrer les champs autorisés
@@ -176,7 +176,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (Object.keys(data).length === 0) {
-      return NextResponse.json({ erreur: 'Aucun champ valide à mettre à jour' }, { status: 400 });
+      return NextResponse.json({ error: 'Aucun champ valide à mettre à jour' }, { status: 400 });
     }
 
     const twin = await db.vehicleTwin.update({
@@ -193,6 +193,6 @@ export async function PATCH(request: NextRequest) {
     });
   } catch (error) {
     console.error('[PATCH /api/vehicle-twin] Erreur :', error);
-    return NextResponse.json({ erreur: 'Erreur serveur' }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

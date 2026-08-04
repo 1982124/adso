@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Twitter, Linkedin, Github, ChevronDown } from 'lucide-react'
-import { useState } from 'react'
+import { useLocaleStore } from '@/stores/locale-store'
 
 const platformLinks = [
   { label: 'Cours', href: '#courses' },
@@ -43,7 +43,7 @@ const footerVariants = {
 }
 
 export default function Footer() {
-  const [currentLang, setCurrentLang] = useState('fr')
+  const { locale, setLocale } = useLocaleStore()
 
   return (
     <motion.footer
@@ -156,8 +156,8 @@ export default function Footer() {
           </p>
           <div className="relative">
             <select
-              value={currentLang}
-              onChange={(e) => setCurrentLang(e.target.value)}
+              value={locale}
+              onChange={(e) => setLocale(e.target.value)}
               className="appearance-none bg-slate-900 border border-slate-700 text-sm text-slate-300 rounded-md px-3 py-1.5 pr-8 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 cursor-pointer"
               aria-label="Sélectionner la langue"
             >

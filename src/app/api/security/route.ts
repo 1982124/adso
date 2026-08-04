@@ -37,33 +37,38 @@ const SEVERITY_COLORS: Record<string, string> = {
 
 // ─── GET: list security events ─────────────────────────────
 export async function GET() {
-  const user = await getDemoUser()
-  if (!user) {
-    return NextResponse.json({ success: true, data: [], message: 'Aucun utilisateur' })
+  try {
+    const user = await getDemoUser()
+    if (!user) {
+      return NextResponse.json({ success: true, data: [], message: 'Aucun utilisateur' })
+    }
+
+    const events = await db.securityEvent.findMany({
+      where: { userId: user.id },
+      orderBy: { timestamp: 'desc' },
+      include: { user: { select: { id: true, name: true, email: true } } },
+      take: 100,
+    })
+
+    const formatted = events.map(e => ({
+      id: e.id,
+      type: e.type,
+      event: EVENT_LABELS[e.type] || e.type,
+      time: e.timestamp.toISOString().replace('T', ' ').slice(0, 16),
+      location: e.address || '—',
+      status: e.resolved ? 'resolved' : 'confirmed',
+      severity: e.severity,
+      color: SEVERITY_COLORS[e.severity] || 'text-slate-400',
+      latitude: e.latitude,
+      longitude: e.longitude,
+      speed: e.speed,
+    }))
+
+    return NextResponse.json({ success: true, data: formatted })
+  } catch (error) {
+    console.error('[GET /api/security] Error:', error)
+    return NextResponse.json({ success: false, error: 'Erreur interne' }, { status: 500 })
   }
-
-  const events = await db.securityEvent.findMany({
-    where: { userId: user.id },
-    orderBy: { timestamp: 'desc' },
-    include: { user: { select: { id: true, name: true, email: true } } },
-    take: 100,
-  })
-
-  const formatted = events.map(e => ({
-    id: e.id,
-    type: e.type,
-    event: EVENT_LABELS[e.type] || e.type,
-    time: e.timestamp.toISOString().replace('T', ' ').slice(0, 16),
-    location: e.address || '—',
-    status: e.resolved ? 'resolved' : 'confirmed',
-    severity: e.severity,
-    color: SEVERITY_COLORS[e.severity] || 'text-slate-400',
-    latitude: e.latitude,
-    longitude: e.longitude,
-    speed: e.speed,
-  }))
-
-  return NextResponse.json({ success: true, data: formatted })
 }
 
 // ─── POST: create a security event ─────────────────────────
@@ -97,24 +102,29 @@ export async function POST(request: NextRequest) {
 
 // ─── DELETE: delete an unresolved event ─────────────────────
 export async function DELETE(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const id = searchParams.get('id')
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
 
-  if (!id) {
-    return NextResponse.json({ success: false, error: 'ID manquant' }, { status: 400 })
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'ID manquant' }, { status: 400 })
+    }
+
+    const event = await db.securityEvent.findUnique({ where: { id } })
+
+    if (!event) {
+      return NextResponse.json({ success: false, error: 'Événement non trouvé' }, { status: 404 })
+    }
+
+    if (event.resolved) {
+      return NextResponse.json({ success: false, error: 'Impossible de supprimer un événement résolu' }, { status: 400 })
+    }
+
+    await db.securityEvent.delete({ where: { id } })
+
+    return NextResponse.json({ success: true, message: 'Événement supprimé' })
+  } catch (error) {
+    console.error('[DELETE /api/security] Error:', error)
+    return NextResponse.json({ success: false, error: 'Erreur interne' }, { status: 500 })
   }
-
-  const event = await db.securityEvent.findUnique({ where: { id } })
-
-  if (!event) {
-    return NextResponse.json({ success: false, error: 'Événement non trouvé' }, { status: 404 })
-  }
-
-  if (event.resolved) {
-    return NextResponse.json({ success: false, error: 'Impossible de supprimer un événement résolu' }, { status: 400 })
-  }
-
-  await db.securityEvent.delete({ where: { id } })
-
-  return NextResponse.json({ success: true, message: 'Événement supprimé' })
 }
