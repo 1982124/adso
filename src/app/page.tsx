@@ -24,7 +24,7 @@ import AnalyticsSection from '@/components/sections/AnalyticsSection';
 // PLATFORM MODULES — Lazy loaded to keep initial bundle small
 // ═══════════════════════════════════════════════════════════
 const LearningPlatform = dynamic(
-  () => import('@/components/modules/LearningPlatform'),
+  () => import('@/components/modules/learning/LearningPlatform'),
   { ssr: false, loading: () => <ModuleLoader label="Formation" /> }
 );
 const MechanicModule = dynamic(

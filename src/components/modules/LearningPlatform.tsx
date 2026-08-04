@@ -16,6 +16,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
+import ExamPlatform from '@/components/modules/learning/ExamPlatform';
+import ProgressDashboard from '@/components/modules/learning/ProgressDashboard';
 import {
   Globe, Car, Bike, Truck, Bus, Search, Clock, Star, Trophy,
   ShieldAlert, TriangleAlert, CircleDot, Info, TrafficCone, ArrowRightLeft,
@@ -658,13 +660,13 @@ export default function LearningPlatform() {
 
           <TabsContent value="examens" className="mt-0">
             <TabAnimation keyProp="examens">
-              <ExamensTab />
+              <ExamPlatform />
             </TabAnimation>
           </TabsContent>
 
           <TabsContent value="progression" className="mt-0">
             <TabAnimation keyProp="progression">
-              <ProgressionTab />
+              <ProgressDashboard />
             </TabAnimation>
           </TabsContent>
         </Tabs>

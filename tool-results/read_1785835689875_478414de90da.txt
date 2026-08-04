@@ -1,0 +1,1122 @@
+     1→'use client';
+     2→
+     3→import React, { useState, useEffect, useRef, useCallback } from 'react';
+     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+     6→import { Badge } from '@/components/ui/badge';
+     7→import { Button } from '@/components/ui/button';
+     8→import { Progress } from '@/components/ui/progress';
+     9→import { ScrollArea } from '@/components/ui/scroll-area';
+    10→import { Skeleton } from '@/components/ui/skeleton';
+    11→import { Separator } from '@/components/ui/separator';
+    12→import {
+    13→  Select,
+    14→  SelectContent,
+    15→  SelectItem,
+    16→  SelectTrigger,
+    17→  SelectValue,
+    18→} from '@/components/ui/select';
+    19→import {
+    20→  GraduationCap,
+    21→  Clock,
+    22→  Play,
+    23→  Trophy,
+    24→  XCircle,
+    25→  CheckCircle2,
+    26→  AlertTriangle,
+    27→  RotateCcw,
+    28→  ArrowLeft,
+    29→  Target,
+    30→  BrainCircuit,
+    31→  FileCheck,
+    32→  ChevronRight,
+    33→  Zap,
+    34→} from 'lucide-react';
+    35→
+    36→// ─── Constants ─────────────────────────────────────────────────────────────
+    37→
+    38→const USER_ID = 'demo@adso.com';
+    39→
+    40→const OPTION_LABELS = ['A', 'B', 'C', 'D'];
+    41→
+    42→const CATEGORY_MAP: Record<string, string> = {
+    43→  regulation: 'Réglementation',
+    44→  safety: 'Sécurité',
+    45→  sign: 'Signalisation',
+    46→  priority: 'Priorité',
+    47→  highway: 'Autoroute',
+    48→  intersection: 'Intersection',
+    49→  parking: 'Stationnement',
+    50→  first_aid: 'Secourisme',
+    51→  eco_driving: 'Éco-conduite',
+    52→  weather: 'Météo',
+    53→  vehicle: 'Véhicule',
+    54→};
+    55→
+    56→const DIFFICULTY_MAP: Record<string, string> = {
+    57→  easy: 'Facile',
+    58→  medium: 'Moyen',
+    59→  hard: 'Difficile',
+    60→};
+    61→
+    62→const DIFFICULTY_BADGE: Record<string, string> = {
+    63→  easy: 'bg-green-700/50 text-green-300',
+    64→  medium: 'bg-amber-700/50 text-amber-300',
+    65→  hard: 'bg-red-700/50 text-red-300',
+    66→};
+    67→
+    68→// ─── Types ─────────────────────────────────────────────────────────────────
+    69→
+    70→type ExamType = 'practice' | 'mock_exam' | 'official' | 'adaptive';
+    71→
+    72→type ExamState = 'idle' | 'loading' | 'running' | 'finished';
+    73→
+    74→type Question = {
+    75→  id: string;
+    76→  question: string;
+    77→  options: string[];
+    78→  correctIndex: number;
+    79→  explanation: string;
+    80→  difficulty: string;
+    81→  category: string;
+    82→  theme: string;
+    83→  reference: string;
+    84→};
+    85→
+    86→type ExamResult = {
+    87→  attemptId: string;
+    88→  score: number;
+    89→  passed: boolean;
+    90→  correctAnswers: number;
+    91→  totalQuestions: number;
+    92→  wrongAnswers: string[];
+    93→};
+    94→
+    95→type ExamConfig = {
+    96→  type: ExamType;
+    97→  title: string;
+    98→  description: string;
+    99→  badge: string;
+   100→  badgeColor: string;
+   101→  icon: React.ElementType;
+   102→  questionCount: number;
+   103→  duration: number;
+   104→  passThreshold: number;
+   105→};
+   106→
+   107→// ─── Exam type definitions ─────────────────────────────────────────────────
+   108→
+   109→const EXAM_TYPES: ExamConfig[] = [
+   110→  {
+   111→    type: 'practice',
+   112→    title: 'Entraînement Libre',
+   113→    description: 'Pratiquez à votre rythme avec des questions aléatoires',
+   114→    badge: 'Libre',
+   115→    badgeColor: 'bg-slate-700/50 text-slate-300',
+   116→    icon: Target,
+   117→    questionCount: 20,
+   118→    duration: 0,
+   119→    passThreshold: 70,
+   120→  },
+   121→  {
+   122→    type: 'mock_exam',
+   123→    title: 'Examen Blanc',
+   124→    description: '40 questions, 30 minutes, comme le vrai examen',
+   125→    badge: 'Simulation',
+   126→    badgeColor: 'bg-emerald-700/50 text-emerald-300',
+   127→    icon: FileCheck,
+   128→    questionCount: 40,
+   129→    duration: 1800,
+   130→    passThreshold: 70,
+   131→  },
+   132→  {
+   133→    type: 'official',
+   134→    title: 'Examen Officiel',
+   135→    description: '40 questions, 35 minutes, seuil de réussite 35/40',
+   136→    badge: 'Officiel',
+   137→    badgeColor: 'bg-amber-700/50 text-amber-300',
+   138→    icon: GraduationCap,
+   139→    questionCount: 40,
+   140→    duration: 2100,
+   141→    passThreshold: 88,
+   142→  },
+   143→  {
+   144→    type: 'adaptive',
+   145→    title: 'Examen Adaptatif',
+   146→    description: 'Questions adaptées à vos faiblesses',
+   147→    badge: 'Adaptatif',
+   148→    badgeColor: 'bg-purple-700/50 text-purple-300',
+   149→    icon: BrainCircuit,
+   150→    questionCount: 40,
+   151→    duration: 1800,
+   152→    passThreshold: 70,
+   153→  },
+   154→];
+   155→
+   156→// ─── Helpers ───────────────────────────────────────────────────────────────
+   157→
+   158→function formatTime(seconds: number): string {
+   159→  const m = Math.floor(seconds / 60);
+   160→  const s = seconds % 60;
+   161→  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+   162→}
+   163→
+   164→// ─── IDLE STATE ────────────────────────────────────────────────────────────
+   165→
+   166→function IdleState({
+   167→  onStart,
+   168→}: {
+   169→  onStart: (type: ExamType, difficulty: string, count: number) => void;
+   170→}) {
+   171→  const [selectedType, setSelectedType] = useState<ExamType>('practice');
+   172→  const [difficulty, setDifficulty] = useState<string>('all');
+   173→  const [questionCount, setQuestionCount] = useState<number>(20);
+   174→
+   175→  const selectedConfig = EXAM_TYPES.find((e) => e.type === selectedType)!;
+   176→  const isPractice = selectedType === 'practice';
+   177→
+   178→  return (
+   179→    <div className="space-y-8">
+   180→      {/* Title */}
+   181→      <motion.div
+   182→        initial={{ opacity: 0, y: 20 }}
+   183→        animate={{ opacity: 1, y: 0 }}
+   184→        transition={{ duration: 0.5 }}
+   185→        className="text-center space-y-2"
+   186→      >
+   187→        <h2 className="text-3xl font-bold text-white">Plateforme d&rsquo;Examen</h2>
+   188→        <p className="text-slate-400">
+   189→          Choisissez votre type d&rsquo;examen et commencez à réviser
+   190→        </p>
+   191→      </motion.div>
+   192→
+   193→      {/* Exam type cards */}
+   194→      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+   195→        {EXAM_TYPES.map((config, i) => {
+   196→          const Icon = config.icon;
+   197→          const isSelected = selectedType === config.type;
+   198→          return (
+   199→            <motion.div
+   200→              key={config.type}
+   201→              initial={{ opacity: 0, y: 20 }}
+   202→              animate={{ opacity: 1, y: 0 }}
+   203→              transition={{ duration: 0.4, delay: i * 0.1 }}
+   204→            >
+   205→              <Card
+   206→                onClick={() => setSelectedType(config.type)}
+   207→                className={`cursor-pointer transition-all duration-200 border-slate-800/60 ${
+   208→                  isSelected
+   209→                    ? 'ring-2 ring-emerald-500/70 bg-slate-800/80'
+   210→                    : 'bg-slate-900/80 hover:bg-slate-800/60 hover:border-emerald-500/30'
+   211→                }`}
+   212→              >
+   213→                <CardContent className="p-5 space-y-3">
+   214→                  <div className="flex items-center justify-between">
+   215→                    <div
+   216→                      className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+   217→                        isSelected ? 'bg-emerald-500/20' : 'bg-slate-800'
+   218→                      }`}
+   219→                    >
+   220→                      <Icon
+   221→                        className={`w-5 h-5 ${
+   222→                          isSelected ? 'text-emerald-400' : 'text-slate-400'
+   223→                        }`}
+   224→                      />
+   225→                    </div>
+   226→                    <Badge
+   227→                      variant="outline"
+   228→                      className={`${config.badgeColor} border-0 text-xs`}
+   229→                    >
+   230→                      {config.badge}
+   231→                    </Badge>
+   232→                  </div>
+   233→                  <h3 className="text-white font-semibold text-sm">
+   234→                    {config.title}
+   235→                  </h3>
+   236→                  <p className="text-slate-400 text-xs leading-relaxed">
+   237→                    {config.description}
+   238→                  </p>
+   239→                </CardContent>
+   240→              </Card>
+   241→            </motion.div>
+   242→          );
+   243→        })}
+   244→      </div>
+   245→
+   246→      {/* Configuration section (only for practice) */}
+   247→      <AnimatePresence mode="wait">
+   248→        {isPractice && (
+   249→          <motion.div
+   250→            key="practice-config"
+   251→            initial={{ opacity: 0, height: 0 }}
+   252→            animate={{ opacity: 1, height: 'auto' }}
+   253→            exit={{ opacity: 0, height: 0 }}
+   254→            transition={{ duration: 0.3 }}
+   255→          >
+   256→            <Card className="bg-slate-900/80 border-slate-800/60">
+   257→              <CardHeader className="pb-3">
+   258→                <CardTitle className="text-white text-base">
+   259→                  Configuration de l&rsquo;entraînement
+   260→                </CardTitle>
+   261→              </CardHeader>
+   262→              <CardContent className="space-y-5">
+   263→                <div className="space-y-2">
+   264→                  <p className="text-slate-300 text-sm font-medium">
+   265→                    Difficulté
+   266→                  </p>
+   267→                  <Select
+   268→                    value={difficulty}
+   269→                    onValueChange={setDifficulty}
+   270→                  >
+   271→                    <SelectTrigger className="bg-slate-800/60 border-slate-700 text-white w-full sm:w-64">
+   272→                      <SelectValue placeholder="Choisir la difficulté" />
+   273→                    </SelectTrigger>
+   274→                    <SelectContent>
+   275→                      <SelectItem value="all">Tous les niveaux</SelectItem>
+   276→                      <SelectItem value="easy">Facile</SelectItem>
+   277→                      <SelectItem value="medium">Moyen</SelectItem>
+   278→                      <SelectItem value="hard">Difficile</SelectItem>
+   279→                    </SelectContent>
+   280→                  </Select>
+   281→                </div>
+   282→                <div className="space-y-2">
+   283→                  <p className="text-slate-300 text-sm font-medium">
+   284→                    Nombre de questions
+   285→                  </p>
+   286→                  <div className="flex gap-2 flex-wrap">
+   287→                    {[10, 20, 30, 40].map((n) => (
+   288→                      <Button
+   289→                        key={n}
+   290→                        variant={questionCount === n ? 'default' : 'outline'}
+   291→                        size="sm"
+   292→                        onClick={() => setQuestionCount(n)}
+   293→                        className={
+   294→                          questionCount === n
+   295→                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+   296→                            : 'border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800'
+   297→                        }
+   298→                      >
+   299→                        {n}
+   300→                      </Button>
+   301→                    ))}
+   302→                  </div>
+   303→                </div>
+   304→              </CardContent>
+   305→            </Card>
+   306→          </motion.div>
+   307→        )}
+   308→      </AnimatePresence>
+   309→
+   310→      {/* Start button */}
+   311→      <motion.div
+   312→        initial={{ opacity: 0, y: 20 }}
+   313→        animate={{ opacity: 1, y: 0 }}
+   314→        transition={{ duration: 0.4, delay: 0.4 }}
+   315→        className="flex justify-center"
+   316→      >
+   317→        <Button
+   318→          size="lg"
+   319→          onClick={() => onStart(selectedType, difficulty, questionCount)}
+   320→          className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-semibold px-8 py-6 text-base shadow-lg shadow-emerald-500/20"
+   321→        >
+   322→          <Play className="w-5 h-5 mr-2" />
+   323→          Commencer l&rsquo;examen
+   324→        </Button>
+   325→      </motion.div>
+   326→    </div>
+   327→  );
+   328→}
+   329→
+   330→// ─── LOADING STATE ─────────────────────────────────────────────────────────
+   331→
+   332→function LoadingState() {
+   333→  return (
+   334→    <div className="space-y-6">
+   335→      <Skeleton className="h-10 w-72 bg-slate-800" />
+   336→      <Skeleton className="h-4 w-full bg-slate-800" />
+   337→      <Card className="bg-slate-900/80 border-slate-800/60">
+   338→        <CardContent className="p-6 space-y-4">
+   339→          <Skeleton className="h-6 w-48 bg-slate-800" />
+   340→          <Skeleton className="h-5 w-full bg-slate-800" />
+   341→          <Skeleton className="h-5 w-3/4 bg-slate-800" />
+   342→          <div className="space-y-3 pt-4">
+   343→            {[0, 1, 2, 3].map((i) => (
+   344→              <Skeleton key={i} className="h-12 w-full bg-slate-800" />
+   345→            ))}
+   346→          </div>
+   347→        </CardContent>
+   348→      </Card>
+   349→    </div>
+   350→  );
+   351→}
+   352→
+   353→// ─── RUNNING STATE ─────────────────────────────────────────────────────────
+   354→
+   355→function RunningState({
+   356→  questions,
+   357→  examConfig,
+   358→  timeRemaining,
+   359→  selectedOption,
+   360→  answered,
+   361→  onSelectOption,
+   362→  onNext,
+   363→  onFinish,
+   364→  currentIndex,
+   365→  answers,
+   366→}: {
+   367→  questions: Question[];
+   368→  examConfig: ExamConfig;
+   369→  timeRemaining: number;
+   370→  selectedOption: number | null;
+   371→  answered: boolean;
+   372→  onSelectOption: (index: number) => void;
+   373→  onNext: () => void;
+   374→  onFinish: () => void;
+   375→  currentIndex: number;
+   376→  answers: Map<string, number>;
+   377→}) {
+   378→  const q = questions[currentIndex];
+   379→  const total = questions.length;
+   380→  const progressPercent = Math.round(((currentIndex + (answered ? 1 : 0)) / total) * 100);
+   381→  const isLowTime = timeRemaining > 0 && timeRemaining < 60;
+   382→
+   383→  return (
+   384→    <div className="space-y-6">
+   385→      {/* Top bar */}
+   386→      <motion.div
+   387→        initial={{ opacity: 0, y: -10 }}
+   388→        animate={{ opacity: 1, y: 0 }}
+   389→        className="flex flex-wrap items-center justify-between gap-3"
+   390→      >
+   391→        <div className="flex items-center gap-3">
+   392→          <span className="text-slate-300 text-sm font-medium">
+   393→            Question {currentIndex + 1}/{total}
+   394→          </span>
+   395→          <Badge
+   396→            variant="outline"
+   397→            className={`${examConfig.badgeColor} border-0 text-xs`}
+   398→          >
+   399→            {examConfig.badge}
+   400→          </Badge>
+   401→        </div>
+   402→        {examConfig.duration > 0 && (
+   403→          <div
+   404→            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
+   405→              isLowTime
+   406→                ? 'bg-red-500/10 border border-red-500/30'
+   407→                : 'bg-slate-800/60'
+   408→            }`}
+   409→          >
+   410→            <Clock
+   411→              className={`w-4 h-4 ${
+   412→                isLowTime ? 'text-red-400' : 'text-slate-400'
+   413→              }`}
+   414→            />
+   415→            <span
+   416→              className={`font-mono text-sm font-semibold ${
+   417→                isLowTime ? 'text-red-400' : 'text-white'
+   418→              }`}
+   419→            >
+   420→              {formatTime(timeRemaining)}
+   421→            </span>
+   422→          </div>
+   423→        )}
+   424→      </motion.div>
+   425→
+   426→      {/* Progress bar */}
+   427→      <Progress value={progressPercent} className="h-2 [&>div]:bg-emerald-500" />
+   428→
+   429→      {/* Question card */}
+   430→      <AnimatePresence mode="wait">
+   431→        <motion.div
+   432→          key={q.id}
+   433→          initial={{ opacity: 0, x: 30 }}
+   434→          animate={{ opacity: 1, x: 0 }}
+   435→          exit={{ opacity: 0, x: -30 }}
+   436→          transition={{ duration: 0.3 }}
+   437→        >
+   438→          <Card className="bg-slate-900/80 border-slate-800/60">
+   439→            <CardContent className="p-6 space-y-5">
+   440→              {/* Badges */}
+   441→              <div className="flex flex-wrap items-center gap-2">
+   442→                <Badge variant="outline" className="bg-slate-800 text-slate-300 border-slate-700 text-xs">
+   443→                  {CATEGORY_MAP[q.category] || q.category}
+   444→                </Badge>
+   445→                <Badge
+   446→                  variant="outline"
+   447→                  className={`${DIFFICULTY_BADGE[q.difficulty] || 'bg-slate-700 text-slate-300'} border-0 text-xs`}
+   448→                >
+   449→                  {DIFFICULTY_MAP[q.difficulty] || q.difficulty}
+   450→                </Badge>
+   451→                {q.theme && (
+   452→                  <Badge variant="outline" className="bg-slate-800/60 text-slate-400 border-slate-700/50 text-xs">
+   453→                    {q.theme}
+   454→                  </Badge>
+   455→                )}
+   456→              </div>
+   457→
+   458→              {/* Question text */}
+   459→              <p className="text-white text-base leading-relaxed font-medium">
+   460→                {q.question}
+   461→              </p>
+   462→
+   463→              {/* Options */}
+   464→              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+   465→                {q.options.map((option, idx) => {
+   466→                  const isCorrect = idx === q.correctIndex;
+   467→                  const isSelected = selectedOption === idx;
+   468→                  const showResult = answered;
+   469→
+   470→                  let borderColor = 'border-slate-800/60 hover:border-emerald-500/30';
+   471→                  let bgColor = 'bg-slate-800/60 hover:bg-slate-700/40';
+   472→
+   473→                  if (showResult) {
+   474→                    if (isCorrect) {
+   475→                      borderColor = 'border-emerald-500';
+   476→                      bgColor = 'bg-emerald-500/10';
+   477→                    } else if (isSelected && !isCorrect) {
+   478→                      borderColor = 'border-red-500';
+   479→                      bgColor = 'bg-red-500/10';
+   480→                    }
+   481→                  } else if (isSelected) {
+   482→                    borderColor = 'border-emerald-500/50';
+   483→                    bgColor = 'bg-emerald-500/5';
+   484→                  }
+   485→
+   486→                  return (
+   487→                    <motion.div
+   488→                      key={idx}
+   489→                      whileHover={!answered ? { scale: 1.01 } : undefined}
+   490→                      whileTap={!answered ? { scale: 0.99 } : undefined}
+   491→                    >
+   492→                      <div
+   493→                        role="button"
+   494→                        tabIndex={0}
+   495→                        onKeyDown={(e) => {
+   496→                          if (!answered && (e.key === 'Enter' || e.key === ' ')) {
+   497→                            e.preventDefault();
+   498→                            onSelectOption(idx);
+   499→                          }
+   500→                        }}
+   501→                        onClick={() => !answered && onSelectOption(idx)}
+   502→                        className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${borderColor} ${bgColor} ${
+   503→                          !answered ? 'hover:shadow-[0_0_12px_rgba(16,185,129,0.15)]' : ''
+   504→                        }`}
+   505→                      >
+   506→                        <span
+   507→                          className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 ${
+   508→                            showResult && isCorrect
+   509→                              ? 'bg-emerald-500 text-white'
+   510→                              : showResult && isSelected && !isCorrect
+   511→                                ? 'bg-red-500 text-white'
+   512→                                : 'bg-slate-700 text-slate-300'
+   513→                          }`}
+   514→                        >
+   515→                          {OPTION_LABELS[idx]}
+   516→                        </span>
+   517→                        <span
+   518→                          className={`text-sm leading-relaxed pt-1 ${
+   519→                            showResult && isCorrect
+   520→                              ? 'text-emerald-300 font-medium'
+   521→                              : showResult && isSelected && !isCorrect
+   522→                                ? 'text-red-300'
+   523→                                : 'text-slate-200'
+   524→                          }`}
+   525→                        >
+   526→                          {option}
+   527→                        </span>
+   528→                        {showResult && isCorrect && (
+   529→                          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 ml-auto mt-0.5" />
+   530→                        )}
+   531→                        {showResult && isSelected && !isCorrect && (
+   532→                          <XCircle className="w-5 h-5 text-red-400 shrink-0 ml-auto mt-0.5" />
+   533→                        )}
+   534→                      </div>
+   535→                    </motion.div>
+   536→                  );
+   537→                })}
+   538→              </div>
+   539→
+   540→              {/* Explanation */}
+   541→              <AnimatePresence>
+   542→                {answered && q.explanation && (
+   543→                  <motion.div
+   544→                    initial={{ opacity: 0, y: 10 }}
+   545→                    animate={{ opacity: 1, y: 0 }}
+   546→                    transition={{ duration: 0.3 }}
+   547→                  >
+   548→                    <div className="rounded-xl bg-slate-800/80 border border-slate-700/50 p-4 space-y-2">
+   549→                      <div className="flex items-center gap-2">
+   550→                        <AlertTriangle className="w-4 h-4 text-amber-400" />
+   551→                        <span className="text-amber-300 text-sm font-semibold">
+   552→                          Explication
+   553→                        </span>
+   554→                      </div>
+   555→                      <p className="text-slate-300 text-sm leading-relaxed">
+   556→                        {q.explanation}
+   557→                      </p>
+   558→                      {q.reference && (
+   559→                        <p className="text-slate-500 text-xs mt-1">
+   560→                          Référence : {q.reference}
+   561→                        </p>
+   562→                      )}
+   563→                    </div>
+   564→                  </motion.div>
+   565→                )}
+   566→              </AnimatePresence>
+   567→
+   568→              {/* Actions */}
+   569→              <div className="flex items-center justify-between pt-2">
+   570→                {answered && currentIndex < total - 1 && (
+   571→                  <Button
+   572→                    variant="outline"
+   573→                    onClick={onNext}
+   574→                    className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"
+   575→                  >
+   576→                    Question suivante
+   577→                    <ChevronRight className="w-4 h-4 ml-1" />
+   578→                  </Button>
+   579→                )}
+   580→                {(!answered || currentIndex === total - 1) && <div />}
+   581→                <Button
+   582→                  variant="outline"
+   583→                  onClick={onFinish}
+   584→                  className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+   585→                >
+   586→                  Terminer l&rsquo;examen
+   587→                </Button>
+   588→              </div>
+   589→            </CardContent>
+   590→          </Card>
+   591→        </motion.div>
+   592→      </AnimatePresence>
+   593→    </div>
+   594→  );
+   595→}
+   596→
+   597→// ─── FINISHED STATE ────────────────────────────────────────────────────────
+   598→
+   599→function FinishedState({
+   600→  questions,
+   601→  answers,
+   602→  result,
+   603→  examConfig,
+   604→  elapsedSeconds,
+   605→  onRestart,
+   606→  onBack,
+   607→}: {
+   608→  questions: Question[];
+   609→  answers: Map<string, number>;
+   610→  result: ExamResult | null;
+   611→  examConfig: ExamConfig;
+   612→  elapsedSeconds: number;
+   613→  onRestart: () => void;
+   614→  onBack: () => void;
+   615→}) {
+   616→  const [showDetails, setShowDetails] = useState(false);
+   617→
+   618→  const score = result?.score ?? 0;
+   619→  const passed = result?.passed ?? false;
+   620→  const correctCount = result?.correctAnswers ?? 0;
+   621→  const totalQuestions = questions.length;
+   622→
+   623→  // Build wrong answers details
+   624→  const wrongDetails = questions.filter((q) => answers.has(q.id) && answers.get(q.id) !== q.correctIndex);
+   625→
+   626→  // Category analysis
+   627→  const categoryStats: Record<
+   628→    string,
+   629→    { total: number; correct: number }
+   630→  > = {};
+   631→  for (const q of questions) {
+   632→    if (!categoryStats[q.category]) {
+   633→      categoryStats[q.category] = { total: 0, correct: 0 };
+   634→    }
+   635→    categoryStats[q.category].total++;
+   636→    if (answers.get(q.id) === q.correctIndex) {
+   637→      categoryStats[q.category].correct++;
+   638→    }
+   639→  }
+   640→  const categories = Object.entries(categoryStats).sort(
+   641→    (a, b) => a[1].correct / a[1].total - b[1].correct / b[1].total
+   642→  );
+   643→
+   644→  return (
+   645→    <div className="space-y-6">
+   646→      {/* Score hero */}
+   647→      <motion.div
+   648→        initial={{ opacity: 0, scale: 0.8 }}
+   649→        animate={{ opacity: 1, scale: 1 }}
+   650→        transition={{ duration: 0.6, type: 'spring', bounce: 0.4 }}
+   651→        className="text-center space-y-4 py-6"
+   652→      >
+   653→        <div className="relative inline-block">
+   654→          <div
+   655→            className={`w-36 h-36 rounded-full flex items-center justify-center mx-auto ${
+   656→              passed
+   657→                ? 'bg-emerald-500/10 ring-4 ring-emerald-500/30'
+   658→                : 'bg-red-500/10 ring-4 ring-red-500/30'
+   659→            }`}
+   660→          >
+   661→            <div className="text-center">
+   662→              <motion.span
+   663→                initial={{ opacity: 0 }}
+   664→                animate={{ opacity: 1 }}
+   665→                transition={{ delay: 0.3 }}
+   666→                className={`text-4xl font-bold ${passed ? 'text-emerald-400' : 'text-red-400'}`}
+   667→              >
+   668→                {score}%
+   669→              </motion.span>
+   670→            </div>
+   671→          </div>
+   672→          <motion.div
+   673→            initial={{ opacity: 0, y: 10 }}
+   674→            animate={{ opacity: 1, y: 0 }}
+   675→            transition={{ delay: 0.5 }}
+   676→          >
+   677→            {passed ? (
+   678→              <div className="flex items-center justify-center gap-2 mt-3">
+   679→                <Trophy className="w-6 h-6 text-emerald-400" />
+   680→                <span className="text-2xl font-bold text-emerald-400">
+   681→                  RÉUSSI
+   682→                </span>
+   683→              </div>
+   684→            ) : (
+   685→              <div className="flex items-center justify-center gap-2 mt-3">
+   686→                <XCircle className="w-6 h-6 text-red-400" />
+   687→                <span className="text-2xl font-bold text-red-400">
+   688→                  ÉCHOUÉ
+   689→                </span>
+   690→              </div>
+   691→            )}
+   692→          </motion.div>
+   693→        </div>
+   694→      </motion.div>
+   695→
+   696→      {/* Stats row */}
+   697→      <motion.div
+   698→        initial={{ opacity: 0, y: 20 }}
+   699→        animate={{ opacity: 1, y: 0 }}
+   700→        transition={{ delay: 0.4 }}
+   701→        className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+   702→      >
+   703→        {[
+   704→          {
+   705→            label: 'Réponses',
+   706→            value: `${correctCount}/${totalQuestions}`,
+   707→            icon: CheckCircle2,
+   708→            color: 'text-emerald-400',
+   709→          },
+   710→          {
+   711→            label: 'Score',
+   712→            value: `${score}%`,
+   713→            icon: Target,
+   714→            color: 'text-emerald-400',
+   715→          },
+   716→          {
+   717→            label: 'Temps',
+   718→            value: formatTime(elapsedSeconds),
+   719→            icon: Clock,
+   720→            color: 'text-slate-300',
+   721→          },
+   722→          {
+   723→            label: 'Type',
+   724→            value: examConfig.badge,
+   725→            icon: examConfig.icon,
+   726→            color: 'text-slate-300',
+   727→          },
+   728→        ].map((stat) => (
+   729→          <div
+   730→            key={stat.label}
+   731→            className="bg-slate-900/80 border border-slate-800/60 rounded-xl p-4 text-center"
+   732→          >
+   733→            <stat.icon className={`w-5 h-5 ${stat.color} mx-auto mb-1`} />
+   734→            <p className="text-white text-lg font-bold">{stat.value}</p>
+   735→            <p className="text-slate-400 text-xs">{stat.label}</p>
+   736→          </div>
+   737→        ))}
+   738→      </motion.div>
+   739→
+   740→      {/* Wrong answers */}
+   741→      {wrongDetails.length > 0 && (
+   742→        <motion.div
+   743→          initial={{ opacity: 0, y: 20 }}
+   744→          animate={{ opacity: 1, y: 0 }}
+   745→          transition={{ delay: 0.5 }}
+   746→        >
+   747→          <Card className="bg-slate-900/80 border-slate-800/60">
+   748→            <CardHeader className="pb-3">
+   749→              <div className="flex items-center justify-between">
+   750→                <CardTitle className="text-white text-base flex items-center gap-2">
+   751→                  <AlertTriangle className="w-4 h-4 text-amber-400" />
+   752→                  Réponses incorrectes ({wrongDetails.length})
+   753→                </CardTitle>
+   754→                <Button
+   755→                  variant="ghost"
+   756→                  size="sm"
+   757→                  onClick={() => setShowDetails(!showDetails)}
+   758→                  className="text-slate-400 hover:text-white text-xs"
+   759→                >
+   760→                  {showDetails ? 'Masquer' : 'Afficher'}
+   761→                </Button>
+   762→              </div>
+   763→            </CardHeader>
+   764→            <AnimatePresence>
+   765→              {showDetails && (
+   766→                <motion.div
+   767→                  initial={{ height: 0, opacity: 0 }}
+   768→                  animate={{ height: 'auto', opacity: 1 }}
+   769→                  exit={{ height: 0, opacity: 0 }}
+   770→                  transition={{ duration: 0.3 }}
+   771→                >
+   772→                  <ScrollArea className="max-h-96 px-6 pb-4">
+   773→                    <div className="space-y-4">
+   774→                      {wrongDetails.map((q, i) => {
+   775→                        const userAnswer = answers.get(q.id)!;
+   776→                        return (
+   777→                          <div
+   778→                            key={q.id}
+   779→                            className="border border-slate-800/60 rounded-xl p-4 space-y-2"
+   780→                          >
+   781→                            <p className="text-slate-200 text-sm font-medium">
+   782→                              {i + 1}. {q.question}
+   783→                            </p>
+   784→                            <div className="flex flex-col sm:flex-row gap-2 text-xs">
+   785→                              <span className="text-red-400">
+   786→                                Votre réponse : {OPTION_LABELS[userAnswer]} — {q.options[userAnswer]}
+   787→                              </span>
+   788→                              <span className="hidden sm:inline text-slate-600">|</span>
+   789→                              <span className="text-emerald-400">
+   790→                                Bonne réponse : {OPTION_LABELS[q.correctIndex]} — {q.options[q.correctIndex]}
+   791→                              </span>
+   792→                            </div>
+   793→                            {q.explanation && (
+   794→                              <p className="text-slate-400 text-xs leading-relaxed">
+   795→                                {q.explanation}
+   796→                              </p>
+   797→                            )}
+   798→                          </div>
+   799→                        );
+   800→                      })}
+   801→                    </div>
+   802→                  </ScrollArea>
+   803→                </motion.div>
+   804→              )}
+   805→            </AnimatePresence>
+   806→          </Card>
+   807→        </motion.div>
+   808→      )}
+   809→
+   810→      {/* Category analysis */}
+   811→      <motion.div
+   812→        initial={{ opacity: 0, y: 20 }}
+   813→        animate={{ opacity: 1, y: 0 }}
+   814→        transition={{ delay: 0.6 }}
+   815→      >
+   816→        <Card className="bg-slate-900/80 border-slate-800/60">
+   817→          <CardHeader className="pb-3">
+   818→            <CardTitle className="text-white text-base flex items-center gap-2">
+   819→              <Zap className="w-4 h-4 text-emerald-400" />
+   820→              Analyse par catégorie
+   821→            </CardTitle>
+   822→          </CardHeader>
+   823→          <CardContent className="space-y-3">
+   824→            {categories.map(([cat, stats]) => {
+   825→              const pct = Math.round((stats.correct / stats.total) * 100);
+   826→              const barColor =
+   827→                pct >= 80
+   828→                  ? 'bg-emerald-500'
+   829→                  : pct >= 50
+   830→                    ? 'bg-amber-500'
+   831→                    : 'bg-red-500';
+   832→              return (
+   833→                <div key={cat} className="space-y-1">
+   834→                  <div className="flex items-center justify-between text-xs">
+   835→                    <span className="text-slate-300">
+   836→                      {CATEGORY_MAP[cat] || cat}
+   837→                    </span>
+   838→                    <span className="text-slate-400">
+   839→                      {stats.correct}/{stats.total} ({pct}%)
+   840→                    </span>
+   841→                  </div>
+   842→                  <div className="w-full h-2.5 rounded-full bg-slate-800 overflow-hidden">
+   843→                    <motion.div
+   844→                      initial={{ width: 0 }}
+   845→                      animate={{ width: `${pct}%` }}
+   846→                      transition={{ duration: 0.8, delay: 0.7 }}
+   847→                      className={`h-full rounded-full ${barColor}`}
+   848→                    />
+   849→                  </div>
+   850→                </div>
+   851→              );
+   852→            })}
+   853→          </CardContent>
+   854→        </Card>
+   855→      </motion.div>
+   856→
+   857→      {/* Action buttons */}
+   858→      <motion.div
+   859→        initial={{ opacity: 0, y: 20 }}
+   860→        animate={{ opacity: 1, y: 0 }}
+   861→        transition={{ delay: 0.7 }}
+   862→        className="flex flex-col sm:flex-row gap-3 justify-center pt-2"
+   863→      >
+   864→        <Button
+   865→          onClick={onRestart}
+   866→          className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-semibold"
+   867→        >
+   868→          <RotateCcw className="w-4 h-4 mr-2" />
+   869→          Recommencer
+   870→        </Button>
+   871→        <Button
+   872→          variant="outline"
+   873→          onClick={onBack}
+   874→          className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800"
+   875→        >
+   876→          <ArrowLeft className="w-4 h-4 mr-2" />
+   877→          Retour aux examens
+   878→        </Button>
+   879→      </motion.div>
+   880→    </div>
+   881→  );
+   882→}
+   883→
+   884→// ─── MAIN COMPONENT ────────────────────────────────────────────────────────
+   885→
+   886→export default function ExamPlatform() {
+   887→  const [examState, setExamState] = useState<ExamState>('idle');
+   888→  const [examConfig, setExamConfig] = useState<ExamConfig>(EXAM_TYPES[0]);
+   889→  const [questions, setQuestions] = useState<Question[]>([]);
+   890→  const [currentIndex, setCurrentIndex] = useState(0);
+   891→  const [answers, setAnswers] = useState<Map<string, number>>(new Map());
+   892→  const [selectedOption, setSelectedOption] = useState<number | null>(null);
+   893→  const [answered, setAnswered] = useState(false);
+   894→  const [timeRemaining, setTimeRemaining] = useState(0);
+   895→  const [result, setResult] = useState<ExamResult | null>(null);
+   896→  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+   897→
+   898→  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+   899→  const startTimeRef = useRef<number>(0);
+   900→  const autoAdvanceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+   901→
+   902→  // Clear any pending auto-advance on unmount
+   903→  useEffect(() => {
+   904→    return () => {
+   905→      if (timerRef.current) clearInterval(timerRef.current);
+   906→      if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
+   907→    };
+   908→  }, []);
+   909→
+   910→  // Timer countdown
+   911→  useEffect(() => {
+   912→    if (examState !== 'running' || examConfig.duration <= 0) return;
+   913→
+   914→    timerRef.current = setInterval(() => {
+   915→      setTimeRemaining((prev) => {
+   916→        if (prev <= 1) {
+   917→          if (timerRef.current) clearInterval(timerRef.current);
+   918→          return 0;
+   919→        }
+   920→        return prev - 1;
+   921→      });
+   922→    }, 1000);
+   923→
+   924→    return () => {
+   925→      if (timerRef.current) clearInterval(timerRef.current);
+   926→    };
+   927→  }, [examState, examConfig.duration]);
+   928→
+   929→  // Auto-finish when timer reaches 0
+   930→  useEffect(() => {
+   931→    if (
+   932→      examState === 'running' &&
+   933→      examConfig.duration > 0 &&
+   934→      timeRemaining === 0
+   935→    ) {
+   936→      handleFinish();
+   937→    }
+   938→  }, [timeRemaining, examState, examConfig.duration, handleFinish]);
+   939→
+   940→  // Elapsed time counter
+   941→  useEffect(() => {
+   942→    if (examState !== 'running') return;
+   943→    startTimeRef.current = Date.now();
+   944→
+   945→    const interval = setInterval(() => {
+   946→      setElapsedSeconds(
+   947→        Math.floor((Date.now() - startTimeRef.current) / 1000)
+   948→      );
+   949→    }, 1000);
+   950→
+   951→    return () => clearInterval(interval);
+   952→  }, [examState]);
+   953→
+   954→  // Post results to API
+   955→  const submitResults = useCallback(
+   956→    async (qs: Question[], ans: Map<string, number>, config: ExamConfig, elapsed: number) => {
+   957→      const answerArray = Array.from(ans.entries()).map(([questionId, selectedOption]) => ({
+   958→        questionId,
+   959→        selectedOption,
+   960→      }));
+   961→
+   962→      if (answerArray.length === 0) return;
+   963→
+   964→      try {
+   965→        const res = await fetch('/api/exam', {
+   966→          method: 'POST',
+   967→          headers: { 'Content-Type': 'application/json' },
+   968→          body: JSON.stringify({
+   969→            userId: USER_ID,
+   970→            answers: answerArray,
+   971→            type: config.type,
+   972→            duration: elapsed,
+   973→            countryCode: 'FR',
+   974→            licenseCode: 'B',
+   975→          }),
+   976→        });
+   977→        if (res.ok) {
+   978→          const data: ExamResult = await res.json();
+   979→          setResult(data);
+   980→        }
+   981→      } catch (err) {
+   982→        console.error('Erreur de soumission :', err);
+   983→      }
+   984→    },
+   985→    []
+   986→  );
+   987→
+   988→  const startExam = useCallback(
+   989→    async (type: ExamType, difficulty: string, count: number) => {
+   990→      const config = EXAM_TYPES.find((e) => e.type === type)!;
+   991→      setExamConfig(config);
+   992→      setExamState('loading');
+   993→      setAnswers(new Map());
+   994→      setCurrentIndex(0);
+   995→      setSelectedOption(null);
+   996→      setAnswered(false);
+   997→      setResult(null);
+   998→      setElapsedSeconds(0);
+   999→
+  1000→      // Build query params
+  1001→      const params = new URLSearchParams();
+  1002→      if (difficulty !== 'all') params.set('difficulty', difficulty);
+  1003→      params.set('count', String(type === 'practice' ? count : config.questionCount));
+  1004→
+  1005→      try {
+  1006→        const res = await fetch(`/api/learning/questions?${params.toString()}`);
+  1007→        if (res.ok) {
+  1008→          const data = await res.json();
+  1009→          const fetchedQuestions: Question[] = data.questions;
+  1010→          if (fetchedQuestions.length === 0) {
+  1011→            setExamState('idle');
+  1012→            return;
+  1013→          }
+  1014→          setQuestions(fetchedQuestions);
+  1015→          setTimeRemaining(config.duration);
+  1016→          setExamState('running');
+  1017→        } else {
+  1018→          setExamState('idle');
+  1019→        }
+  1020→      } catch (err) {
+  1021→        console.error('Erreur de chargement des questions :', err);
+  1022→        setExamState('idle');
+  1023→      }
+  1024→    },
+  1025→    []
+  1026→  );
+  1027→
+  1028→  const handleSelectOption = useCallback(
+  1029→    (index: number) => {
+  1030→      if (answered) return;
+  1031→      const q = questions[currentIndex];
+  1032→      setSelectedOption(index);
+  1033→      setAnswered(true);
+  1034→
+  1035→      const newAnswers = new Map(answers);
+  1036→      newAnswers.set(q.id, index);
+  1037→      setAnswers(newAnswers);
+  1038→
+  1039→      // Auto-advance after 1.5s
+  1040→      if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
+  1041→      autoAdvanceRef.current = setTimeout(() => {
+  1042→        if (currentIndex < questions.length - 1) {
+  1043→          setCurrentIndex((prev) => prev + 1);
+  1044→          setSelectedOption(null);
+  1045→          setAnswered(false);
+  1046→        }
+  1047→      }, 1500);
+  1048→    },
+  1049→    [answered, answers, currentIndex, questions]
+  1050→  );
+  1051→
+  1052→  const handleNext = useCallback(() => {
+  1053→    if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
+  1054→    if (currentIndex < questions.length - 1) {
+  1055→      setCurrentIndex((prev) => prev + 1);
+  1056→      setSelectedOption(null);
+  1057→      setAnswered(false);
+  1058→    }
+  1059→  }, [currentIndex, questions.length]);
+  1060→
+  1061→  const handleFinish = useCallback(async () => {
+  1062→    if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
+  1063→    if (timerRef.current) clearInterval(timerRef.current);
+  1064→
+  1065→    const finalElapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
+  1066→    setElapsedSeconds(finalElapsed);
+  1067→    setExamState('finished');
+  1068→
+  1069→    await submitResults(questions, answers, examConfig, finalElapsed);
+  1070→  }, [questions, answers, examConfig, submitResults]);
+  1071→
+  1072→  const handleRestart = useCallback(() => {
+  1073→    setExamState('idle');
+  1074→    setQuestions([]);
+  1075→    setAnswers(new Map());
+  1076→    setCurrentIndex(0);
+  1077→    setSelectedOption(null);
+  1078→    setAnswered(false);
+  1079→    setResult(null);
+  1080→    setElapsedSeconds(0);
+  1081→    setTimeRemaining(0);
+  1082→  }, []);
+  1083→
+  1084→  const handleBack = useCallback(() => {
+  1085→    handleRestart();
+  1086→  }, [handleRestart]);
+  1087→
+  1088→  // ─── Render ──────────────────────────────────────────────────────────
+  1089→
+  1090→  return (
+  1091→    <div className="min-h-full">
+  1092→      {examState === 'idle' && <IdleState onStart={startExam} />}
+  1093→      {examState === 'loading' && <LoadingState />}
+  1094→      {examState === 'running' && (
+  1095→        <RunningState
+  1096→          questions={questions}
+  1097→          examConfig={examConfig}
+  1098→          timeRemaining={timeRemaining}
+  1099→          selectedOption={selectedOption}
+  1100→          answered={answered}
+  1101→          onSelectOption={handleSelectOption}
+  1102→          onNext={handleNext}
+  1103→          onFinish={handleFinish}
+  1104→          currentIndex={currentIndex}
+  1105→          answers={answers}
+  1106→        />
+  1107→      )}
+  1108→      {examState === 'finished' && (
+  1109→        <FinishedState
+  1110→          questions={questions}
+  1111→          answers={answers}
+  1112→          result={result}
+  1113→          examConfig={examConfig}
+  1114→          elapsedSeconds={elapsedSeconds}
+  1115→          onRestart={handleRestart}
+  1116→          onBack={handleBack}
+  1117→        />
+  1118→      )}
+  1119→    </div>
+  1120→  );
+  1121→}
+  1122→

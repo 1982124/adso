@@ -1,0 +1,657 @@
+     1→'use client';
+     2→
+     3→import React, { useState, useEffect, useCallback } from 'react';
+     4→import { motion } from 'framer-motion';
+     5→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+     6→import { Badge } from '@/components/ui/badge';
+     7→import { Button } from '@/components/ui/button';
+     8→import { Skeleton } from '@/components/ui/skeleton';
+     9→import { ScrollArea } from '@/components/ui/scroll-area';
+    10→import { Separator } from '@/components/ui/separator';
+    11→import {
+    12→  BookOpen, CheckCircle2, ClipboardCheck, TrendingUp,
+    13→  Clock, Award, Copy, Check, AlertTriangle, BarChart3,
+    14→  GraduationCap, Calendar, Shield, Info,
+    15→} from 'lucide-react';
+    16→
+    17→// ─── Types ───────────────────────────────────────────────────────────────
+    18→
+    19→const USER_ID = 'demo@adso.com';
+    20→
+    21→type StatsData = {
+    22→  userId: string;
+    23→  courses: { started: number; completed: number };
+    24→  quiz: {
+    25→    totalAttempts: number;
+    26→    totalQuestionsAnswered: number;
+    27→    avgScore: number;
+    28→    bestScore: number;
+    29→    passRate: number;
+    30→  };
+    31→  categoryBreakdown: Array<{
+    32→    category: string;
+    33→    totalQuestions: number;
+    34→    wrongAttempts: number;
+    35→    passRate: number;
+    36→  }>;
+    37→  weakAreas: Array<{
+    38→    category: string;
+    39→    passRate: number;
+    40→    wrongAttempts: number;
+    41→  }>;
+    42→};
+    43→
+    44→type ExamHistoryItem = {
+    45→  id: string;
+    46→  totalQuestions: number;
+    47→  correctAnswers: number;
+    48→  score: number;
+    49→  duration: number;
+    50→  passed: boolean;
+    51→  type: string;
+    52→  country: string;
+    53→  licenseCode: string;
+    54→  wrongAnswers: string[];
+    55→  createdAt: string;
+    56→};
+    57→
+    58→type ExamHistoryData = {
+    59→  history: ExamHistoryItem[];
+    60→  stats: {
+    61→    totalAttempts: number;
+    62→    passedAttempts: number;
+    63→    failedAttempts: number;
+    64→    avgScore: number;
+    65→    passRate: number;
+    66→    bestScore: number;
+    67→  };
+    68→};
+    69→
+    70→type CertificationItem = {
+    71→  id: string;
+    72→  userId: string;
+    73→  type: string;
+    74→  title: string;
+    75→  description: string;
+    76→  countryCode: string;
+    77→  licenseCode: string;
+    78→  score: number;
+    79→  qrCode: string;
+    80→  certificateId: string;
+    81→  issuedAt: string;
+    82→  expiresAt: string;
+    83→};
+    84→
+    85→type CertificationsData = {
+    86→  certifications: CertificationItem[];
+    87→  total: number;
+    88→};
+    89→
+    90→const CATEGORY_MAP: Record<string, string> = {
+    91→  regulation: 'Réglementation',
+    92→  safety: 'Sécurité',
+    93→  sign: 'Signalisation',
+    94→  priority: 'Priorité',
+    95→  highway: 'Autoroute',
+    96→  intersection: 'Intersection',
+    97→  parking: 'Stationnement',
+    98→  first_aid: 'Secourisme',
+    99→  eco_driving: 'Éco-conduite',
+   100→  weather: 'Météo',
+   101→  vehicle: 'Véhicule',
+   102→};
+   103→
+   104→const TYPE_LABELS: Record<string, string> = {
+   105→  practice: 'Entraînement',
+   106→  mock_exam: 'Examen blanc',
+   107→  official: 'Officiel',
+   108→  adaptive: 'Adaptatif',
+   109→};
+   110→
+   111→const TYPE_BADGE: Record<string, string> = {
+   112→  practice: 'bg-slate-700/50 text-slate-300',
+   113→  mock_exam: 'bg-emerald-700/50 text-emerald-300',
+   114→  official: 'bg-amber-700/50 text-amber-300',
+   115→  adaptive: 'bg-purple-700/50 text-purple-300',
+   116→};
+   117→
+   118→// ─── Helpers ─────────────────────────────────────────────────────────────
+   119→
+   120→function formatDuration(seconds: number): string {
+   121→  const m = Math.floor(seconds / 60);
+   122→  const s = seconds % 60;
+   123→  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+   124→}
+   125→
+   126→function formatDate(dateStr: string): string {
+   127→  try {
+   128→    return new Date(dateStr).toLocaleDateString('fr-FR', {
+   129→      day: 'numeric',
+   130→      month: 'short',
+   131→      year: 'numeric',
+   132→    });
+   133→  } catch {
+   134→    return dateStr;
+   135→  }
+   136→}
+   137→
+   138→function getBarColor(passRate: number): string {
+   139→  if (passRate >= 80) return 'bg-emerald-500';
+   140→  if (passRate >= 60) return 'bg-amber-500';
+   141→  return 'bg-red-500';
+   142→}
+   143→
+   144→function getBarTextColor(passRate: number): string {
+   145→  if (passRate >= 80) return 'text-emerald-400';
+   146→  if (passRate >= 60) return 'text-amber-400';
+   147→  return 'text-red-400';
+   148→}
+   149→
+   150→// ─── Component ───────────────────────────────────────────────────────────
+   151→
+   152→export default function ProgressDashboard() {
+   153→  const [stats, setStats] = useState<StatsData | null>(null);
+   154→  const [examHistory, setExamHistory] = useState<ExamHistoryData | null>(null);
+   155→  const [certifications, setCertifications] = useState<CertificationsData | null>(null);
+   156→  const [loading, setLoading] = useState(true);
+   157→  const [copiedId, setCopiedId] = useState<string | null>(null);
+   158→
+   159→  const fetchData = useCallback(async () => {
+   160→    setLoading(true);
+   161→    try {
+   162→      const [statsRes, examRes, certRes] = await Promise.all([
+   163→        fetch(`/api/learning/stats?userId=${USER_ID}`),
+   164→        fetch(`/api/exam?userId=${USER_ID}&limit=20`),
+   165→        fetch(`/api/certifications?userId=${USER_ID}`),
+   166→      ]);
+   167→
+   168→      if (statsRes.ok) {
+   169→        const data = await statsRes.json();
+   170→        setStats(data);
+   171→      }
+   172→      if (examRes.ok) {
+   173→        const data = await examRes.json();
+   174→        setExamHistory(data);
+   175→      }
+   176→      if (certRes.ok) {
+   177→        const data = await certRes.json();
+   178→        setCertifications(data);
+   179→      }
+   180→    } catch {
+   181→      // Silently fail — UI shows empty states
+   182→    } finally {
+   183→      setLoading(false);
+   184→    }
+   185→  }, []);
+   186→
+   187→  useEffect(() => {
+   188→    fetchData();
+   189→  }, [fetchData]);
+   190→
+   191→  const copyToClipboard = useCallback((id: string, certId: string) => {
+   192→    navigator.clipboard.writeText(certId);
+   193→    setCopiedId(id);
+   194→    setTimeout(() => setCopiedId(null), 2000);
+   195→  }, []);
+   196→
+   197→  // ─── LOADING STATE ─────────────────────────────────────────────────────
+   198→
+   199→  if (loading) {
+   200→    return (
+   201→      <div className="space-y-6">
+   202→        {/* Stats Cards Skeleton */}
+   203→        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+   204→          {[1, 2, 3, 4].map((i) => (
+   205→            <Card key={i} className="border-slate-800/60 bg-slate-900/80 rounded-xl">
+   206→              <CardContent className="py-4 px-4">
+   207→                <Skeleton className="h-9 w-9 rounded-lg bg-slate-800 mb-3" />
+   208→                <Skeleton className="h-7 w-16 bg-slate-800 mb-1" />
+   209→                <Skeleton className="h-3 w-24 bg-slate-800" />
+   210→              </CardContent>
+   211→            </Card>
+   212→          ))}
+   213→        </div>
+   214→
+   215→        {/* Exam History Skeleton */}
+   216→        <Card className="border-slate-800/60 bg-slate-900/80 rounded-xl">
+   217→          <CardHeader className="pb-3 pt-4 px-4">
+   218→            <Skeleton className="h-5 w-40 bg-slate-800" />
+   219→          </CardHeader>
+   220→          <CardContent className="px-4 pb-4">
+   221→            <div className="space-y-3">
+   222→              {[1, 2, 3].map((i) => (
+   223→                <Skeleton key={i} className="h-16 w-full bg-slate-800 rounded-xl" />
+   224→              ))}
+   225→            </div>
+   226→          </CardContent>
+   227→        </Card>
+   228→
+   229→        {/* Bottom Row Skeleton */}
+   230→        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+   231→          <Card className="border-slate-800/60 bg-slate-900/80 rounded-xl">
+   232→            <CardHeader className="pb-3 pt-4 px-4">
+   233→              <Skeleton className="h-5 w-36 bg-slate-800" />
+   234→            </CardHeader>
+   235→            <CardContent className="px-4 pb-4">
+   236→              <div className="space-y-3">
+   237→                {[1, 2, 3, 4].map((i) => (
+   238→                  <Skeleton key={i} className="h-6 w-full bg-slate-800 rounded" />
+   239→                ))}
+   240→              </div>
+   241→            </CardContent>
+   242→          </Card>
+   243→          <Card className="border-slate-800/60 bg-slate-900/80 rounded-xl">
+   244→            <CardHeader className="pb-3 pt-4 px-4">
+   245→              <Skeleton className="h-5 w-32 bg-slate-800" />
+   246→            </CardHeader>
+   247→            <CardContent className="px-4 pb-4">
+   248→              <div className="space-y-3">
+   249→                {[1, 2].map((i) => (
+   250→                  <Skeleton key={i} className="h-20 w-full bg-slate-800 rounded-xl" />
+   251→                ))}
+   252→              </div>
+   253→            </CardContent>
+   254→          </Card>
+   255→        </div>
+   256→      </div>
+   257→    );
+   258→  }
+   259→
+   260→  const statCards = [
+   261→    {
+   262→      label: 'Cours suivis',
+   263→      value: stats?.courses.started ?? 0,
+   264→      icon: <BookOpen className="h-5 w-5" />,
+   265→      color: 'text-blue-400',
+   266→      bgColor: 'bg-blue-500/10',
+   267→    },
+   268→    {
+   269→      label: 'Cours terminés',
+   270→      value: stats?.courses.completed ?? 0,
+   271→      icon: <CheckCircle2 className="h-5 w-5" />,
+   272→      color: 'text-emerald-400',
+   273→      bgColor: 'bg-emerald-500/10',
+   274→    },
+   275→    {
+   276→      label: 'Examens passés',
+   277→      value: examHistory?.stats.totalAttempts ?? stats?.quiz.totalAttempts ?? 0,
+   278→      icon: <ClipboardCheck className="h-5 w-5" />,
+   279→      color: 'text-amber-400',
+   280→      bgColor: 'bg-amber-500/10',
+   281→    },
+   282→    {
+   283→      label: 'Taux de réussite',
+   284→      value: `${examHistory?.stats.passRate ?? stats?.quiz.passRate ?? 0}%`,
+   285→      icon: <TrendingUp className="h-5 w-5" />,
+   286→      color: 'text-emerald-400',
+   287→      bgColor: 'bg-emerald-500/10',
+   288→    },
+   289→  ];
+   290→
+   291→  return (
+   292→    <div className="space-y-6">
+   293→      {/* ─── Top Row: Stats Cards ──────────────────────────────────────────── */}
+   294→      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+   295→        {statCards.map((stat, idx) => (
+   296→          <motion.div
+   297→            key={stat.label}
+   298→            initial={{ opacity: 0, y: 15 }}
+   299→            animate={{ opacity: 1, y: 0 }}
+   300→            transition={{ delay: idx * 0.05 }}
+   301→          >
+   302→            <Card className="border-slate-800/60 bg-slate-900/80 rounded-xl">
+   303→              <CardContent className="py-4 px-4">
+   304→                <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${stat.bgColor} ${stat.color} mb-3`}>
+   305→                  {stat.icon}
+   306→                </div>
+   307→                <p className="text-2xl font-bold text-white">{stat.value}</p>
+   308→                <p className="text-xs text-slate-500 mt-0.5">{stat.label}</p>
+   309→              </CardContent>
+   310→            </Card>
+   311→          </motion.div>
+   312→        ))}
+   313→      </div>
+   314→
+   315→      {/* ─── Weak Areas Alert ────────────────────────────────────────────── */}
+   316→      {stats?.weakAreas && stats.weakAreas.length > 0 && (
+   317→        <motion.div
+   318→          initial={{ opacity: 0, y: 15 }}
+   319→          animate={{ opacity: 1, y: 0 }}
+   320→          transition={{ delay: 0.2 }}
+   321→        >
+   322→          <Card className="border-amber-500/30 bg-amber-950/10 rounded-xl">
+   323→            <CardContent className="p-4">
+   324→              <div className="flex items-start gap-3">
+   325→                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 mt-0.5">
+   326→                  <AlertTriangle className="h-5 w-5 text-amber-400" />
+   327→                </div>
+   328→                <div>
+   329→                  <h3 className="text-sm font-semibold text-amber-300 mb-1">
+   330→                    Zones à améliorer
+   331→                  </h3>
+   332→                  <p className="text-xs text-slate-400 mb-3">
+   333→                    Ces catégories ont un taux de réussite inférieur à 70%. Nous vous recommandons de les pratiquer davantage.
+   334→                  </p>
+   335→                  <div className="flex flex-wrap gap-2">
+   336→                    {stats.weakAreas.map((area) => (
+   337→                      <Badge
+   338→                        key={area.category}
+   339→                        variant="outline"
+   340→                        className="border-amber-500/30 bg-amber-500/10 text-amber-300"
+   341→                      >
+   342→                        {CATEGORY_MAP[area.category] || area.category}
+   343→                        <span className="ml-1.5 text-amber-400/70">{area.passRate}%</span>
+   344→                      </Badge>
+   345→                    ))}
+   346→                  </div>
+   347→                </div>
+   348→              </div>
+   349→            </CardContent>
+   350→          </Card>
+   351→        </motion.div>
+   352→      )}
+   353→
+   354→      {/* ─── Middle: Exam History ──────────────────────────────────────────── */}
+   355→      <motion.div
+   356→        initial={{ opacity: 0, y: 15 }}
+   357→        animate={{ opacity: 1, y: 0 }}
+   358→        transition={{ delay: 0.1 }}
+   359→      >
+   360→        <Card className="border-slate-800/60 bg-slate-900/80 rounded-xl">
+   361→          <CardHeader className="pb-3 pt-4 px-4 sm:px-6">
+   362→            <div className="flex items-center gap-3">
+   363→              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600/20">
+   364→                <Clock className="h-5 w-5 text-emerald-400" />
+   365→              </div>
+   366→              <div>
+   367→                <CardTitle className="text-base font-semibold text-white">
+   368→                  Historique des examens
+   369→                </CardTitle>
+   370→                <p className="text-xs text-slate-500">
+   371→                  {examHistory?.history.length ?? 0} tentatives enregistrées
+   372→                </p>
+   373→              </div>
+   374→            </div>
+   375→          </CardHeader>
+   376→          <CardContent className="px-4 pb-4 sm:px-6">
+   377→            {!examHistory?.history || examHistory.history.length === 0 ? (
+   378→              <div className="text-center py-10">
+   379→                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-800 mx-auto mb-3">
+   380→                  <ClipboardCheck className="h-7 w-7 text-slate-500" />
+   381→                </div>
+   382→                <p className="text-sm text-slate-400">Aucun examen passé</p>
+   383→                <p className="text-xs text-slate-600 mt-1">
+   384→                  Passez votre premier examen pour voir votre historique ici
+   385→                </p>
+   386→              </div>
+   387→            ) : (
+   388→              <ScrollArea className="max-h-[600px]">
+   389→                <div className="space-y-2 pr-3">
+   390→                  {examHistory.history.slice(0, 10).map((exam, idx) => (
+   391→                    <motion.div
+   392→                      key={exam.id}
+   393→                      initial={{ opacity: 0, x: -10 }}
+   394→                      animate={{ opacity: 1, x: 0 }}
+   395→                      transition={{ delay: idx * 0.03 }}
+   396→                      className="rounded-xl border border-slate-800/60 bg-slate-800/30 p-3 sm:p-4"
+   397→                    >
+   398→                      <div className="flex items-center justify-between gap-3">
+   399→                        <div className="flex items-center gap-3 min-w-0">
+   400→                          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${exam.passed ? 'bg-emerald-600/20' : 'bg-red-600/20'}`}>
+   401→                            {exam.passed
+   402→                              ? <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+   403→                              : <AlertTriangle className="h-5 w-5 text-red-400" />
+   404→                            }
+   405→                          </div>
+   406→                          <div className="min-w-0">
+   407→                            <div className="flex items-center gap-2 flex-wrap">
+   408→                              <span className="text-sm font-medium text-white">
+   409→                                {exam.correctAnswers}/{exam.totalQuestions}
+   410→                              </span>
+   411→                              <span className={`text-xs font-semibold ${exam.passed ? 'text-emerald-400' : 'text-red-400'}`}>
+   412→                                {exam.score}%
+   413→                              </span>
+   414→                              <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${TYPE_BADGE[exam.type] || TYPE_BADGE.practice}`}>
+   415→                                {TYPE_LABELS[exam.type] || exam.type}
+   416→                              </Badge>
+   417→                            </div>
+   418→                            <p className="text-xs text-slate-500 mt-0.5">{formatDate(exam.createdAt)}</p>
+   419→                          </div>
+   420→                        </div>
+   421→                        <div className="flex items-center gap-3 shrink-0">
+   422→                          <div className="text-right hidden sm:block">
+   423→                            <p className={`text-xs font-medium ${exam.passed ? 'text-emerald-400' : 'text-red-400'}`}>
+   424→                              {exam.passed ? 'Réussi' : 'Échoué'}
+   425→                            </p>
+   426→                            <p className="text-[11px] text-slate-500 flex items-center gap-1 justify-end">
+   427→                              <Clock className="h-3 w-3" />
+   428→                              {formatDuration(exam.duration)}
+   429→                            </p>
+   430→                          </div>
+   431→                        </div>
+   432→                      </div>
+   433→                    </motion.div>
+   434→                  ))}
+   435→                </div>
+   436→              </ScrollArea>
+   437→            )}
+   438→          </CardContent>
+   439→        </Card>
+   440→      </motion.div>
+   441→
+   442→      {/* ─── Bottom Row: Category Breakdown + Certifications ─────────────── */}
+   443→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+   444→        {/* Category Breakdown */}
+   445→        <motion.div
+   446→          initial={{ opacity: 0, y: 15 }}
+   447→          animate={{ opacity: 1, y: 0 }}
+   448→          transition={{ delay: 0.15 }}
+   449→        >
+   450→          <Card className="border-slate-800/60 bg-slate-900/80 rounded-xl h-full">
+   451→            <CardHeader className="pb-3 pt-4 px-4 sm:px-6">
+   452→              <div className="flex items-center gap-3">
+   453→                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600/20">
+   454→                  <BarChart3 className="h-5 w-5 text-emerald-400" />
+   455→                </div>
+   456→                <div>
+   457→                  <CardTitle className="text-base font-semibold text-white">
+   458→                    Taux de réussite par catégorie
+   459→                  </CardTitle>
+   460→                  <p className="text-xs text-slate-500">
+   461→                    Performance dans chaque thématique
+   462→                  </p>
+   463→                </div>
+   464→              </div>
+   465→            </CardHeader>
+   466→            <CardContent className="px-4 pb-4 sm:px-6">
+   467→              {!stats?.categoryBreakdown || stats.categoryBreakdown.length === 0 ? (
+   468→                <div className="text-center py-8">
+   469→                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-800 mx-auto mb-2">
+   470→                    <BarChart3 className="h-6 w-6 text-slate-500" />
+   471→                  </div>
+   472→                  <p className="text-sm text-slate-400">Aucune donnée disponible</p>
+   473→                  <p className="text-xs text-slate-600 mt-1">
+   474→                    Passez des examens pour voir vos statistiques par catégorie
+   475→                  </p>
+   476→                </div>
+   477→              ) : (
+   478→                <ScrollArea className="max-h-[600px]">
+   479→                  <div className="space-y-3 pr-3">
+   480→                    {stats.categoryBreakdown
+   481→                      .sort((a, b) => a.passRate - b.passRate)
+   482→                      .map((cat, idx) => (
+   483→                        <motion.div
+   484→                          key={cat.category}
+   485→                          initial={{ opacity: 0, x: -10 }}
+   486→                          animate={{ opacity: 1, x: 0 }}
+   487→                          transition={{ delay: idx * 0.04 }}
+   488→                        >
+   489→                          <div className="flex items-center justify-between mb-1">
+   490→                            <span className="text-sm text-slate-300">
+   491→                              {CATEGORY_MAP[cat.category] || cat.category}
+   492→                            </span>
+   493→                            <span className={`text-xs font-medium ${getBarTextColor(cat.passRate)}`}>
+   494→                              {cat.passRate}%
+   495→                            </span>
+   496→                          </div>
+   497→                          <div className="h-2.5 w-full rounded-full bg-slate-800">
+   498→                            <motion.div
+   499→                              initial={{ width: 0 }}
+   500→                              animate={{ width: `${cat.passRate}%` }}
+   501→                              transition={{ duration: 0.6, delay: 0.1 + idx * 0.04 }}
+   502→                              className={`h-full rounded-full ${getBarColor(cat.passRate)}`}
+   503→                            />
+   504→                          </div>
+   505→                          <p className="text-[11px] text-slate-600 mt-0.5">
+   506→                            {cat.totalQuestions} questions · {cat.wrongAttempts} erreur(s)
+   507→                          </p>
+   508→                        </motion.div>
+   509→                      ))}
+   510→                  </div>
+   511→                </ScrollArea>
+   512→              )}
+   513→            </CardContent>
+   514→          </Card>
+   515→        </motion.div>
+   516→
+   517→        {/* Certifications */}
+   518→        <motion.div
+   519→          initial={{ opacity: 0, y: 15 }}
+   520→          animate={{ opacity: 1, y: 0 }}
+   521→          transition={{ delay: 0.2 }}
+   522→        >
+   523→          <Card className="border-slate-800/60 bg-slate-900/80 rounded-xl h-full">
+   524→            <CardHeader className="pb-3 pt-4 px-4 sm:px-6">
+   525→              <div className="flex items-center gap-3">
+   526→                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10">
+   527→                  <Award className="h-5 w-5 text-amber-400" />
+   528→                </div>
+   529→                <div>
+   530→                  <CardTitle className="text-base font-semibold text-white">
+   531→                    Certifications
+   532→                  </CardTitle>
+   533→                  <p className="text-xs text-slate-500">
+   534→                    {certifications?.total ?? 0} certification(s) obtenue(s)
+   535→                  </p>
+   536→                </div>
+   537→              </div>
+   538→            </CardHeader>
+   539→            <CardContent className="px-4 pb-4 sm:px-6">
+   540→              {!certifications?.certifications || certifications.certifications.length === 0 ? (
+   541→                <div className="text-center py-8">
+   542→                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-800 mx-auto mb-2">
+   543→                    <GraduationCap className="h-6 w-6 text-slate-500" />
+   544→                  </div>
+   545→                  <p className="text-sm text-slate-400">Aucune certification</p>
+   546→                  <p className="text-xs text-slate-600 mt-1">
+   547→                    Obtenez vos certifications en réussissant les examens officiels
+   548→                  </p>
+   549→                </div>
+   550→              ) : (
+   551→                <ScrollArea className="max-h-[600px]">
+   552→                  <div className="space-y-3 pr-3">
+   553→                    {certifications.certifications.map((cert, idx) => (
+   554→                      <motion.div
+   555→                        key={cert.id}
+   556→                        initial={{ opacity: 0, y: 10 }}
+   557→                        animate={{ opacity: 1, y: 0 }}
+   558→                        transition={{ delay: idx * 0.05 }}
+   559→                        className="rounded-xl border border-slate-800/60 bg-slate-800/30 p-4"
+   560→                      >
+   561→                        <div className="flex items-start gap-3">
+   562→                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10">
+   563→                            <Shield className="h-5 w-5 text-amber-400" />
+   564→                          </div>
+   565→                          <div className="min-w-0 flex-1">
+   566→                            <h4 className="text-sm font-semibold text-white truncate">{cert.title}</h4>
+   567→                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+   568→                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-slate-800 text-slate-400 border-slate-700">
+   569→                                {TYPE_LABELS[cert.type] || cert.type}
+   570→                              </Badge>
+   571→                              {cert.score !== null && cert.score > 0 && (
+   572→                                <span className="text-[11px] text-emerald-400 font-medium">{cert.score}%</span>
+   573→                              )}
+   574→                            </div>
+   575→                            <div className="flex items-center gap-3 mt-2 text-[11px] text-slate-500">
+   576→                              <span className="flex items-center gap-1">
+   577→                                <Calendar className="h-3 w-3" />
+   578→                                {formatDate(cert.issuedAt)}
+   579→                              </span>
+   580→                              {cert.expiresAt && (
+   581→                                <span className="flex items-center gap-1">
+   582→                                  Expire : {formatDate(cert.expiresAt)}
+   583→                                </span>
+   584→                              )}
+   585→                            </div>
+   586→
+   587→                            {/* Certificate ID with copy */}
+   588→                            <div className="flex items-center gap-2 mt-2">
+   589→                              <code className="rounded-md bg-slate-800 px-2 py-0.5 text-[11px] text-slate-300 font-mono">
+   590→                                {cert.certificateId}
+   591→                              </code>
+   592→                              <button
+   593→                                onClick={() => copyToClipboard(cert.id, cert.certificateId)}
+   594→                                className="flex h-6 w-6 items-center justify-center rounded-md hover:bg-slate-700 transition-colors"
+   595→                                title="Copier l'identifiant"
+   596→                              >
+   597→                                {copiedId === cert.id
+   598→                                  ? <Check className="h-3.5 w-3.5 text-emerald-400" />
+   599→                                  : <Copy className="h-3.5 w-3.5 text-slate-500" />
+   600→                                }
+   601→                              </button>
+   602→                            </div>
+   603→                          </div>
+   604→                        </div>
+   605→                      </motion.div>
+   606→                    ))}
+   607→                  </div>
+   608→                </ScrollArea>
+   609→              )}
+   610→            </CardContent>
+   611→          </Card>
+   612→        </motion.div>
+   613→      </div>
+   614→
+   615→      {/* ─── Additional Stats Footer ───────────────────────────────────────── */}
+   616→      {stats && (stats.quiz.totalAttempts > 0 || stats.quiz.bestScore > 0) && (
+   617→        <motion.div
+   618→          initial={{ opacity: 0, y: 15 }}
+   619→          animate={{ opacity: 1, y: 0 }}
+   620→          transition={{ delay: 0.25 }}
+   621→        >
+   622→          <Card className="border-slate-800/60 bg-slate-900/80 rounded-xl">
+   623→            <CardContent className="p-4 sm:p-6">
+   624→              <div className="flex items-center gap-3 mb-4">
+   625→                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600/20">
+   626→                  <Info className="h-5 w-5 text-emerald-400" />
+   627→                </div>
+   628→                <CardTitle className="text-base font-semibold text-white">
+   629→                  Détails des performances
+   630→                </CardTitle>
+   631→              </div>
+   632→              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+   633→                <div>
+   634→                  <p className="text-xs text-slate-500">Score moyen</p>
+   635→                  <p className="text-lg font-bold text-white">{stats.quiz.avgScore}%</p>
+   636→                </div>
+   637→                <div>
+   638→                  <p className="text-xs text-slate-500">Meilleur score</p>
+   639→                  <p className="text-lg font-bold text-emerald-400">{stats.quiz.bestScore}%</p>
+   640→                </div>
+   641→                <div>
+   642→                  <p className="text-xs text-slate-500">Questions répondues</p>
+   643→                  <p className="text-lg font-bold text-white">{stats.quiz.totalQuestionsAnswered}</p>
+   644→                </div>
+   645→                <div>
+   646→                  <p className="text-xs text-slate-500">Tentatives totales</p>
+   647→                  <p className="text-lg font-bold text-white">{stats.quiz.totalAttempts}</p>
+   648→                </div>
+   649→              </div>
+   650→            </CardContent>
+   651→          </Card>
+   652→        </motion.div>
+   653→      )}
+   654→    </div>
+   655→  );
+   656→}
+   657→
