@@ -262,7 +262,7 @@ export default function QuizSection() {
                         const isCorrectOption = idx === currentQuestion.correctIndex;
                         let borderClass = 'border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/50';
                         let bgClass = '';
-                        let icon = null;
+                        let icon: React.ReactNode = null;
 
                         if (validated) {
                           if (isCorrectOption) {

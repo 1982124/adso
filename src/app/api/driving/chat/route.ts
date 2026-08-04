@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import ZAI from 'z-ai-web-dev-sdk';
 
-const zai = new ZAI();
+let _zai: Awaited<ReturnType<typeof ZAI.create>> | null = null;
+async function getZAI() {
+  if (!_zai) _zai = await ZAI.create();
+  return _zai;
+}
 
 const SYSTEM_PROMPT = `Tu es l'Instructeur IA d'ADSO V4.1, un instructeur de conduite intelligent et bienveillant. Tu aides les élèves conducteurs en temps réel pendant leurs sessions de conduite.
 
@@ -46,6 +50,7 @@ export async function POST(request: NextRequest) {
       : message;
 
     // Call LLM
+    const zai = await getZAI();
     const response = await zai.chat.completions.create({
       model: 'deepseek-v3',
       messages: [

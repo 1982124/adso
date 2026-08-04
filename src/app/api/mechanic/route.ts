@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { chat } from 'z-ai-web-dev-sdk';
+import ZAI from 'z-ai-web-dev-sdk';
+
+let _zai: Awaited<ReturnType<typeof ZAI.create>> | null = null;
+async function getZAI() {
+  if (!_zai) _zai = await ZAI.create();
+  return _zai;
+}
 
 const CATEGORY_LABELS: Record<string, string> = {
   moteur: 'Moteur (Engine)',
@@ -69,7 +75,8 @@ Règles:
 - Assure-toi que le JSON est valide
 - Les causes doivent etre entre 3 et 5, ordonnees par probabilite decroissante`;
 
-    const result = await chat({
+    const zai = await getZAI();
+    const result = await zai.chat.completions.create({
       model: 'deepseek-v3',
       messages: [{ role: 'user', content: prompt }],
     });

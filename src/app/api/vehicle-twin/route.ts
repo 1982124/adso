@@ -161,17 +161,17 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Filtrer les champs autorisés
-    const allowedFields: (keyof typeof updateData)[] = [
+    const allowedFields = [
       'vin', 'registration', 'currentMileage', 'totalTrips', 'totalDistance',
       'avgFuelConsumption', 'aiHealthScore', 'nextServiceDate',
       'nextServiceMileage', 'lastAccidentDate', 'insuranceStatus',
       'recallCount', 'ownershipHistory', 'aiPredictions',
-    ];
+    ] as const;
 
     const data: Record<string, unknown> = {};
     for (const field of allowedFields) {
-      if (updateData[field] !== undefined) {
-        data[field] = updateData[field];
+      if ((updateData as Record<string, unknown>)[field] !== undefined) {
+        data[field] = (updateData as Record<string, unknown>)[field];
       }
     }
 

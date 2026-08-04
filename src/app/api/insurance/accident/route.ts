@@ -51,11 +51,11 @@ export async function POST(req: NextRequest) {
     })
 
     // Auto-create InsuranceClaim for high/critical severity
-    let claimDraft = null
+    let claimDraft: { id: string } | null = null
     if (severity === 'high' || severity === 'critical') {
       const description = `Accident ${severity} détecté par télématique le ${incident.timestamp.toISOString()}. Type: ${type}, Vitesse: ${speed ?? 'N/A'} km/h, Décélération: ${deceleration ?? 'N/A'} m/s². Incident ID: ${incident.id}.`
 
-      claimDraft = await db.insuranceClaim.create({
+      const claim = await db.insuranceClaim.create({
         data: {
           userId: user.id,
           policyId: null,
@@ -67,10 +67,11 @@ export async function POST(req: NextRequest) {
           incidentDate: incident.timestamp,
         },
       })
+      claimDraft = claim;
 
       await db.accidentIncident.update({
         where: { id: incident.id },
-        data: { claimId: claimDraft.id },
+        data: { claimId: claim.id },
       })
     }
 

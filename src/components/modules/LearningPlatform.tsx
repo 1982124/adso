@@ -1303,7 +1303,7 @@ function ExamensTab() {
   };
 
   const score = useMemo(() => {
-    return answers.reduce((acc, ans, idx) => {
+    return answers.reduce<number>((acc, ans, idx) => {
       if (ans !== null && questions[idx]?.correctIndex === ans) return acc + 1;
       return acc;
     }, 0);
@@ -1398,7 +1398,7 @@ function ExamensTab() {
 
   // Finished State
   if (examState === 'finished') {
-    const percentage = Math.round((score / questions.length) * 100);
+    const percentage = Math.round((score / Math.max(questions.length, 1)) * 100);
     return (
       <div className="space-y-6">
         <Card className={`border-2 overflow-hidden ${passed ? 'border-emerald-500/50 bg-emerald-950/20' : 'border-red-500/50 bg-red-950/20'}`}>
@@ -1432,7 +1432,7 @@ function ExamensTab() {
                 </div>
                 <div className="rounded-lg bg-slate-900/80 p-3">
                   <p className="text-xs text-slate-500">Incorrectes</p>
-                  <p className="text-lg font-bold text-red-400">{questions.length - score}</p>
+                  <p className="text-lg font-bold text-red-400">{Math.max(0, questions.length - score)}</p>
                 </div>
                 <div className="rounded-lg bg-slate-900/80 p-3">
                   <p className="text-xs text-slate-500">Temps utilisé</p>

@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import ZAI from 'z-ai-web-dev-sdk';
 
-const zai = new ZAI();
+let _zai: Awaited<ReturnType<typeof ZAI.create>> | null = null;
+async function getZAI() {
+  if (!_zai) _zai = await ZAI.create();
+  return _zai;
+}
 
 const SYSTEM_PROMPT = `Tu es l'ADSO AI Coach, le coach de conduite intelligent d'Auto Drive School Online. Tu es un expert dans l'éducation à la conduite en France.
 
@@ -71,6 +75,7 @@ export async function POST(request: NextRequest) {
       }));
 
     // Call LLM via z-ai-web-dev-sdk
+    const zai = await getZAI();
     const response = await zai.chat.completions.create({
       model: 'deepseek-v3',
       messages: [

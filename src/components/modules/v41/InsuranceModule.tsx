@@ -1035,7 +1035,7 @@ function ClaimsCenterTab({
 // ─── Claim Detail Dialog ─────────────────────────────────────
 function ClaimDetailDialog({ claim, policies, onClose }: { claim: Claim; policies: Policy[]; onClose: () => void }) {
   const policy = policies.find(p => p.id === claim.policyId)
-  let damage = null
+  let damage: Record<string, unknown> | null = null
   try { damage = claim.damageAssessment ? JSON.parse(claim.damageAssessment) : null } catch { /* */ }
 
   const timeline = [
@@ -1093,16 +1093,16 @@ function ClaimDetailDialog({ claim, policies, onClose }: { claim: Claim; policie
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 rounded-lg bg-slate-800/50">
                     <p className="text-slate-500 text-xs">Sévérité</p>
-                    <p className={`text-sm font-medium capitalize ${damage.severity === 'léger' ? 'text-emerald-400' : damage.severity === 'modéré' ? 'text-amber-400' : 'text-red-400'}`}>{damage.severity}</p>
+                    <p className={`text-sm font-medium capitalize ${(damage?.severity as string) === 'léger' ? 'text-emerald-400' : (damage?.severity as string) === 'modéré' ? 'text-amber-400' : 'text-red-400'}`}>{String(damage?.severity ?? '-')}</p>
                   </div>
                   <div className="p-3 rounded-lg bg-slate-800/50">
                     <p className="text-slate-500 text-xs">Délai de réparation</p>
-                    <p className="text-white text-sm font-medium">{damage.repairTime}</p>
+                    <p className="text-white text-sm font-medium">{String(damage?.repairTime ?? '-')}</p>
                   </div>
                   <div className="p-3 rounded-lg bg-slate-800/50 col-span-2">
                     <p className="text-slate-500 text-xs mb-1">Zones endommagées</p>
                     <div className="flex flex-wrap gap-1">
-                      {damage.zones?.map((z: string, i: number) => (
+                      {(damage?.zones as string[] | undefined)?.map((z: string, i: number) => (
                         <Badge key={i} variant="outline" className="border-slate-600 text-slate-300 text-xs">{z}</Badge>
                       ))}
                     </div>
@@ -1110,7 +1110,7 @@ function ClaimDetailDialog({ claim, policies, onClose }: { claim: Claim; policie
                   <div className="p-3 rounded-lg bg-slate-800/50 col-span-2">
                     <p className="text-slate-500 text-xs mb-1">Pièces nécessaires</p>
                     <div className="flex flex-wrap gap-1">
-                      {damage.parts?.map((p: string, i: number) => (
+                      {(damage?.parts as string[] | undefined)?.map((p: string, i: number) => (
                         <Badge key={i} variant="outline" className="border-emerald-500/30 text-emerald-400 text-xs">{p}</Badge>
                       ))}
                     </div>
@@ -1459,8 +1459,8 @@ function FraudDetectionTab({ trustScore }: { trustScore: TrustScoreData }) {
           ) : (
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {alerts.map((alert) => {
-                let evidence: unknown = null
-                try { evidence = alert.evidence ? JSON.parse(alert.evidence) : null } catch { /* */ }
+                let evidence: string | null = null
+                try { evidence = alert.evidence || null } catch { /* */ }
                 return (
                   <div key={alert.id} className="p-4 rounded-lg bg-slate-800/50 border border-slate-700/50">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
@@ -1732,7 +1732,7 @@ function TelematicsCenterTab() {
   const [reportOpen, setReportOpen] = useState(false)
   const [reportMonth, setReportMonth] = useState(new Date().getMonth() + 1)
   const [reportYear, setReportYear] = useState(new Date().getFullYear())
-  const [report, setReport] = useState<unknown>(null)
+  const [report, setReport] = useState<Record<string, unknown> | null>(null)
   const [generating, setGenerating] = useState(false)
 
   useEffect(() => {

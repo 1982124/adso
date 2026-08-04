@@ -72,7 +72,7 @@ export async function GET() {
     }
 
     // Create new FraudAlert records (avoid duplicates by type+claimId combo)
-    const createdAlerts = []
+    const createdAlerts: Array<{ id: string; type: string; description: string; probability: number; evidence: string | null; status: string; createdAt: Date; updatedAt: Date; userId: string; claimId: string | null }> = []
     for (const alert of newAlerts) {
       const existing = alert.claimId
         ? await db.fraudAlert.findFirst({ where: { userId: user.id, type: alert.type, claimId: alert.claimId } })

@@ -9,7 +9,7 @@ const fadeInUp = {
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.15, duration: 0.6, ease: 'easeOut' },
+    transition: { delay: i * 0.15, duration: 0.6, ease: 'easeOut' as const },
   }),
 };
 
@@ -32,39 +32,39 @@ export default function HeroSection() {
         <motion.div
           className="absolute top-[20%] -left-4 w-32 h-1 bg-emerald-500/10 rounded-full"
           animate={{ x: [0, 100, 0] }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' as const }}
         />
         <motion.div
           className="absolute top-[45%] right-0 w-48 h-1 bg-emerald-400/10 rounded-full"
           animate={{ x: [0, -120, 0] }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' as const }}
         />
         <motion.div
           className="absolute bottom-[30%] left-[10%] w-24 h-1 bg-emerald-500/8 rounded-full"
           animate={{ x: [0, 80, 0] }}
-          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' as const, delay: 2 }}
         />
         {/* Floating circles (road signs) */}
         <motion.div
           className="absolute top-[15%] right-[15%] w-3 h-3 rounded-full bg-emerald-400/20"
           animate={{ y: [0, -20, 0], scale: [1, 1.2, 1] }}
-          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' as const }}
         />
         <motion.div
           className="absolute top-[60%] left-[8%] w-2 h-2 rounded-full bg-emerald-300/15"
           animate={{ y: [0, -15, 0], scale: [1, 1.3, 1] }}
-          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' as const, delay: 1 }}
         />
         <motion.div
           className="absolute bottom-[25%] right-[25%] w-4 h-4 rounded-full border border-emerald-500/15"
           animate={{ y: [0, -25, 0], scale: [1, 0.8, 1] }}
-          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
+          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' as const, delay: 3 }}
         />
         {/* Steering wheel shape */}
         <motion.div
           className="absolute bottom-[20%] right-[10%] w-16 h-16 rounded-full border border-emerald-500/10"
           animate={{ rotate: [0, 360] }}
-          transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+          transition={{ duration: 20, repeat: Infinity, ease: 'linear' as const }}
         />
       </div>
 

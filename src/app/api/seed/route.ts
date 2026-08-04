@@ -381,7 +381,6 @@ async function seedV42Data(userId: string) {
           openingHours: l.openingHours ? JSON.stringify(l.openingHours) : null,
           services: l.services ? JSON.stringify(l.services) : null,
           certifications: l.certifications ? JSON.stringify(l.certifications) : null,
-          rating: l.rating || 0,
         },
       });
       listingIds.push(listing.id);
@@ -587,7 +586,7 @@ export async function POST(request: NextRequest) {
     // Seed signs
     if (existingSigns === 0) {
       for (const sign of seedRoadSigns) {
-        await db.roadSign.create({ data: sign });
+        await db.roadSign.create({ data: sign as Parameters<typeof db.roadSign.create>[0]['data'] });
       }
     }
 
