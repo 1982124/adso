@@ -1,53 +1,53 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireRole, getUserId } from '@/lib/auth'
 
 // ─── GET: Insurance Dashboard KPIs ──────────────────────────
 export async function GET() {
   try {
-    const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } })
-    if (!user) {
-      return NextResponse.json({ error: 'Aucun utilisateur trouvé' }, { status: 404 })
-    }
+    const { error, session } = await requireRole('insurer');
+    if (error) return error;
+    const userId = getUserId(session)!;
 
     // Active policies count
     const activePolicies = await db.insurancePolicy.count({
-      where: { userId: user.id, status: 'active' },
+      where: { userId, status: 'active' },
     })
 
     // Total claims count
     const totalClaims = await db.insuranceClaim.count({
-      where: { userId: user.id },
+      where: { userId },
     })
 
     // Total claim cost (approved + paid)
     const costResult = await db.insuranceClaim.aggregate({
       _sum: { estimatedCost: true },
-      where: { userId: user.id, status: { in: ['approved', 'paid'] } },
+      where: { userId, status: { in: ['approved', 'paid'] } },
     })
     const totalClaimCost = costResult._sum.estimatedCost ?? 0
 
     // Pending fraud alerts
     const fraudAlerts = await db.fraudAlert.count({
-      where: { userId: user.id, status: 'pending' },
+      where: { userId, status: 'pending' },
     })
 
     // Average premium (active policies)
     const premiumResult = await db.insurancePolicy.aggregate({
       _avg: { premium: true },
-      where: { userId: user.id, status: 'active', premium: { not: null } },
+      where: { userId, status: 'active', premium: { not: null } },
     })
     const averagePremium = premiumResult._avg.premium ?? 0
 
     // Average risk from TrustScore
     const latestTrust = await db.trustScore.findFirst({
-      where: { userId: user.id },
+      where: { userId },
       orderBy: { lastCalculated: 'desc' },
     })
     const averageRisk = latestTrust ? latestTrust.overallScore : 50
 
     // Claims by month
     const allClaims = await db.insuranceClaim.findMany({
-      where: { userId: user.id, incidentDate: { not: null } },
+      where: { userId, incidentDate: { not: null } },
       select: { incidentDate: true, id: true },
     })
     const claimsByMonthMap = new Map<string, number>()
@@ -63,7 +63,7 @@ export async function GET() {
 
     // Policies by type
     const policies = await db.insurancePolicy.findMany({
-      where: { userId: user.id },
+      where: { userId },
       select: { type: true },
     })
     const policiesByTypeMap = new Map<string, number>()
@@ -74,7 +74,7 @@ export async function GET() {
 
     // Claims by status
     const claimsAll = await db.insuranceClaim.findMany({
-      where: { userId: user.id },
+      where: { userId },
       select: { status: true },
     })
     const claimsByStatusMap = new Map<string, number>()

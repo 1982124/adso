@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireRole, getUserId } from '@/lib/auth'
 
 // ─── GET: List claims ─────────────────────────────────────────
 export async function GET() {
   try {
-    const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } })
-    if (!user) {
-      return NextResponse.json({ error: 'Aucun utilisateur trouvé' }, { status: 404 })
-    }
+    const { error, session } = await requireRole('insurer');
+    if (error) return error;
+    const userId = getUserId(session)!;
 
     const claims = await db.insuranceClaim.findMany({
-      where: { userId: user.id },
+      where: { userId },
       orderBy: { createdAt: 'desc' },
     })
 
@@ -24,10 +24,9 @@ export async function GET() {
 // ─── POST: File new claim ─────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
-    const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } })
-    if (!user) {
-      return NextResponse.json({ error: 'Aucun utilisateur trouvé' }, { status: 404 })
-    }
+    const { error, session } = await requireRole('insurer');
+    if (error) return error;
+    const userId = getUserId(session)!;
 
     const body = await req.json()
     const { type, description, date, location, policyId, photos } = body
@@ -38,7 +37,7 @@ export async function POST(req: NextRequest) {
 
     const claim = await db.insuranceClaim.create({
       data: {
-        userId: user.id,
+        userId,
         policyId: policyId || null,
         type: type || 'collision',
         status: 'submitted',

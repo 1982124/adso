@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireRole } from '@/lib/auth';
 
 export async function GET() {
+  const { error } = await requireRole('admin');
+  if (error) return error;
   try {
     // Run all aggregation queries in parallel
     const [

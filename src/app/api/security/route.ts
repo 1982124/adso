@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-
-// ─── Helper: get demo user ─────────────────────────────────
-async function getDemoUser() {
-  return db.user.findFirst({ orderBy: { createdAt: 'asc' } })
-}
+import { requireAuth, getUserId } from '@/lib/auth'
 
 // ─── Event type to French label mapping ────────────────────
 const EVENT_LABELS: Record<string, string> = {
@@ -38,7 +34,11 @@ const SEVERITY_COLORS: Record<string, string> = {
 // ─── GET: list security events ─────────────────────────────
 export async function GET() {
   try {
-    const user = await getDemoUser()
+    const { error: authError, session } = await requireAuth()
+    if (authError) return authError
+    const userId = getUserId(session)!
+
+    const user = await db.user.findUnique({ where: { id: userId } })
     if (!user) {
       return NextResponse.json({ success: true, data: [], message: 'Aucun utilisateur' })
     }
@@ -73,12 +73,15 @@ export async function GET() {
 
 // ─── POST: create a security event ─────────────────────────
 export async function POST(request: NextRequest) {
-  const user = await getDemoUser()
-  if (!user) {
-    return NextResponse.json({ success: false, error: 'Utilisateur non trouvé' }, { status: 404 })
-  }
-
   try {
+    const { error: authError, session } = await requireAuth()
+    if (authError) return authError
+    const userId = getUserId(session)!
+
+    const user = await db.user.findUnique({ where: { id: userId } })
+    if (!user) {
+      return NextResponse.json({ success: false, error: 'Utilisateur non trouvé' }, { status: 404 })
+    }
     const body = await request.json()
 
     const event = await db.securityEvent.create({
@@ -103,6 +106,9 @@ export async function POST(request: NextRequest) {
 // ─── DELETE: delete an unresolved event ─────────────────────
 export async function DELETE(request: NextRequest) {
   try {
+    const { error } = await requireAuth()
+    if (error) return error
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 

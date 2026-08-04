@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireRole, getUserId } from '@/lib/auth'
 
 const PART_CATALOG: Record<string, string> = {
   bumperScore: 'Pare-chocs',
@@ -35,10 +36,9 @@ function computeSeverity(avg: number): string {
 // ─── GET: Get damage assessment for a claim ──────────────────
 export async function GET(req: NextRequest) {
   try {
-    const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } })
-    if (!user) {
-      return NextResponse.json({ error: 'Aucun utilisateur trouvé' }, { status: 404 })
-    }
+    const { error, session } = await requireRole('insurer');
+    if (error) return error;
+    const userId = getUserId(session)!;
 
     const claimId = req.nextUrl.searchParams.get('claimId')
     if (!claimId) {
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
     }
 
     const claim = await db.insuranceClaim.findFirst({
-      where: { id: claimId, userId: user.id },
+      where: { id: claimId, userId },
     })
     if (!claim) {
       return NextResponse.json({ error: 'Réclamation non trouvée' }, { status: 404 })
@@ -73,10 +73,9 @@ export async function GET(req: NextRequest) {
 // ─── POST: Create DamageAssessment for a claim ───────────────
 export async function POST(req: NextRequest) {
   try {
-    const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } })
-    if (!user) {
-      return NextResponse.json({ error: 'Aucun utilisateur trouvé' }, { status: 404 })
-    }
+    const { error, session } = await requireRole('insurer');
+    if (error) return error;
+    const userId = getUserId(session)!;
 
     const body = await req.json()
     const {
@@ -96,7 +95,7 @@ export async function POST(req: NextRequest) {
     }
 
     const claim = await db.insuranceClaim.findFirst({
-      where: { id: claimId, userId: user.id },
+      where: { id: claimId, userId },
     })
     if (!claim) {
       return NextResponse.json({ error: 'Réclamation non trouvée' }, { status: 404 })

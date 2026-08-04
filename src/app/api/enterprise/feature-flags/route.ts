@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRole } from '@/lib/auth'
 
 // Feature flags are stored in-memory for now (no DB model)
 const featureFlags: Array<{
@@ -94,6 +95,8 @@ const featureFlags: Array<{
 ]
 
 export async function GET() {
+  const { error } = await requireRole('admin')
+  if (error) return error
   try {
     return NextResponse.json({ success: true, data: featureFlags })
   } catch (error) {
@@ -106,6 +109,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const { error } = await requireRole('admin')
+  if (error) return error
   try {
     const body = await request.json()
     const { flagId, enabled } = body

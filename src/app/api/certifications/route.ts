@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAuth, getUserId } from '@/lib/auth';
 import crypto from 'crypto';
 
 function randomChars(length: number): string {
@@ -36,23 +37,11 @@ function getExpirationDate(type: string): Date {
 // ── GET: List user certifications ──
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    const { error: authError, session } = await requireAuth();
+    if (authError) return authError;
+    const userId = getUserId(session)!;
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'userId requis' },
-        { status: 400 }
-      );
-    }
-
-    // Resolve user by email or id
-    let user;
-    user = await db.user.findUnique({ where: { email: userId } });
-    if (!user) {
-      user = await db.user.findUnique({ where: { id: userId } });
-    }
-
+    const user = await db.user.findUnique({ where: { id: userId } });
     if (!user) {
       return NextResponse.json(
         { error: 'Utilisateur non trouvé' },
@@ -81,9 +70,12 @@ export async function GET(request: NextRequest) {
 // ── POST: Issue a new certification ──
 export async function POST(request: NextRequest) {
   try {
+    const { error: authError, session } = await requireAuth();
+    if (authError) return authError;
+    const userId = getUserId(session)!;
+
     const body = await request.json();
     const {
-      userId,
       type,
       title,
       description,
@@ -91,7 +83,6 @@ export async function POST(request: NextRequest) {
       licenseCode,
       score,
     } = body as {
-      userId?: string;
       type?: string;
       title?: string;
       description?: string;
@@ -100,20 +91,14 @@ export async function POST(request: NextRequest) {
       score?: number;
     };
 
-    if (!userId || !type || !title || !description) {
+    if (!type || !title || !description) {
       return NextResponse.json(
-        { error: 'userId, type, titre et description sont requis' },
+        { error: 'type, titre et description sont requis' },
         { status: 400 }
       );
     }
 
-    // Resolve user by email or id
-    let user;
-    user = await db.user.findUnique({ where: { email: userId } });
-    if (!user) {
-      user = await db.user.findUnique({ where: { id: userId } });
-    }
-
+    const user = await db.user.findUnique({ where: { id: userId } });
     if (!user) {
       return NextResponse.json(
         { error: 'Utilisateur non trouvé' },

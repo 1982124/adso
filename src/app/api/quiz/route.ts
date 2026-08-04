@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAuth, getUserId } from '@/lib/auth';
 
 // Fisher-Yates shuffle
 function shuffleArray<T>(array: T[]): T[] {
@@ -13,6 +14,9 @@ function shuffleArray<T>(array: T[]): T[] {
 
 export async function GET() {
   try {
+    const { error } = await requireAuth();
+    if (error) return error;
+
     const allQuestions = await db.question.findMany();
 
     if (allQuestions.length === 0) {
@@ -63,9 +67,12 @@ interface QuizAnswer {
 
 export async function POST(request: NextRequest) {
   try {
+    const { error, session } = await requireAuth();
+    if (error) return error;
+    const userId = getUserId(session)!;
+
     const body = await request.json();
-    const { userId, answers, duration } = body as {
-      userId?: string;
+    const { answers, duration } = body as {
       answers: QuizAnswer[];
       duration?: number;
     };
@@ -77,16 +84,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Resolve user by email or id
-    let user;
-    if (userId) {
-      // Try email first, then id
-      user = await db.user.findUnique({ where: { email: userId } });
-      if (!user) {
-        user = await db.user.findUnique({ where: { id: userId } });
-      }
-    }
-
+    const user = await db.user.findUnique({ where: { id: userId } });
     if (!user) {
       return NextResponse.json(
         { error: 'Utilisateur non trouvé' },

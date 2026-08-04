@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAuth, getUserId } from '@/lib/auth';
 
 // GET — Récupérer les jumeaux numériques du véhicule
 export async function GET(request: NextRequest) {
   try {
-    const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } });
+    const { error: authError, session } = await requireAuth();
+    if (authError) return authError;
+    const userId = getUserId(session)!;
+
+    const user = await db.user.findUnique({ where: { id: userId } });
     if (!user) {
       return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 });
     }
@@ -46,7 +51,11 @@ export async function GET(request: NextRequest) {
 // POST — Créer ou mettre à jour un jumeau numérique
 export async function POST(request: NextRequest) {
   try {
-    const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } });
+    const { error: authError, session } = await requireAuth();
+    if (authError) return authError;
+    const userId = getUserId(session)!;
+
+    const user = await db.user.findUnique({ where: { id: userId } });
     if (!user) {
       return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 });
     }
@@ -153,6 +162,9 @@ export async function POST(request: NextRequest) {
 // PATCH — Mettre à jour un jumeau numérique
 export async function PATCH(request: NextRequest) {
   try {
+    const { error } = await requireAuth();
+    if (error) return error;
+
     const body = await request.json();
     const { id, ...updateData } = body;
 

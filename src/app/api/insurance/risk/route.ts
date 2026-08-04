@@ -1,17 +1,19 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireRole, getUserId } from '@/lib/auth'
 
 // ─── GET: Risk assessment ──────────────────────────────────
 export async function GET() {
   try {
-    const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } })
-    if (!user) {
-      return NextResponse.json({ error: 'Aucun utilisateur trouvé' }, { status: 404 })
-    }
+    const { error, session } = await requireRole('insurer');
+    if (error) return error;
+    const userId = getUserId(session)!;
+
+    const user = await db.user.findUnique({ where: { id: userId } })
 
     // 1. Vehicle risk: based on vehicle profiles
     const vehicles = await db.vehicleProfile.findMany({
-      where: { userId: user.id },
+      where: { userId },
       select: { year: true, mileage: true, lastService: true, type: true },
     })
 
@@ -37,15 +39,15 @@ export async function GET() {
     // 2. Driver risk: based on quiz attempts, certifications, claims
     const [quizAttempts, certifications, claims] = await Promise.all([
       db.quizAttempt.findMany({
-        where: { userId: user.id },
+        where: { userId },
         select: { score: true, passed: true },
       }),
       db.certification.findMany({
-        where: { userId: user.id },
+        where: { userId },
         select: { score: true },
       }),
       db.insuranceClaim.findMany({
-        where: { userId: user.id },
+        where: { userId },
         select: { status: true, type: true },
       }),
     ])
@@ -63,14 +65,14 @@ export async function GET() {
         : driverRiskScore <= 75 ? 'Élevé' : 'Très élevé'
 
     // 3. Location risk (simulated based on user country)
-    const locationRisk = user.country === 'FR' ? 42 : 55
+    const locationRisk = user?.country === 'FR' ? 42 : 55
 
     // 4. Risk factors
     const riskFactors = [
       { name: 'Âge du conducteur', value: 15, description: 'Conducteur expérimenté (30-45 ans)' },
       { name: 'Historique accidents', value: Math.min(100, accidentClaims * 25), description: `${accidentClaims} sinistre(s) enregistré(s)` },
       { name: 'Kilométrage annuel', value: vehicles.length > 0 ? Math.min(80, Math.round(vehicles[0].mileage / 200)) : 40, description: vehicles.length > 0 ? `Environ ${Math.round(vehicles[0].mileage * 1.5).toLocaleString('fr-FR')} km/an estimés` : 'Non disponible' },
-      { name: 'Zone géographique', value: locationRisk, description: `Zone ${user.country} — risque ${locationRisk <= 30 ? 'faible' : locationRisk <= 60 ? 'moyen' : 'élevé'}` },
+      { name: 'Zone géographique', value: locationRisk, description: `Zone ${user?.country ?? 'FR'} — risque ${locationRisk <= 30 ? 'faible' : locationRisk <= 60 ? 'moyen' : 'élevé'}` },
       { name: 'Type de véhicule', value: vehicles.length > 0 ? (vehicles[0].type === 'car' ? 20 : 40) : 30, description: vehicles.length > 0 ? `Type : ${vehicles[0].type}` : 'Non défini' },
       { name: 'Score de conduite', value: Math.max(0, 100 - driverRiskScore), description: `Score global : ${Math.max(0, 100 - driverRiskScore)}/100` },
       { name: 'Fréquence d\'utilisation', value: 30, description: 'Usage quotidien modéré' },

@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAuth } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
+    const { error } = await requireAuth();
+    if (error) return error;
+
     const { searchParams } = request.nextUrl;
     const limit = Math.min(parseInt(searchParams.get('limit') ?? '10', 10), 50);
 

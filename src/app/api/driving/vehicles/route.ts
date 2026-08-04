@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAuth, getUserId } from '@/lib/auth';
 
 // POST: Add vehicle profile
 // GET: List user vehicles
 export async function POST(request: NextRequest) {
   try {
+    const { error: authError, session } = await requireAuth();
+    if (authError) return authError;
+    const userId = getUserId(session)!;
+
     const body = await request.json();
     const {
-      userId,
       make,
       model,
       year,
@@ -20,7 +24,6 @@ export async function POST(request: NextRequest) {
       color,
       mileage = 0,
     } = body as {
-      userId?: string;
       make: string;
       model: string;
       year: number;
@@ -41,15 +44,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user
-    let user;
-    if (userId) {
-      user = await db.user.findUnique({ where: { email: userId } });
-      if (!user) user = await db.user.findUnique({ where: { id: userId } });
-    }
-    if (!user) {
-      user = await db.user.findFirst();
-    }
+    const user = await db.user.findUnique({ where: { id: userId } });
     if (!user) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }
@@ -83,19 +78,14 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const { error: authError, session } = await requireAuth();
+    if (authError) return authError;
+    const userId = getUserId(session)!;
+
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId') || undefined;
     const type = searchParams.get('type') || undefined;
 
-    // Find user
-    let user;
-    if (userId) {
-      user = await db.user.findUnique({ where: { email: userId } });
-      if (!user) user = await db.user.findUnique({ where: { id: userId } });
-    }
-    if (!user) {
-      user = await db.user.findFirst();
-    }
+    const user = await db.user.findUnique({ where: { id: userId } });
     if (!user) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }

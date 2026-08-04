@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireRole } from '@/lib/auth'
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { error } = await requireRole('admin')
+  if (error) return error
   try {
     const { id } = await params
     const violation = await db.trafficViolation.findUnique({
@@ -35,6 +38,8 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { error } = await requireRole('admin')
+  if (error) return error
   try {
     const { id } = await params
     const body = await request.json()

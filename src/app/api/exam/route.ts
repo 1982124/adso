@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAuth, getUserId } from '@/lib/auth';
 
 // ── POST: Submit an exam ──
 interface ExamAnswer {
@@ -9,10 +10,13 @@ interface ExamAnswer {
 
 export async function POST(request: NextRequest) {
   try {
+    const { error: authError, session } = await requireAuth();
+    if (authError) return authError;
+    const userId = getUserId(session)!;
+
     const body = await request.json();
-    const { userId, answers, type, duration, countryCode, licenseCode } =
+    const { answers, type, duration, countryCode, licenseCode } =
       body as {
-        userId?: string;
         answers: ExamAnswer[];
         type?: string;
         duration?: number;
@@ -27,15 +31,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Resolve user by email or id
-    let user;
-    if (userId) {
-      user = await db.user.findUnique({ where: { email: userId } });
-      if (!user) {
-        user = await db.user.findUnique({ where: { id: userId } });
-      }
-    }
-
+    const user = await db.user.findUnique({ where: { id: userId } });
     if (!user) {
       return NextResponse.json(
         { error: 'Utilisateur non trouvé' },
@@ -101,25 +97,15 @@ export async function POST(request: NextRequest) {
 // ── GET: Exam history for a user ──
 export async function GET(request: NextRequest) {
   try {
+    const { error: authError, session } = await requireAuth();
+    if (authError) return authError;
+    const userId = getUserId(session)!;
+
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
     const type = searchParams.get('type');
     const limitParam = searchParams.get('limit');
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'userId requis' },
-        { status: 400 }
-      );
-    }
-
-    // Resolve user by email or id
-    let user;
-    user = await db.user.findUnique({ where: { email: userId } });
-    if (!user) {
-      user = await db.user.findUnique({ where: { id: userId } });
-    }
-
+    const user = await db.user.findUnique({ where: { id: userId } });
     if (!user) {
       return NextResponse.json(
         { error: 'Utilisateur non trouvé' },

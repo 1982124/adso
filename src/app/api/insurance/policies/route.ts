@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireRole, getUserId } from '@/lib/auth'
 
 // ─── GET: List policies ───────────────────────────────────────
 export async function GET() {
   try {
-    const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } })
-    if (!user) {
-      return NextResponse.json({ error: 'Aucun utilisateur trouvé' }, { status: 404 })
-    }
+    const { error, session } = await requireRole('insurer');
+    if (error) return error;
+    const userId = getUserId(session)!;
 
     const policies = await db.insurancePolicy.findMany({
-      where: { userId: user.id },
+      where: { userId },
       orderBy: { createdAt: 'desc' },
     })
 
@@ -24,10 +24,9 @@ export async function GET() {
 // ─── POST: Create policy ──────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
-    const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } })
-    if (!user) {
-      return NextResponse.json({ error: 'Aucun utilisateur trouvé' }, { status: 404 })
-    }
+    const { error, session } = await requireRole('insurer');
+    if (error) return error;
+    const userId = getUserId(session)!;
 
     const body = await req.json()
     const { provider, type, vehicleType, premium, deductible, startDate, endDate, paydEnabled, phydEnabled } = body
@@ -40,7 +39,7 @@ export async function POST(req: NextRequest) {
 
     const policy = await db.insurancePolicy.create({
       data: {
-        userId: user.id,
+        userId,
         provider: provider || 'ADSO Assurances',
         policyNumber,
         type: type || 'third_party',

@@ -5,6 +5,7 @@ import { seedLicenseCategories } from '../../../../seed-data/seed-licenses';
 import { seedRoadSigns } from '../../../../seed-data/seed-signs';
 import { seedQuestions } from '../../../../seed-data/seed-questions';
 import { seedPracticalExercises } from '../../../../seed-data/seed-practical';
+import { requireRole } from '@/lib/auth';
 
 // ═══════════════════════════════════════════════════════════
 // V4.2 Seed — Données de démonstration complètes
@@ -522,6 +523,8 @@ async function seedV42Data(userId: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const { error } = await requireRole('admin');
+  if (error) return error;
   // ─── Auth guard: seed requires admin+ in production ───
   if (process.env.NODE_ENV === 'production') {
     return NextResponse.json(
@@ -640,6 +643,8 @@ export async function POST(request: NextRequest) {
 
 // GET — Return current DB counts
 export async function GET() {
+  const { error } = await requireRole('admin');
+  if (error) return error;
   // ─── Auth guard: seed requires admin+ in production ───
   if (process.env.NODE_ENV === 'production') {
     return NextResponse.json(

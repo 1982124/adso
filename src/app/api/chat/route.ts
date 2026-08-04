@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAuth, getUserId } from '@/lib/auth';
 import ZAI from 'z-ai-web-dev-sdk';
 
 let _zai: Awaited<ReturnType<typeof ZAI.create>> | null = null;
@@ -23,8 +24,12 @@ Limite tes réponses à quelques phrases concises et utiles.`;
 
 export async function POST(request: NextRequest) {
   try {
+    const { error: authError, session } = await requireAuth();
+    if (authError) return authError;
+    const userId = getUserId(session)!;
+
     const body = await request.json();
-    const { userId, message } = body as { userId?: string; message?: string };
+    const { message } = body as { message?: string };
 
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return NextResponse.json(
@@ -33,15 +38,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Resolve user
-    let user;
-    if (userId) {
-      user = await db.user.findUnique({ where: { email: userId } });
-      if (!user) {
-        user = await db.user.findUnique({ where: { id: userId } });
-      }
-    }
-
+    const user = await db.user.findUnique({ where: { id: userId } });
     if (!user) {
       return NextResponse.json(
         { error: 'Utilisateur non trouvé' },

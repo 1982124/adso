@@ -522,163 +522,179 @@
    522→}
    523→
    524→export async function POST(request: NextRequest) {
-   525→  try {
-   526→    const body = await request.json().catch(() => ({}));
-   527→    const action = (body as { action?: string }).action;
-   528→
-   529→    if (action === 'practical') {
-   530→      const existing = await db.practicalExercise.count();
-   531→      if (existing > 0) {
-   532→        return NextResponse.json({
-   533→          seeded: true,
-   534→          message: `Exercices pratiques déjà présents (${existing})`,
-   535→          count: existing,
-   536→        });
-   537→      }
-   538→
-   539→      for (const exercise of seedPracticalExercises) {
-   540→        await db.practicalExercise.create({ data: exercise });
-   541→      }
-   542→
-   543→      const count = await db.practicalExercise.count();
-   544→      return NextResponse.json({
-   545→        seeded: true,
-   546→        action: 'practical',
-   547→        count,
-   548→      });
-   549→    }
+   525→  // ─── Auth guard: seed requires admin+ in production ───
+   526→  if (process.env.NODE_ENV === 'production') {
+   527→    return NextResponse.json(
+   528→      { error: 'Endpoint désactivé en production' },
+   529→      { status: 403 },
+   530→    );
+   531→  }
+   532→
+   533→  try {
+   534→    const body = await request.json().catch(() => ({}));
+   535→    const action = (body as { action?: string }).action;
+   536→
+   537→    if (action === 'practical') {
+   538→      const existing = await db.practicalExercise.count();
+   539→      if (existing > 0) {
+   540→        return NextResponse.json({
+   541→          seeded: true,
+   542→          message: `Exercices pratiques déjà présents (${existing})`,
+   543→          count: existing,
+   544→        });
+   545→      }
+   546→
+   547→      for (const exercise of seedPracticalExercises) {
+   548→        await db.practicalExercise.create({ data: exercise });
+   549→      }
    550→
-   551→    if (action === 'v42') {
-   552→      const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } });
-   553→      if (!user) {
-   554→        return NextResponse.json({ erreur: 'Utilisateur introuvable' }, { status: 404 });
-   555→      }
-   556→      const v42Counts = await seedV42Data(user.id);
-   557→      return NextResponse.json({
-   558→        seeded: true,
-   559→        action: 'v42',
-   560→        counts: v42Counts,
-   561→      });
-   562→    }
-   563→
-   564→    // Default: seed everything
-   565→    const [existingCountries, existingLicenses, existingSigns, existingQuestions] = await Promise.all([
-   566→      db.country.count(),
-   567→      db.licenseCategory.count(),
-   568→      db.roadSign.count(),
-   569→      db.question.count(),
-   570→    ]);
+   551→      const count = await db.practicalExercise.count();
+   552→      return NextResponse.json({
+   553→        seeded: true,
+   554→        action: 'practical',
+   555→        count,
+   556→      });
+   557→    }
+   558→
+   559→    if (action === 'v42') {
+   560→      const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } });
+   561→      if (!user) {
+   562→        return NextResponse.json({ erreur: 'Utilisateur introuvable' }, { status: 404 });
+   563→      }
+   564→      const v42Counts = await seedV42Data(user.id);
+   565→      return NextResponse.json({
+   566→        seeded: true,
+   567→        action: 'v42',
+   568→        counts: v42Counts,
+   569→      });
+   570→    }
    571→
-   572→    // Seed countries
-   573→    if (existingCountries === 0) {
-   574→      for (const country of seedCountries) {
-   575→        await db.country.create({ data: country });
-   576→      }
-   577→    }
-   578→
-   579→    // Seed licenses
-   580→    if (existingLicenses === 0) {
-   581→      for (const license of seedLicenseCategories) {
-   582→        await db.licenseCategory.create({ data: license });
-   583→      }
-   584→    }
-   585→
-   586→    // Seed signs
-   587→    if (existingSigns === 0) {
-   588→      for (const sign of seedRoadSigns) {
-   589→        await db.roadSign.create({ data: sign as Parameters<typeof db.roadSign.create>[0]['data'] });
-   590→      }
-   591→    }
-   592→
-   593→    // Seed questions
-   594→    if (existingQuestions === 0) {
-   595→      for (const question of seedQuestions) {
-   596→        await db.question.create({ data: question });
-   597→      }
-   598→    }
-   599→
-   600→    // Seed practical exercises
-   601→    const existingPractical = await db.practicalExercise.count();
-   602→    if (existingPractical === 0) {
-   603→      for (const exercise of seedPracticalExercises) {
-   604→        await db.practicalExercise.create({ data: exercise });
+   572→    // Default: seed everything
+   573→    const [existingCountries, existingLicenses, existingSigns, existingQuestions] = await Promise.all([
+   574→      db.country.count(),
+   575→      db.licenseCategory.count(),
+   576→      db.roadSign.count(),
+   577→      db.question.count(),
+   578→    ]);
+   579→
+   580→    // Seed countries
+   581→    if (existingCountries === 0) {
+   582→      for (const country of seedCountries) {
+   583→        await db.country.create({ data: country });
+   584→      }
+   585→    }
+   586→
+   587→    // Seed licenses
+   588→    if (existingLicenses === 0) {
+   589→      for (const license of seedLicenseCategories) {
+   590→        await db.licenseCategory.create({ data: license });
+   591→      }
+   592→    }
+   593→
+   594→    // Seed signs
+   595→    if (existingSigns === 0) {
+   596→      for (const sign of seedRoadSigns) {
+   597→        await db.roadSign.create({ data: sign as Parameters<typeof db.roadSign.create>[0]['data'] });
+   598→      }
+   599→    }
+   600→
+   601→    // Seed questions
+   602→    if (existingQuestions === 0) {
+   603→      for (const question of seedQuestions) {
+   604→        await db.question.create({ data: question });
    605→      }
    606→    }
    607→
-   608→    // Seed V4.2 demo data
-   609→    const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } });
-   610→    let v42Counts: Record<string, number> = {};
-   611→    if (user) {
-   612→      v42Counts = await seedV42Data(user.id);
-   613→    }
-   614→
-   615→    const [countries, licenses, signs, questions, practical] = await Promise.all([
-   616→      db.country.count(),
-   617→      db.licenseCategory.count(),
-   618→      db.roadSign.count(),
-   619→      db.question.count(),
-   620→      db.practicalExercise.count(),
-   621→    ]);
+   608→    // Seed practical exercises
+   609→    const existingPractical = await db.practicalExercise.count();
+   610→    if (existingPractical === 0) {
+   611→      for (const exercise of seedPracticalExercises) {
+   612→        await db.practicalExercise.create({ data: exercise });
+   613→      }
+   614→    }
+   615→
+   616→    // Seed V4.2 demo data
+   617→    const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } });
+   618→    let v42Counts: Record<string, number> = {};
+   619→    if (user) {
+   620→      v42Counts = await seedV42Data(user.id);
+   621→    }
    622→
-   623→    return NextResponse.json({
-   624→      seeded: true,
-   625→      counts: { countries, licenses, signs, questions, practical, ...v42Counts },
-   626→    });
-   627→  } catch (error) {
-   628→    console.error('[POST /api/seed] Error:', error);
-   629→    return NextResponse.json({ error: 'Seed error' }, { status: 500 });
-   630→  }
-   631→}
-   632→
-   633→// GET — Return current DB counts
-   634→export async function GET() {
-   635→  try {
-   636→    const [countries, licenses, signs, questions, practical, insurancePolicies, insuranceClaims, trustScores, telematicsTrips, fleetOrganizations, securityEvents, marketplaceListings, trafficViolations, collaborationEvents, vehicleTwins, featureFlags, fraudAlerts, accidentIncidents] = await Promise.all([
-   637→      db.country.count(),
-   638→      db.licenseCategory.count(),
-   639→      db.roadSign.count(),
-   640→      db.question.count(),
-   641→      db.practicalExercise.count(),
-   642→      db.insurancePolicy.count(),
-   643→      db.insuranceClaim.count(),
-   644→      db.trustScore.count(),
-   645→      db.telematicsTrip.count(),
-   646→      db.fleetOrganization.count(),
-   647→      db.securityEvent.count(),
-   648→      db.marketplaceListing.count(),
-   649→      db.trafficViolation.count(),
-   650→      db.collaborationEvent.count(),
-   651→      db.vehicleTwin.count(),
-   652→      db.featureFlag.count(),
-   653→      db.fraudAlert.count(),
-   654→      db.accidentIncident.count(),
-   655→    ]);
-   656→
-   657→    return NextResponse.json({
-   658→      counts: {
-   659→        countries,
-   660→        licenses,
-   661→        signs,
-   662→        questions,
-   663→        practical,
-   664→        insurancePolicies,
-   665→        insuranceClaims,
-   666→        trustScores,
-   667→        telematicsTrips,
-   668→        fleetOrganizations,
-   669→        securityEvents,
-   670→        marketplaceListings,
-   671→        trafficViolations,
-   672→        collaborationEvents,
-   673→        vehicleTwins,
-   674→        featureFlags,
-   675→        fraudAlerts,
-   676→        accidentIncidents,
-   677→      },
-   678→    });
-   679→  } catch (error) {
-   680→    console.error('[GET /api/seed] Error:', error);
-   681→    return NextResponse.json({ error: 'Seed error' }, { status: 500 });
-   682→  }
-   683→}
-   684→
+   623→    const [countries, licenses, signs, questions, practical] = await Promise.all([
+   624→      db.country.count(),
+   625→      db.licenseCategory.count(),
+   626→      db.roadSign.count(),
+   627→      db.question.count(),
+   628→      db.practicalExercise.count(),
+   629→    ]);
+   630→
+   631→    return NextResponse.json({
+   632→      seeded: true,
+   633→      counts: { countries, licenses, signs, questions, practical, ...v42Counts },
+   634→    });
+   635→  } catch (error) {
+   636→    console.error('[POST /api/seed] Error:', error);
+   637→    return NextResponse.json({ error: 'Seed error' }, { status: 500 });
+   638→  }
+   639→}
+   640→
+   641→// GET — Return current DB counts
+   642→export async function GET() {
+   643→  // ─── Auth guard: seed requires admin+ in production ───
+   644→  if (process.env.NODE_ENV === 'production') {
+   645→    return NextResponse.json(
+   646→      { error: 'Endpoint désactivé en production' },
+   647→      { status: 403 },
+   648→    );
+   649→  }
+   650→
+   651→  try {
+   652→    const [countries, licenses, signs, questions, practical, insurancePolicies, insuranceClaims, trustScores, telematicsTrips, fleetOrganizations, securityEvents, marketplaceListings, trafficViolations, collaborationEvents, vehicleTwins, featureFlags, fraudAlerts, accidentIncidents] = await Promise.all([
+   653→      db.country.count(),
+   654→      db.licenseCategory.count(),
+   655→      db.roadSign.count(),
+   656→      db.question.count(),
+   657→      db.practicalExercise.count(),
+   658→      db.insurancePolicy.count(),
+   659→      db.insuranceClaim.count(),
+   660→      db.trustScore.count(),
+   661→      db.telematicsTrip.count(),
+   662→      db.fleetOrganization.count(),
+   663→      db.securityEvent.count(),
+   664→      db.marketplaceListing.count(),
+   665→      db.trafficViolation.count(),
+   666→      db.collaborationEvent.count(),
+   667→      db.vehicleTwin.count(),
+   668→      db.featureFlag.count(),
+   669→      db.fraudAlert.count(),
+   670→      db.accidentIncident.count(),
+   671→    ]);
+   672→
+   673→    return NextResponse.json({
+   674→      counts: {
+   675→        countries,
+   676→        licenses,
+   677→        signs,
+   678→        questions,
+   679→        practical,
+   680→        insurancePolicies,
+   681→        insuranceClaims,
+   682→        trustScores,
+   683→        telematicsTrips,
+   684→        fleetOrganizations,
+   685→        securityEvents,
+   686→        marketplaceListings,
+   687→        trafficViolations,
+   688→        collaborationEvents,
+   689→        vehicleTwins,
+   690→        featureFlags,
+   691→        fraudAlerts,
+   692→        accidentIncidents,
+   693→      },
+   694→    });
+   695→  } catch (error) {
+   696→    console.error('[GET /api/seed] Error:', error);
+   697→    return NextResponse.json({ error: 'Seed error' }, { status: 500 });
+   698→  }
+   699→}
+   700→

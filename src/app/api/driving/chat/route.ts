@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth';
 import ZAI from 'z-ai-web-dev-sdk';
 
 let _zai: Awaited<ReturnType<typeof ZAI.create>> | null = null;
@@ -24,6 +25,9 @@ Utilise un ton professionnel mais chaleureux.`;
 
 export async function POST(request: NextRequest) {
   try {
+    const { error } = await requireAuth();
+    if (error) return error;
+
     const body = await request.json();
     const { message, sessionId, score, events } = body as {
       message?: string;

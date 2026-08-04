@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireRole, getUserId } from '@/lib/auth'
 
 // ─── Trust Score Computation ─────────────────────────────────
 async function computeTrustScore(userId: string) {
@@ -119,23 +120,21 @@ async function computeTrustScore(userId: string) {
 // ─── GET: Retrieve trust score ────────────────────────────────
 export async function GET() {
   try {
-    // Use first user as demo user
-    const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } })
-    if (!user) {
-      return NextResponse.json({ error: 'Aucun utilisateur trouvé' }, { status: 404 })
-    }
+    const { error, session } = await requireRole('insurer');
+    if (error) return error;
+    const userId = getUserId(session)!;
 
     let trustScore = await db.trustScore.findFirst({
-      where: { userId: user.id },
+      where: { userId },
       orderBy: { lastCalculated: 'desc' },
     })
 
     if (!trustScore) {
       // Compute initial score
-      const scores = await computeTrustScore(user.id)
+      const scores = await computeTrustScore(userId)
       trustScore = await db.trustScore.create({
         data: {
-          userId: user.id,
+          userId,
           ...scores,
         },
       })
@@ -151,15 +150,14 @@ export async function GET() {
 // ─── POST: Recalculate trust score ────────────────────────────
 export async function POST() {
   try {
-    const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } })
-    if (!user) {
-      return NextResponse.json({ error: 'Aucun utilisateur trouvé' }, { status: 404 })
-    }
+    const { error, session } = await requireRole('insurer');
+    if (error) return error;
+    const userId = getUserId(session)!;
 
-    const scores = await computeTrustScore(user.id)
+    const scores = await computeTrustScore(userId)
 
     // Upsert: update existing or create new
-    const existing = await db.trustScore.findFirst({ where: { userId: user.id } })
+    const existing = await db.trustScore.findFirst({ where: { userId } })
 
     if (existing) {
       const updated = await db.trustScore.update({
@@ -169,7 +167,7 @@ export async function POST() {
       return NextResponse.json({ trustScore: updated, recalculated: true })
     } else {
       const created = await db.trustScore.create({
-        data: { userId: user.id, ...scores },
+        data: { userId, ...scores },
       })
       return NextResponse.json({ trustScore: created, recalculated: true })
     }

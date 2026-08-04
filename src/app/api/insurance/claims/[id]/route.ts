@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireRole } from '@/lib/auth'
 
 // ─── GET: Get claim with details ────────────────────────────
 export async function GET(
@@ -7,6 +8,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { error } = await requireRole('insurer');
+    if (error) return error;
+
     const { id } = await params
     const claim = await db.insuranceClaim.findUnique({ where: { id } })
 
@@ -27,6 +31,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { error } = await requireRole('insurer');
+    if (error) return error;
+
     const { id } = await params
     const body = await req.json()
 

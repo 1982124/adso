@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireRole, getUserId } from '@/lib/auth'
 
 const BASE_PREMIUMS: Record<string, number> = {
   third_party: 500,
@@ -12,22 +13,21 @@ const BASE_PREMIUMS: Record<string, number> = {
 // ─── GET: Calculate premium for all user policies ─────────────
 export async function GET() {
   try {
-    const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } })
-    if (!user) {
-      return NextResponse.json({ error: 'Aucun utilisateur trouvé' }, { status: 404 })
-    }
+    const { error, session } = await requireRole('insurer');
+    if (error) return error;
+    const userId = getUserId(session)!;
 
     const policies = await db.insurancePolicy.findMany({
-      where: { userId: user.id },
+      where: { userId },
     })
 
     const trustScore = await db.trustScore.findFirst({
-      where: { userId: user.id },
+      where: { userId },
       orderBy: { lastCalculated: 'desc' },
     })
 
     const sessions = await db.drivingSession.findMany({
-      where: { userId: user.id, status: 'completed' },
+      where: { userId, status: 'completed' },
     })
 
     const totalHarshBrakes = sessions.reduce((sum, s) => sum + s.harshBrakes, 0)
@@ -41,7 +41,7 @@ export async function GET() {
     )
 
     const vehicles = await db.vehicleProfile.findMany({
-      where: { userId: user.id },
+      where: { userId },
     })
     const currentYear = new Date().getFullYear()
     const avgVehicleAge = vehicles.length
@@ -52,7 +52,7 @@ export async function GET() {
       : 50000
 
     const claimsCount = await db.insuranceClaim.count({
-      where: { userId: user.id },
+      where: { userId },
     })
 
     const maintenanceQuality = trustScore?.maintenanceQuality ?? 50
@@ -99,7 +99,7 @@ export async function GET() {
     })
 
     return NextResponse.json({
-      utilisateur: user.id,
+      utilisateur: userId,
       formule: 'basePremium * (1 - trustScore/200) * (1 + behaviorPenalty) * (1 + riskFactor)',
       primes: results,
     })
@@ -112,10 +112,9 @@ export async function GET() {
 // ─── POST: Recalculate premium for a specific policy ──────────
 export async function POST(req: NextRequest) {
   try {
-    const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } })
-    if (!user) {
-      return NextResponse.json({ error: 'Aucun utilisateur trouvé' }, { status: 404 })
-    }
+    const { error, session } = await requireRole('insurer');
+    if (error) return error;
+    const userId = getUserId(session)!;
 
     const body = await req.json()
     const { policyId } = body
@@ -125,19 +124,19 @@ export async function POST(req: NextRequest) {
     }
 
     const policy = await db.insurancePolicy.findFirst({
-      where: { id: policyId, userId: user.id },
+      where: { id: policyId, userId },
     })
     if (!policy) {
       return NextResponse.json({ error: 'Police non trouvée' }, { status: 404 })
     }
 
     const trustScore = await db.trustScore.findFirst({
-      where: { userId: user.id },
+      where: { userId },
       orderBy: { lastCalculated: 'desc' },
     })
 
     const sessions = await db.drivingSession.findMany({
-      where: { userId: user.id, status: 'completed' },
+      where: { userId, status: 'completed' },
     })
 
     const totalHarshBrakes = sessions.reduce((sum, s) => sum + s.harshBrakes, 0)
@@ -151,7 +150,7 @@ export async function POST(req: NextRequest) {
     )
 
     const vehicles = await db.vehicleProfile.findMany({
-      where: { userId: user.id },
+      where: { userId },
     })
     const currentYear = new Date().getFullYear()
     const avgVehicleAge = vehicles.length
@@ -162,7 +161,7 @@ export async function POST(req: NextRequest) {
       : 50000
 
     const claimsCount = await db.insuranceClaim.count({
-      where: { userId: user.id },
+      where: { userId },
     })
 
     const maintenanceQuality = trustScore?.maintenanceQuality ?? 50

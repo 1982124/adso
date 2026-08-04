@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireRole, getUserId } from '@/lib/auth'
 
 // ─── GET: Calculate PHYD metrics ──────────────────────────────
 export async function GET() {
   try {
-    const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } })
-    if (!user) {
-      return NextResponse.json({ error: 'Aucun utilisateur trouvé' }, { status: 404 })
-    }
+    const { error, session } = await requireRole('insurer');
+    if (error) return error;
+    const userId = getUserId(session)!;
 
     const trips = await db.telematicsTrip.findMany({
-      where: { userId: user.id },
+      where: { userId },
       orderBy: { startTime: 'asc' },
     })
 
@@ -74,7 +74,7 @@ export async function GET() {
     }).sort((a, b) => a.mois.localeCompare(b.mois))
 
     return NextResponse.json({
-      utilisateur: user.id,
+      utilisateur: userId,
       totalKm: parseFloat(totalKm.toFixed(2)),
       dureeTotale,
       dureeTotaleFormatee: `${Math.floor(dureeTotale / 3600)}h ${Math.floor((dureeTotale % 3600) / 60)}min`,
@@ -95,10 +95,9 @@ export async function GET() {
 // ─── POST: Generate monthly PHYD report ───────────────────────
 export async function POST(req: NextRequest) {
   try {
-    const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } })
-    if (!user) {
-      return NextResponse.json({ error: 'Aucun utilisateur trouvé' }, { status: 404 })
-    }
+    const { error, session } = await requireRole('insurer');
+    if (error) return error;
+    const userId = getUserId(session)!;
 
     const body = await req.json()
     const { mois, annee } = body
@@ -112,7 +111,7 @@ export async function POST(req: NextRequest) {
 
     const trips = await db.telematicsTrip.findMany({
       where: {
-        userId: user.id,
+        userId,
         startTime: { gte: startDate, lt: endDate },
       },
       orderBy: { startTime: 'asc' },
@@ -142,7 +141,7 @@ export async function POST(req: NextRequest) {
     const rapport = {
       periode: `${String(mois).padStart(2, '0')}/${annee}`,
       genereLe: new Date().toISOString(),
-      utilisateur: user.id,
+      utilisateur: userId,
       resume: {
         nombreTrajets: trips.length,
         kilometrageTotal: parseFloat(totalKm.toFixed(2)),

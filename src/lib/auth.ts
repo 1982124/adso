@@ -6,7 +6,8 @@
  */
 
 import { getServerSession } from 'next-auth';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { hasMinRole, type ADSORole } from './rbac';
 
 // ─── Re-export types from next-auth for convenience ───
@@ -18,7 +19,7 @@ export { getServerSession };
  * Get the current authenticated session (or null).
  */
 export async function getSession() {
-  return getServerSession();
+  return getServerSession(authOptions);
 }
 
 /**

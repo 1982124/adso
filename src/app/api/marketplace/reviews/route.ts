@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-
-// ─── Helper: get demo user ───────────────────────────────
-async function getDemoUser() {
-  return db.user.findFirst({ orderBy: { createdAt: 'asc' } })
-}
+import { requireAuth, getUserId } from '@/lib/auth'
 
 // ─── GET: list reviews for a listing ─────────────────────
 export async function GET(request: NextRequest) {
@@ -31,12 +27,15 @@ export async function GET(request: NextRequest) {
 
 // ─── POST: create a review ──────────────────────────────
 export async function POST(request: NextRequest) {
-  const user = await getDemoUser()
-  if (!user) {
-    return NextResponse.json({ success: false, error: 'Utilisateur non trouvé' }, { status: 404 })
-  }
-
   try {
+    const { error: authError, session } = await requireAuth()
+    if (authError) return authError
+    const userId = getUserId(session)!
+
+    const user = await db.user.findUnique({ where: { id: userId } })
+    if (!user) {
+      return NextResponse.json({ success: false, error: 'Utilisateur non trouvé' }, { status: 404 })
+    }
     const body = await request.json()
 
     if (!body.listingId || !body.rating) {

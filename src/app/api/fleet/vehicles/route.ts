@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireRole } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
+  const { error } = await requireRole('fleet_manager')
+  if (error) return error
   try {
     const { searchParams } = new URL(request.url)
     const fleetId = searchParams.get('fleetId')
@@ -31,6 +34,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const { error } = await requireRole('fleet_manager')
+  if (error) return error
   try {
     const body = await request.json()
     const { fleetId, make, model, year, type, fuelType, licensePlate, vin, mileage } = body

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAuth } from '@/lib/auth';
 
 // GET: Get vehicle
 // PATCH: Update vehicle
@@ -9,6 +10,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { error } = await requireAuth();
+    if (error) return error;
+
     const { id } = await params;
     const vehicle = await db.vehicleProfile.findUnique({
       where: { id },
@@ -33,6 +37,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { error } = await requireAuth();
+    if (error) return error;
+
     const { id } = await params;
     const body = await request.json();
     const {
@@ -99,6 +106,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { error } = await requireAuth();
+    if (error) return error;
+
     const { id } = await params;
 
     const existing = await db.vehicleProfile.findUnique({ where: { id } });

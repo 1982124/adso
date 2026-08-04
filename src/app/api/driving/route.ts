@@ -1,40 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAuth, getUserId } from '@/lib/auth';
 
 // POST: Create new driving session
 // GET: List all sessions with filters
 export async function POST(request: NextRequest) {
   try {
+    const { error: authError, session } = await requireAuth();
+    if (authError) return authError;
+    const userId = getUserId(session)!;
+
     const body = await request.json();
     const {
-      userId,
       vehicleId,
       type = 'lesson',
       weather,
       roadType,
     } = body as {
-      userId?: string;
       vehicleId?: string;
       type?: string;
       weather?: string;
       roadType?: string;
     };
 
-    // Find user
-    let user;
-    if (userId) {
-      user = await db.user.findUnique({ where: { email: userId } });
-      if (!user) user = await db.user.findUnique({ where: { id: userId } });
-    }
-    if (!user) {
-      // Fallback: use first user for dev
-      user = await db.user.findFirst();
-    }
+    const user = await db.user.findUnique({ where: { id: userId } });
     if (!user) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }
 
-    const session = await db.drivingSession.create({
+    const drivingSession = await db.drivingSession.create({
       data: {
         userId: user.id,
         vehicleId: vehicleId || null,
@@ -49,7 +43,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(session, { status: 201 });
+    return NextResponse.json(drivingSession, { status: 201 });
   } catch (error) {
     console.error('[POST /api/driving] Error:', error);
     return NextResponse.json(
@@ -61,24 +55,19 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const { error: authError, session } = await requireAuth();
+    if (authError) return authError;
+    const userId = getUserId(session)!;
+
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') || undefined;
     const status = searchParams.get('status') || undefined;
     const dateFrom = searchParams.get('dateFrom') || undefined;
     const dateTo = searchParams.get('dateTo') || undefined;
-    const userId = searchParams.get('userId') || undefined;
     const limit = parseInt(searchParams.get('limit') || '50', 10);
     const offset = parseInt(searchParams.get('offset') || '0', 10);
 
-    // Find user
-    let user;
-    if (userId) {
-      user = await db.user.findUnique({ where: { email: userId } });
-      if (!user) user = await db.user.findUnique({ where: { id: userId } });
-    }
-    if (!user) {
-      user = await db.user.findFirst();
-    }
+    const user = await db.user.findUnique({ where: { id: userId } });
     if (!user) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAuth, getUserId } from '@/lib/auth'
 
 // ─── Category label mapping (DB values → French) ──────────
 const CATEGORY_LABELS: Record<string, string> = {
@@ -31,11 +32,6 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
   driving_school: 'from-teal-600/20 to-teal-800/20',
   rental: 'from-teal-600/20 to-teal-800/20',
   vehicle_sales: 'from-indigo-600/20 to-indigo-800/20',
-}
-
-// ─── Helper: get demo user ───────────────────────────────
-async function getDemoUser() {
-  return db.user.findFirst({ orderBy: { createdAt: 'asc' } })
 }
 
 // ─── GET: list marketplace listings ──────────────────────
@@ -96,12 +92,15 @@ export async function GET(request: NextRequest) {
 
 // ─── POST: create a new listing ──────────────────────────
 export async function POST(request: NextRequest) {
-  const user = await getDemoUser()
-  if (!user) {
-    return NextResponse.json({ success: false, error: 'Utilisateur non trouvé' }, { status: 404 })
-  }
-
   try {
+    const { error: authError, session } = await requireAuth()
+    if (authError) return authError
+    const userId = getUserId(session)!
+
+    const user = await db.user.findUnique({ where: { id: userId } })
+    if (!user) {
+      return NextResponse.json({ success: false, error: 'Utilisateur non trouvé' }, { status: 404 })
+    }
     const body = await request.json()
 
     const listing = await db.marketplaceListing.create({

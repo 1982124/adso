@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-
-// ─── Helper: get demo user ───────────────────────────────
-async function getDemoUser() {
-  return db.user.findFirst({ orderBy: { createdAt: 'asc' } })
-}
+import { requireAuth, getUserId } from '@/lib/auth'
 
 // ─── GET: list bookings ──────────────────────────────────
 export async function GET(request: NextRequest) {
   try {
+    const { error: authError, session } = await requireAuth()
+    if (authError) return authError
+    const userId = getUserId(session)!
+
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
     const listingId = searchParams.get('listingId')
 
     const where: Record<string, unknown> = {}
@@ -18,9 +17,7 @@ export async function GET(request: NextRequest) {
     if (listingId) {
       where.listingId = listingId
     } else {
-      // Default to demo user
-      const user = await getDemoUser()
-      if (user) where.userId = user.id
+      where.userId = userId
     }
 
     const bookings = await db.bookingRecord.findMany({
@@ -41,12 +38,15 @@ export async function GET(request: NextRequest) {
 
 // ─── POST: create a booking ─────────────────────────────
 export async function POST(request: NextRequest) {
-  const user = await getDemoUser()
-  if (!user) {
-    return NextResponse.json({ success: false, error: 'Utilisateur non trouvé' }, { status: 404 })
-  }
-
   try {
+    const { error: authError, session } = await requireAuth()
+    if (authError) return authError
+    const userId = getUserId(session)!
+
+    const user = await db.user.findUnique({ where: { id: userId } })
+    if (!user) {
+      return NextResponse.json({ success: false, error: 'Utilisateur non trouvé' }, { status: 404 })
+    }
     const body = await request.json()
 
     if (!body.listingId || !body.serviceDate) {

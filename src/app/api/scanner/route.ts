@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth';
 
 // ═══════════════════════════════════════════════════════════
 // Simulated sensor data ranges
@@ -12,6 +13,9 @@ function randomInRange(min: number, max: number, decimals = 0): number {
 // POST /api/scanner/connect — Simulated connection
 export async function POST(request: NextRequest) {
   try {
+    const { error } = await requireAuth();
+    if (error) return error;
+
     const body = await request.json();
     const { action } = body;
 
@@ -72,6 +76,9 @@ export async function POST(request: NextRequest) {
 // GET /api/scanner/data — Return simulated sensor data
 export async function GET() {
   try {
+    const { error } = await requireAuth();
+    if (error) return error;
+
     const data = {
       speed: randomInRange(0, 130),
       rpm: randomInRange(800, 3500),

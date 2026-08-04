@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireRole, getUserId } from '@/lib/auth'
 
 // ─── GET: Analyze all claims for fraud patterns ──────────────
 export async function GET() {
   try {
-    const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } })
-    if (!user) {
-      return NextResponse.json({ error: 'Aucun utilisateur trouvé' }, { status: 404 })
-    }
+    const { error, session } = await requireRole('insurer');
+    if (error) return error;
+    const userId = getUserId(session)!;
 
     const claims = await db.insuranceClaim.findMany({
-      where: { userId: user.id },
+      where: { userId },
       orderBy: { createdAt: 'desc' },
     })
 
@@ -75,13 +75,13 @@ export async function GET() {
     const createdAlerts: Array<{ id: string; type: string; description: string; probability: number; evidence: string | null; status: string; createdAt: Date; updatedAt: Date; userId: string; claimId: string | null }> = []
     for (const alert of newAlerts) {
       const existing = alert.claimId
-        ? await db.fraudAlert.findFirst({ where: { userId: user.id, type: alert.type, claimId: alert.claimId } })
-        : await db.fraudAlert.findFirst({ where: { userId: user.id, type: alert.type } })
+        ? await db.fraudAlert.findFirst({ where: { userId, type: alert.type, claimId: alert.claimId } })
+        : await db.fraudAlert.findFirst({ where: { userId, type: alert.type } })
 
       if (!existing) {
         const created = await db.fraudAlert.create({
           data: {
-            userId: user.id,
+            userId,
             claimId: alert.claimId,
             type: alert.type,
             probability: alert.probability,
@@ -96,7 +96,7 @@ export async function GET() {
 
     // Return all fraud alerts for the user
     const allAlerts = await db.fraudAlert.findMany({
-      where: { userId: user.id },
+      where: { userId },
       orderBy: { createdAt: 'desc' },
     })
 
@@ -117,10 +117,9 @@ export async function GET() {
 // ─── POST: Create a manual fraud alert ───────────────────────
 export async function POST(req: NextRequest) {
   try {
-    const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } })
-    if (!user) {
-      return NextResponse.json({ error: 'Aucun utilisateur trouvé' }, { status: 404 })
-    }
+    const { error, session } = await requireRole('insurer');
+    if (error) return error;
+    const userId = getUserId(session)!;
 
     const body = await req.json()
     const { claimId, type, description } = body
@@ -131,7 +130,7 @@ export async function POST(req: NextRequest) {
 
     const alert = await db.fraudAlert.create({
       data: {
-        userId: user.id,
+        userId,
         claimId: claimId || null,
         type,
         probability: 75,

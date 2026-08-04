@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAuth, getUserId } from '@/lib/auth'
 
 const DAY_NAMES = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
 const MONTH_NAMES = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
 
-// ─── Helper: get demo user ─────────────────────────────────
-async function getDemoUser() {
-  return db.user.findFirst({ orderBy: { createdAt: 'asc' } })
-}
-
 // ─── GET ───────────────────────────────────────────────────
 export async function GET(request: NextRequest) {
   try {
+    const { error: authError, session } = await requireAuth()
+    if (authError) return authError
+    const userId = getUserId(session)!
+
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type')
 
-    const user = await getDemoUser()
+    const user = await db.user.findUnique({ where: { id: userId } })
     if (!user) {
       return NextResponse.json({ success: true, data: [], message: 'Aucun utilisateur' })
     }
@@ -157,12 +157,15 @@ export async function GET(request: NextRequest) {
 
 // ─── POST: create a new trip ────────────────────────────────
 export async function POST(request: NextRequest) {
-  const user = await getDemoUser()
-  if (!user) {
-    return NextResponse.json({ success: false, error: 'Utilisateur non trouvé' }, { status: 404 })
-  }
-
   try {
+    const { error: authError, session } = await requireAuth()
+    if (authError) return authError
+    const userId = getUserId(session)!
+
+    const user = await db.user.findUnique({ where: { id: userId } })
+    if (!user) {
+      return NextResponse.json({ success: false, error: 'Utilisateur non trouvé' }, { status: 404 })
+    }
     const body = await request.json()
 
     const trip = await db.telematicsTrip.create({

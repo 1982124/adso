@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireRole } from '@/lib/auth'
 
 export async function GET() {
+  const { error } = await requireRole('admin')
+  if (error) return error
   try {
     const organizations = await db.fleetOrganization.findMany({
       include: {
@@ -21,6 +24,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const { error } = await requireRole('admin')
+  if (error) return error
   try {
     const body = await request.json()
     const { name, description, country, plan, maxVehicles, maxDrivers } = body

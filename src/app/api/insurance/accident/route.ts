@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireRole, getUserId } from '@/lib/auth'
 
 // ─── GET: List accident incidents (latest first) ─────────────
 export async function GET() {
   try {
-    const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } })
-    if (!user) {
-      return NextResponse.json({ error: 'Aucun utilisateur trouvé' }, { status: 404 })
-    }
+    const { error, session } = await requireRole('insurer');
+    if (error) return error;
+    const userId = getUserId(session)!;
 
     const incidents = await db.accidentIncident.findMany({
-      where: { userId: user.id },
+      where: { userId },
       orderBy: { timestamp: 'desc' },
     })
 
@@ -24,10 +24,9 @@ export async function GET() {
 // ─── POST: Create AccidentIncident from telemetry data ────────
 export async function POST(req: NextRequest) {
   try {
-    const user = await db.user.findFirst({ orderBy: { createdAt: 'asc' } })
-    if (!user) {
-      return NextResponse.json({ error: 'Aucun utilisateur trouvé' }, { status: 404 })
-    }
+    const { error, session } = await requireRole('insurer');
+    if (error) return error;
+    const userId = getUserId(session)!;
 
     const body = await req.json()
     const { type, severity, latitude, longitude, speed, deceleration, vehicleId } = body
@@ -39,7 +38,7 @@ export async function POST(req: NextRequest) {
     // Create the AccidentIncident
     const incident = await db.accidentIncident.create({
       data: {
-        userId: user.id,
+        userId,
         vehicleId: vehicleId || null,
         type,
         severity,
@@ -57,7 +56,7 @@ export async function POST(req: NextRequest) {
 
       const claim = await db.insuranceClaim.create({
         data: {
-          userId: user.id,
+          userId,
           policyId: null,
           type: 'collision',
           status: 'draft',
@@ -78,7 +77,7 @@ export async function POST(req: NextRequest) {
     // Create CollaborationEvent
     await db.collaborationEvent.create({
       data: {
-        userId: user.id,
+        userId,
         triggerModule: 'telematics',
         eventType: 'accident',
         severity: severity === 'critical' ? 'critical' : severity === 'high' ? 'warning' : 'info',
