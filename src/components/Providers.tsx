@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { IntlClientProvider } from '@/i18n/client';
+import { SessionProvider } from 'next-auth/react';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -19,10 +20,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <IntlClientProvider>
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
-    </IntlClientProvider>
+    <SessionProvider>
+      <IntlClientProvider>
+        <QueryClientProvider client={queryClient}>
+          {children}
+        </QueryClientProvider>
+      </IntlClientProvider>
+    </SessionProvider>
   );
 }

@@ -13,17 +13,23 @@ datasource db {
 // ═══════════════════════════════════════════════════════════
 
 // ─── Users & Roles ───
+// RBAC Roles: super_admin | admin | instructor | mechanic | insurer | fleet_manager | student | driver
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
   name         String
   avatar       String?
-  role         String   @default("student") // student | instructor | school_admin | enterprise_admin | super_admin
+  role         String   @default("student") // super_admin | admin | instructor | mechanic | insurer | fleet_manager | student | driver
   country      String   @default("FR")
   language     String   @default("fr")
   subscription String   @default("free") // free | starter | pro | premium
+  emailVerified DateTime?
+  image        String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  // NextAuth relations
+  accounts     Account[]
 
   // V3 relations
   studentProgress StudentProgress[]
@@ -159,6 +165,8 @@ model StudentProgress {
   enrollment Enrollment @relation(fields: [courseId, userId], references: [courseId, userId])
 
   @@unique([courseId, userId])
+  @@index([userId])
+  @@index([courseId])
 }
 
 model Enrollment {
@@ -226,6 +234,7 @@ model QuizAttempt {
   createdAt      DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }
 
 // ─── Practical Exercises ───
@@ -263,6 +272,7 @@ model SkillRecord {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, skill])
+  @@index([userId])
 }
 
 // ─── Certifications ───
@@ -283,6 +293,7 @@ model Certification {
   updatedAt     DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }
 
 // ─── AI Chat ───
@@ -294,6 +305,7 @@ model ChatMessage {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }
 
 // ─── School (B2B) ───
@@ -344,6 +356,7 @@ model VehicleProfile {
   diagnosticRecords DiagnosticRecord[]
   telematicsTrips   TelematicsTrip[]
   vehicleTwin       VehicleTwin?
+  @@index([userId])
 }
 
 model DrivingSession {
@@ -375,6 +388,8 @@ model DrivingSession {
   user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   vehicle       VehicleProfile? @relation(fields: [vehicleId], references: [id])
   drivingEvents DrivingEvent[]
+  @@index([userId])
+  @@index([vehicleId])
 }
 
 model DrivingEvent {
@@ -391,6 +406,7 @@ model DrivingEvent {
   createdAt DateTime @default(now())
 
   session DrivingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  @@index([sessionId])
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -418,6 +434,8 @@ model DiagnosticRecord {
 
   user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   vehicle VehicleProfile? @relation(fields: [vehicleId], references: [id])
+  @@index([userId])
+  @@index([vehicleId])
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -443,6 +461,7 @@ model SecurityEvent {
   updatedAt  DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -468,6 +487,7 @@ model TrustScore {
   updatedAt          DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }
 
 model InsurancePolicy {
@@ -490,6 +510,7 @@ model InsurancePolicy {
 
   user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   premiumCalculations PremiumCalculation[]
+  @@index([userId])
 }
 
 model InsuranceClaim {
@@ -515,6 +536,7 @@ model InsuranceClaim {
   updatedAt          DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -552,6 +574,7 @@ model MarketplaceListing {
   user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   reviews  ListingReview[]
   bookings BookingRecord[]
+  @@index([userId])
 }
 
 model ListingReview {
@@ -565,6 +588,8 @@ model ListingReview {
 
   user    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   listing MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@index([listingId])
 }
 
 model BookingRecord {
@@ -582,6 +607,8 @@ model BookingRecord {
 
   user    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   listing MarketplaceListing @relation(fields: [listingId], references: [id])
+  @@index([userId])
+  @@index([listingId])
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -629,6 +656,7 @@ model FleetVehicle {
   maintenanceRecords MaintenanceRecord[]
   fuelRecords        FuelRecord[]
   assignments        FleetAssignment[]
+  @@index([fleetId])
 }
 
 model FleetDriver {
@@ -648,6 +676,7 @@ model FleetDriver {
   user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   fleet       FleetOrganization @relation(fields: [fleetId], references: [id], onDelete: Cascade)
   assignments FleetAssignment[]
+  @@index([fleetId])
 }
 
 model MaintenanceRecord {
@@ -669,6 +698,7 @@ model MaintenanceRecord {
 
   user    User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
   vehicle FleetVehicle @relation(fields: [fleetVehicleId], references: [id], onDelete: Cascade)
+  @@index([fleetVehicleId])
 }
 
 model FuelRecord {
@@ -688,6 +718,7 @@ model FuelRecord {
 
   user    User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
   vehicle FleetVehicle @relation(fields: [fleetVehicleId], references: [id], onDelete: Cascade)
+  @@index([fleetVehicleId])
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -714,6 +745,7 @@ model TrafficViolation {
   updatedAt     DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -733,6 +765,7 @@ model AuditLogEntry {
   createdAt  DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -772,6 +805,8 @@ model TelematicsTrip {
 
   user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   vehicle VehicleProfile? @relation(fields: [vehicleId], references: [id])
+  @@index([userId])
+  @@index([vehicleId])
 }
 
 model VehicleTwin {
@@ -797,6 +832,7 @@ model VehicleTwin {
 
   vehicleProfile VehicleProfile @relation(fields: [vehicleProfileId], references: [id])
   owner          User           @relation("VehicleTwinOwner", fields: [ownerUserId], references: [id])
+  @@index([ownerUserId])
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -829,6 +865,7 @@ model PremiumCalculation {
   calculatedAt        DateTime @default(now())
 
   policy InsurancePolicy @relation(fields: [policyId], references: [id])
+  @@index([policyId])
 }
 
 model AccidentIncident {
@@ -849,6 +886,7 @@ model AccidentIncident {
   updatedAt    DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }
 
 model DamageAssessment {
@@ -868,6 +906,7 @@ model DamageAssessment {
   photos                  String?
   assessedAt              DateTime @default(now())
   createdAt               DateTime @default(now())
+  @@index([claimId])
 }
 
 model FraudAlert {
@@ -883,6 +922,7 @@ model FraudAlert {
   updatedAt   DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -904,6 +944,9 @@ model FleetAssignment {
   fleet   FleetOrganization @relation(fields: [fleetId], references: [id], onDelete: Cascade)
   vehicle FleetVehicle      @relation(fields: [vehicleId], references: [id])
   driver  FleetDriver       @relation(fields: [driverId], references: [id])
+  @@index([fleetId])
+  @@index([vehicleId])
+  @@index([driverId])
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -933,6 +976,7 @@ model ApiKey {
   updatedAt   DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -953,4 +997,30 @@ model CollaborationEvent {
   updatedAt       DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ═══════════════════════════════════════════════════════════
+// NextAuth — Account model for OAuth providers
+// ═══════════════════════════════════════════════════════════
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
 }

@@ -279,3 +279,53 @@ Stage Summary:
 - 0 regressions
 - 0 TypeScript errors in src/
 - 0 ESLint errors
+
+---
+Task ID: PSF-1
+Agent: Main Orchestrator
+Task: Production Foundation — Auth, RBAC, Security Headers, Rate Limiting, Prisma Migrations
+
+Work Log:
+- Updated Prisma schema:
+  - Added Account model for NextAuth OAuth support
+  - Added emailVerified and image fields to User model
+  - Expanded role values: super_admin, admin, instructor, mechanic, insurer, fleet_manager, student, driver
+  - Added 39 @@index directives on 30 most-queried foreign key fields
+  - Ran db:push — schema synced, client generated
+
+- Created NextAuth configuration:
+  - src/app/api/auth/[...nextauth]/route.ts — Credentials provider with JWT strategy
+  - src/types/next-auth.d.ts — Type augmentation for session (id + role)
+  - Added NEXTAUTH_URL and NEXTAUTH_SECRET to .env
+  - Created .env.example for onboarding
+  - Updated Providers.tsx with SessionProvider
+
+- Created RBAC system:
+  - src/lib/rbac.ts — 8 roles with hierarchy, hasMinRole(), hasPermission(), RESOURCE_PERMISSIONS map
+
+- Created auth helpers:
+  - src/lib/auth.ts — requireAuth(), requireRole(), getUserRole(), getUserId()
+
+- Created rate limiter:
+  - src/lib/rate-limit.ts — In-memory sliding window (100 req/min default), getClientIp()
+
+- Created middleware:
+  - src/middleware.ts — Security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, X-XSS-Protection) + rate limiting + /api/seed production guard
+
+- Protected /api/seed:
+  - GET + POST both return 403 in production (middleware + route-level double guard)
+
+- Updated next.config.ts:
+  - Removed duplicate security headers (now in middleware)
+  - Kept only API Cache-Control header
+
+Stage Summary:
+- 7 new files created (auth route, types, rbac, auth helpers, rate-limit, middleware, env.example)
+- 5 files modified (schema, Providers, seed route, next.config, .env)
+- 0 TypeScript errors in src/
+- 0 ESLint errors
+- All 7 security headers verified via curl
+- Rate limiting verified: X-RateLimit-Remaining header present
+- Auth endpoint verified: POST /api/auth/callback/credentials returns 302 (redirect)
+- All 13 tested API routes return HTTP 200
+- /api/seed returns HTTP 200 in dev, would return 403 in production

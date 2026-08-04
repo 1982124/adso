@@ -522,6 +522,14 @@ async function seedV42Data(userId: string) {
 }
 
 export async function POST(request: NextRequest) {
+  // ─── Auth guard: seed requires admin+ in production ───
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      { error: 'Endpoint désactivé en production' },
+      { status: 403 },
+    );
+  }
+
   try {
     const body = await request.json().catch(() => ({}));
     const action = (body as { action?: string }).action;
@@ -632,6 +640,14 @@ export async function POST(request: NextRequest) {
 
 // GET — Return current DB counts
 export async function GET() {
+  // ─── Auth guard: seed requires admin+ in production ───
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      { error: 'Endpoint désactivé en production' },
+      { status: 403 },
+    );
+  }
+
   try {
     const [countries, licenses, signs, questions, practical, insurancePolicies, insuranceClaims, trustScores, telematicsTrips, fleetOrganizations, securityEvents, marketplaceListings, trafficViolations, collaborationEvents, vehicleTwins, featureFlags, fraudAlerts, accidentIncidents] = await Promise.all([
       db.country.count(),
