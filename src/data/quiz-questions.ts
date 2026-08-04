@@ -8,7 +8,7 @@ export interface QuizQuestion {
   category: string;
 }
 
-export const quizQuestions: QuizQuestion[] = [
+const easyQuestions: QuizQuestion[] = [
   // ═══════════════════════════════════════════════════════════════════
   // EASY (q-1 to q-100)
   // ═══════════════════════════════════════════════════════════════════
@@ -243,16 +243,13 @@ function generateHardQuestions(): QuizQuestion[] {
   return questions;
 }
 
-// Merge all questions
-const allQuestions = [...quizQuestions, ...generateMediumQuestions(), ...generateHardQuestions()];
-
-// Re-export the merged array as quizQuestions (shadowing the local const)
-export { allQuestions as quizQuestions };
+// Merge all questions and export as quizQuestions
+export const quizQuestions = [...easyQuestions, ...generateMediumQuestions(), ...generateHardQuestions()];
 
 export function getRandomQuestions(count: number, category?: string): QuizQuestion[] {
   let pool = category
-    ? allQuestions.filter((q) => q.category === category)
-    : [...allQuestions];
+    ? quizQuestions.filter((q) => q.category === category)
+    : [...quizQuestions];
   // Fisher-Yates shuffle
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -262,9 +259,9 @@ export function getRandomQuestions(count: number, category?: string): QuizQuesti
 }
 
 export function getQuestionsByCategory(category: string): QuizQuestion[] {
-  return allQuestions.filter((q) => q.category === category);
+  return quizQuestions.filter((q) => q.category === category);
 }
 
 export function getQuestionsByDifficulty(difficulty: 'easy' | 'medium' | 'hard'): QuizQuestion[] {
-  return allQuestions.filter((q) => q.difficulty === difficulty);
+  return quizQuestions.filter((q) => q.difficulty === difficulty);
 }

@@ -3,6 +3,8 @@
  *
  * Every API route should use `parseBody()` to validate incoming requests
  * before processing. This ensures consistent error shapes and type safety.
+ *
+ * Uses Zod v4 API.
  */
 
 import { z } from 'zod';
@@ -11,10 +13,7 @@ import { z } from 'zod';
 
 /** Email field shared across multiple schemas. */
 const emailField = z
-  .string({
-    required_error: 'L\'email est requis',
-    invalid_type_error: 'L\'email doit être une chaîne de caractères',
-  })
+  .string({ error: "L'email est requis" })
   .email('Adresse email invalide');
 
 // ─── Schemas ────────────────────────────────────────────────────────────────
@@ -26,15 +25,15 @@ const emailField = z
 export const createUserSchema = z.object({
   email: emailField,
   name: z
-    .string({ required_error: 'Le nom est requis' })
+    .string({ error: 'Le nom est requis' })
     .min(2, 'Le nom doit contenir au moins 2 caractères')
     .max(100, 'Le nom ne peut pas dépasser 100 caractères'),
   password: z
-    .string({ required_error: 'Le mot de passe est requis' })
+    .string({ error: 'Le mot de passe est requis' })
     .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
     .max(128, 'Le mot de passe ne peut pas dépasser 128 caractères'),
   country: z
-    .string({ required_error: 'Le pays est requis' })
+    .string({ error: 'Le pays est requis' })
     .min(2, 'Code pays invalide')
     .max(2, 'Code pays invalide'),
 });
@@ -45,7 +44,7 @@ export const createUserSchema = z.object({
  */
 export const loginSchema = z.object({
   email: emailField,
-  password: z.string({ required_error: 'Le mot de passe est requis' }),
+  password: z.string({ error: 'Le mot de passe est requis' }),
 });
 
 /**
@@ -55,7 +54,7 @@ export const loginSchema = z.object({
 export const chatMessageSchema = z.object({
   userId: emailField,
   message: z
-    .string({ required_error: 'Le message est requis' })
+    .string({ error: 'Le message est requis' })
     .min(1, 'Le message ne peut pas être vide')
     .max(1000, 'Le message ne peut pas dépasser 1000 caractères'),
 });
@@ -69,9 +68,9 @@ export const quizAnswerSchema = z.object({
   answers: z
     .array(
       z.object({
-        questionId: z.string({ required_error: 'questionId est requis' }),
+        questionId: z.string({ error: 'questionId est requis' }),
         selectedOption: z
-          .string({ required_error: 'selectedOption est requis' })
+          .string({ error: 'selectedOption est requis' })
           .min(1, 'Une option doit être sélectionnée'),
       }),
     )
@@ -83,8 +82,8 @@ export const quizAnswerSchema = z.object({
  * Requires userId and courseId.
  */
 export const courseEnrollSchema = z.object({
-  userId: z.string({ required_error: 'userId est requis' }),
-  courseId: z.string({ required_error: 'courseId est requis' }),
+  userId: z.string({ error: 'userId est requis' }),
+  courseId: z.string({ error: 'courseId est requis' }),
 });
 
 /**
@@ -93,16 +92,16 @@ export const courseEnrollSchema = z.object({
  */
 export const contactSchema = z.object({
   name: z
-    .string({ required_error: 'Le nom est requis' })
+    .string({ error: 'Le nom est requis' })
     .min(2, 'Le nom doit contenir au moins 2 caractères')
     .max(100, 'Le nom ne peut pas dépasser 100 caractères'),
   email: emailField,
   subject: z
-    .string({ required_error: 'Le sujet est requis' })
+    .string({ error: 'Le sujet est requis' })
     .min(3, 'Le sujet doit contenir au moins 3 caractères')
     .max(200, 'Le sujet ne peut pas dépasser 200 caractères'),
   message: z
-    .string({ required_error: 'Le message est requis' })
+    .string({ error: 'Le message est requis' })
     .min(10, 'Le message doit contenir au moins 10 caractères')
     .max(5000, 'Le message ne peut pas dépasser 5000 caractères'),
 });
@@ -117,7 +116,7 @@ export const updateProfileSchema = z.object({
     .min(2, 'Le nom doit contenir au moins 2 caractères')
     .max(100, 'Le nom ne peut pas dépasser 100 caractères')
     .optional(),
-  avatar: z.string().url('URL d\'avatar invalide').optional(),
+  avatar: z.string().url("URL d'avatar invalide").optional(),
   country: z
     .string()
     .min(2, 'Code pays invalide')

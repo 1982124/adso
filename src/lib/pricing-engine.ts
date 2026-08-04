@@ -84,7 +84,7 @@ export function getPricingForCountry(
     ? (PPP_MULTIPLIERS[country.region] ?? DEFAULT_PPP)
     : DEFAULT_PPP;
 
-  const currency = country?.currency ?? 'EUR';
+  const currency = country?.currency?.code ?? 'EUR';
 
   // price = base × PPP (rounded to 2 dp)
   const price = Math.round(basePrice * ppp * 100) / 100;
@@ -126,7 +126,7 @@ export function calculateDiscount(
  */
 export function getAvailablePaymentMethods(countryCode: string): string[] {
   const country = getCountryByCode(countryCode);
-  return country ? [...country.paymentMethods] : [];
+  return country ? [...country.paymentProviders] : [];
 }
 
 /**

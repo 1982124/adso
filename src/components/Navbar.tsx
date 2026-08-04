@@ -22,8 +22,8 @@ const homeNavLinks = [
 ];
 
 const moduleIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-  Home, GraduationCap, Wrench, Scan, MapPin, Shield, Store,
-  SteeringWheel, ShieldCheck, Truck, Landmark, Building2, FileCode,
+  Home, GraduationCap, Car, Wrench, Scan, MapPin, Shield, Store,
+  ShieldCheck, Truck, Landmark, Building2, FileCode,
 };
 
 export default function Navbar() {
