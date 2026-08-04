@@ -6,7 +6,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 // ═══════════════════════════════════════════════════════════
-// HOME VIEW — Existing sections ( statically imported for instant load)
+// HOME VIEW — Existing sections (statically imported for instant load)
 // ═══════════════════════════════════════════════════════════
 import HeroSection from '@/components/sections/HeroSection';
 import StatsSection from '@/components/sections/StatsSection';
@@ -21,7 +21,7 @@ import SecuritySection from '@/components/sections/SecuritySection';
 import AnalyticsSection from '@/components/sections/AnalyticsSection';
 
 // ═══════════════════════════════════════════════════════════
-// PLATFORM MODULES — Lazy loaded to keep initial bundle small
+// V3 PLATFORM MODULES — Lazy loaded
 // ═══════════════════════════════════════════════════════════
 const LearningPlatform = dynamic(
   () => import('@/components/modules/learning/LearningPlatform'),
@@ -48,15 +48,36 @@ const MarketplaceModule = dynamic(
   { ssr: false, loading: () => <ModuleLoader label="Marketplace" /> }
 );
 
+// ═══════════════════════════════════════════════════════════
+// V4.1 NEW MODULES — Lazy loaded
+// ═══════════════════════════════════════════════════════════
+const AIDrivingModule = dynamic(
+  () => import('@/components/modules/v41/AIDrivingModule'),
+  { ssr: false, loading: () => <ModuleLoader label="Conduite IA" /> }
+);
+const InsuranceModule = dynamic(
+  () => import('@/components/modules/v41/InsuranceModule'),
+  { ssr: false, loading: () => <ModuleLoader label="Assurance IA" /> }
+);
+const FleetModule = dynamic(
+  () => import('@/components/modules/v41/FleetModule'),
+  { ssr: false, loading: () => <ModuleLoader label="Gestion de Flotte" /> }
+);
+const GovernmentModule = dynamic(
+  () => import('@/components/modules/v41/GovernmentModule'),
+  { ssr: false, loading: () => <ModuleLoader label="Gouvernement" /> }
+);
+const EnterpriseModule = dynamic(
+  () => import('@/components/modules/v41/EnterpriseModule'),
+  { ssr: false, loading: () => <ModuleLoader label="Entreprise" /> }
+);
+
 // Blueprint — lazy loaded
 const BluePrintLayout = dynamic(
   () => import('@/components/BluePrintLayout'),
   { ssr: false }
 );
-const BluePrintCover = dynamic(
-  () => import('@/components/BluePrintCover'),
-  { ssr: false }
-);
+const BluePrintCover = dynamic(() => import('@/components/BluePrintCover'), { ssr: false });
 const VisionEntreprise = dynamic(() => import('@/components/parts/VisionEntreprise'), { ssr: false });
 const EcosystemeComplet = dynamic(() => import('@/components/parts/EcosystemeComplet'), { ssr: false });
 const ArchitectureTechnique = dynamic(() => import('@/components/parts/ArchitectureTechnique'), { ssr: false });
@@ -91,11 +112,16 @@ export default function Home() {
       <main role="main" aria-label="ADSO — Auto Drive School Online">
         {currentView === 'home' && <HomeView />}
         {currentView === 'learning' && <LearningPlatform />}
+        {currentView === 'driving' && <AIDrivingModule />}
         {currentView === 'mechanic' && <MechanicModule />}
         {currentView === 'scanner' && <ScannerModule />}
         {currentView === 'telematics' && <TelematicsModule />}
         {currentView === 'security' && <SecurityModule />}
         {currentView === 'marketplace' && <MarketplaceModule />}
+        {currentView === 'insurance' && <InsuranceModule />}
+        {currentView === 'fleet' && <FleetModule />}
+        {currentView === 'government' && <GovernmentModule />}
+        {currentView === 'enterprise' && <EnterpriseModule />}
         {currentView === 'blueprint' && <BlueprintView />}
       </main>
       <Footer />

@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Menu, X, Car, ArrowLeft, FileCode, Home, GraduationCap,
-  Wrench, Scan, MapPin, Shield, Store, ChevronDown
+  Wrench, Scan, MapPin, Shield, Store, ChevronDown,
+  ShieldCheck, Truck, Landmark, Building2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useViewStore, type AppModule, mainModules, moduleLabels } from '@/stores/view-store';
+import { useViewStore, type AppModule, mainModules, moduleLabels, v41Modules } from '@/stores/view-store';
 
 const homeNavLinks = [
   { label: 'Statistiques', href: '#stats' },
@@ -21,7 +22,8 @@ const homeNavLinks = [
 ];
 
 const moduleIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-  Home, GraduationCap, Wrench, Scan, MapPin, Shield, Store, FileCode,
+  Home, GraduationCap, Wrench, Scan, MapPin, Shield, Store,
+  SteeringWheel, ShieldCheck, Truck, Landmark, Building2, FileCode,
 };
 
 export default function Navbar() {
@@ -77,6 +79,11 @@ export default function Navbar() {
   const textSecondary = isBlueprint ? 'text-slate-300' : isScrolled ? 'text-slate-600' : 'text-white/80';
   const hoverBg = isBlueprint ? 'hover:bg-slate-800 hover:text-white' : isScrolled ? 'hover:text-slate-900 hover:bg-slate-100' : 'text-white/80 hover:text-white hover:bg-white/10';
 
+  // Core modules shown directly in desktop nav
+  const coreDesktopMods: AppModule[] = ['home', 'learning', 'driving', 'mechanic', 'scanner', 'telematics', 'security', 'marketplace'];
+  // Additional modules shown in "More" dropdown
+  const moreMods: AppModule[] = ['insurance', 'fleet', 'government', 'enterprise'];
+
   return (
     <>
       <motion.nav
@@ -85,12 +92,12 @@ export default function Navbar() {
         transition={{ duration: 0.6, ease: 'easeOut' }}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navBg}`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1400px] mx-auto px-3 sm:px-4 lg:px-6">
           <div className="flex items-center justify-between h-14 lg:h-16">
             {/* Logo */}
             <button
               onClick={() => setView('home')}
-              className="flex items-center gap-2 group"
+              className="flex items-center gap-2 group shrink-0"
             >
               <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-600 group-hover:bg-emerald-700 transition-colors">
                 <Car className="w-5 h-5 text-white" />
@@ -99,7 +106,11 @@ export default function Navbar() {
                 ADSO
               </span>
               {!isHome && !isBlueprint && (
-                <span className="hidden sm:inline-flex ml-2 px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/20 text-emerald-600">
+                <span className={`hidden sm:inline-flex ml-2 px-2 py-0.5 rounded text-xs font-medium ${
+                  v41Modules.includes(currentView)
+                    ? 'bg-amber-500/20 text-amber-600'
+                    : 'bg-emerald-500/20 text-emerald-600'
+                }`}>
                   {moduleLabels[currentView]?.label}
                 </span>
               )}
@@ -111,16 +122,15 @@ export default function Navbar() {
             </button>
 
             {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center gap-1">
-              {/* Module Tabs */}
-              {mainModules.map((mod) => {
+            <div className="hidden lg:flex items-center gap-0.5">
+              {coreDesktopMods.map((mod) => {
                 const Icon = moduleIcons[moduleLabels[mod]?.icon || 'Home'];
                 const isActive = currentView === mod;
                 return (
                   <button
                     key={mod}
                     onClick={() => handleModuleClick(mod)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium transition-all ${
                       isActive
                         ? isBlueprint
                           ? 'bg-emerald-600/20 text-emerald-300'
@@ -136,17 +146,55 @@ export default function Navbar() {
                 );
               })}
 
+              {/* More dropdown for additional modules */}
+              <div className="relative">
+                <button
+                  onClick={() => setModulesOpen(!modulesOpen)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium transition-all ${textSecondary} ${hoverBg}`}
+                >
+                  <span>Plus</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${modulesOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {modulesOpen && (
+                  <div className={`absolute right-0 top-full mt-1 py-1 rounded-lg shadow-xl border min-w-[200px] z-50 ${
+                    isBlueprint ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'
+                  }`}>
+                    {moreMods.map((mod) => {
+                      const Icon = moduleIcons[moduleLabels[mod]?.icon || 'Home'];
+                      const isActive = currentView === mod;
+                      return (
+                        <button
+                          key={mod}
+                          onClick={() => handleModuleClick(mod)}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors ${
+                            isActive
+                              ? isBlueprint ? 'bg-emerald-600/20 text-emerald-300' : 'bg-emerald-50 text-emerald-700'
+                              : isBlueprint ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          {Icon && <Icon className="w-4 h-4" />}
+                          <div className="text-left">
+                            <div className="font-medium">{moduleLabels[mod]?.label}</div>
+                            <div className={`text-xs ${isBlueprint ? 'text-slate-500' : 'text-slate-400'}`}>{moduleLabels[mod]?.description}</div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
               {/* Blueprint button */}
               <button
                 onClick={() => handleModuleClick('blueprint')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium transition-all ${
                   isBlueprint
                     ? 'bg-slate-800 text-emerald-300'
                     : `${textSecondary} ${hoverBg}`
                 }`}
               >
                 <FileCode className="w-4 h-4" />
-                <span>Architecture</span>
+                <span className="hidden xl:inline">Architecture</span>
               </button>
             </div>
 
@@ -200,7 +248,7 @@ export default function Navbar() {
             }`}>
               <div className="px-4 py-3 space-y-1">
                 {/* Module list */}
-                {[...mainModules, 'blueprint'].map((mod) => {
+                {mainModules.map((mod) => {
                   const Icon = moduleIcons[moduleLabels[mod]?.icon || 'Home'];
                   const isActive = currentView === mod;
                   return (
@@ -215,10 +263,25 @@ export default function Navbar() {
                     >
                       {Icon && <Icon className="w-5 h-5" />}
                       <span>{moduleLabels[mod]?.label}</span>
-                      <span className="ml-auto text-xs text-slate-400">{moduleLabels[mod]?.description}</span>
+                      {v41Modules.includes(mod) && (
+                        <span className="ml-auto px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-600">V4</span>
+                      )}
                     </button>
                   );
                 })}
+
+                {/* Blueprint */}
+                <button
+                  onClick={() => handleModuleClick('blueprint')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    currentView === 'blueprint'
+                      ? 'text-emerald-700 bg-emerald-50'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <FileCode className="w-5 h-5" />
+                  <span>Architecture</span>
+                </button>
 
                 {/* Home sub-nav (only show when on home view) */}
                 {isHome && (

@@ -1,0 +1,1285 @@
+   655→    { name: 'Conformité', value: trustScore.compliance, icon: <ShieldCheck className="w-4 h-4" /> },
+   656→  ]
+   657→
+   658→  const recommendations = [
+   659→    { text: 'Planifiez un entretien mécanique pour améliorer votre score de santé véhicule.', priority: 'high' },
+   660→    { text: 'Réduisez les freinages brusques — votre score télématique peut encore s\'améliorer.', priority: 'medium' },
+   661→    { text: 'Passez la certification avancée pour booster votre score de progression.', priority: 'low' },
+   662→  ]
+   663→
+   664→  const getLevel = (s: number) => {
+   665→    if (s >= 90) return { label: 'Excellent', color: 'text-emerald-400' }
+   666→    if (s >= 75) return { label: 'Très bon', color: 'text-emerald-400' }
+   667→    if (s >= 60) return { label: 'Bon', color: 'text-amber-400' }
+   668→    if (s >= 40) return { label: 'Moyen', color: 'text-orange-400' }
+   669→    return { label: 'Faible', color: 'text-red-400' }
+   670→  }
+   671→
+   672→  const level = getLevel(score)
+   673→
+   674→  return (
+   675→    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+   676→      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+   677→        {/* Score Gauge */}
+   678→        <Card className="bg-slate-900 border border-slate-800 rounded-xl lg:col-span-1">
+   679→          <CardHeader className="pb-2">
+   680→            <CardTitle className="text-white text-lg flex items-center gap-2">
+   681→              <ShieldCheck className="w-5 h-5 text-emerald-400" />
+   682→              Score de Confiance ADSO
+   683→            </CardTitle>
+   684→          </CardHeader>
+   685→          <CardContent className="flex flex-col items-center py-6">
+   686→            <div className="relative w-56 h-56 mb-4">
+   687→              <svg className="w-56 h-56 -rotate-90" viewBox="0 0 200 200">
+   688→                <circle cx="100" cy="100" r="90" fill="none" stroke="rgb(30,41,59)" strokeWidth="12" />
+   689→                <circle
+   690→                  cx="100" cy="100" r="90" fill="none"
+   691→                  stroke={score >= 75 ? 'rgb(16,185,129)' : score >= 50 ? 'rgb(245,158,11)' : 'rgb(239,68,68)'}
+   692→                  strokeWidth="12"
+   693→                  strokeDasharray={circumference}
+   694→                  strokeDashoffset={dashOffset}
+   695→                  strokeLinecap="round"
+   696→                  className="transition-all duration-1000 ease-out"
+   697→                />
+   698→              </svg>
+   699→              <div className="absolute inset-0 flex flex-col items-center justify-center">
+   700→                <AnimatedNumber value={score} className={`text-5xl font-bold ${level.color}`} />
+   701→                <span className="text-slate-400 text-sm mt-1">sur 100</span>
+   702→                <span className={`text-xs font-medium mt-1 ${level.color}`}>{level.label}</span>
+   703→              </div>
+   704→            </div>
+   705→            <Button
+   706→              onClick={onShare}
+   707→              variant="outline"
+   708→              className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 mt-2"
+   709→            >
+   710→              <Share2 className="w-4 h-4 mr-2" />
+   711→              Partager avec l\'assureur
+   712→            </Button>
+   713→            <p className="text-slate-500 text-xs mt-3">
+   714→              Dernière mise à jour : {new Date(trustScore.lastCalculated).toLocaleDateString('fr-FR')}
+   715→            </p>
+   716→          </CardContent>
+   717→        </Card>
+   718→
+   719→        {/* Score Breakdown */}
+   720→        <Card className="bg-slate-900 border border-slate-800 rounded-xl lg:col-span-1">
+   721→          <CardHeader className="pb-2">
+   722→            <CardTitle className="text-white text-lg">Détail du Score</CardTitle>
+   723→            <CardDescription className="text-slate-400">Composition par facteur</CardDescription>
+   724→          </CardHeader>
+   725→          <CardContent className="space-y-3 max-h-[400px] overflow-y-auto">
+   726→            {factors.map((f) => (
+   727→              <div key={f.name} className="space-y-1">
+   728→                <div className="flex items-center justify-between text-sm">
+   729→                  <div className="flex items-center gap-2 text-slate-300">
+   730→                    <span className="text-slate-500">{f.icon}</span>
+   731→                    <span>{f.name}</span>
+   732→                  </div>
+   733→                  <span className={`font-medium ${getScoreColor(f.inverse ? 100 - f.value : f.value)}`}>
+   734→                    {f.inverse ? `${100 - f.value}%` : `${f.value}%`}
+   735→                  </span>
+   736→                </div>
+   737→                <Progress
+   738→                  value={f.inverse ? 100 - f.value : f.value}
+   739→                  className={`h-2 ${getProgressColor(f.inverse ? 100 - f.value : f.value)}`}
+   740→                />
+   741→              </div>
+   742→            ))}
+   743→          </CardContent>
+   744→        </Card>
+   745→
+   746→        {/* Trend & Recommendations */}
+   747→        <Card className="bg-slate-900 border border-slate-800 rounded-xl lg:col-span-1">
+   748→          <CardHeader className="pb-2">
+   749→            <CardTitle className="text-white text-lg flex items-center gap-2">
+   750→              <TrendingUp className="w-5 h-5 text-emerald-400" />
+   751→              Évolution
+   752→            </CardTitle>
+   753→          </CardHeader>
+   754→          <CardContent>
+   755→            <div className="h-48">
+   756→              <ResponsiveContainer width="100%" height="100%">
+   757→                <AreaChart data={scoreHistory}>
+   758→                  <defs>
+   759→                    <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
+   760→                      <stop offset="5%" stopColor="rgb(16,185,129)" stopOpacity={0.3} />
+   761→                      <stop offset="95%" stopColor="rgb(16,185,129)" stopOpacity={0} />
+   762→                    </linearGradient>
+   763→                  </defs>
+   764→                  <CartesianGrid strokeDasharray="3 3" stroke="rgb(51,65,85)" />
+   765→                  <XAxis dataKey="mois" stroke="rgb(100,116,139)" fontSize={12} />
+   766→                  <YAxis domain={[0, 100]} stroke="rgb(100,116,139)" fontSize={12} />
+   767→                  <Tooltip
+   768→                    contentStyle={{ backgroundColor: 'rgb(15,23,42)', border: '1px solid rgb(51,65,85)', borderRadius: '8px' }}
+   769→                    labelStyle={{ color: 'rgb(148,163,184)' }}
+   770→                  />
+   771→                  <Area type="monotone" dataKey="score" stroke="rgb(16,185,129)" fill="url(#scoreGrad)" strokeWidth={2} />
+   772→                </AreaChart>
+   773→              </ResponsiveContainer>
+   774→            </div>
+   775→            <Separator className="my-4 bg-slate-800" />
+   776→            <h4 className="text-white text-sm font-medium mb-3 flex items-center gap-2">
+   777→              <Zap className="w-4 h-4 text-amber-400" />
+   778→              Recommandations
+   779→            </h4>
+   780→            <div className="space-y-2">
+   781→              {recommendations.map((r, i) => (
+   782→                <div key={i} className="flex gap-2 text-sm">
+   783→                  <ChevronRight className={`w-4 h-4 mt-0.5 shrink-0 ${r.priority === 'high' ? 'text-red-400' : r.priority === 'medium' ? 'text-amber-400' : 'text-slate-500'}`} />
+   784→                  <p className="text-slate-300">{r.text}</p>
+   785→                </div>
+   786→              ))}
+   787→            </div>
+   788→          </CardContent>
+   789→        </Card>
+   790→      </div>
+   791→    </motion.div>
+   792→  )
+   793→}
+   794→
+   795→// ═══════════════════════════════════════════════════════════════
+   796→// TAB 2: INSURANCE DASHBOARD
+   797→// ═══════════════════════════════════════════════════════════════
+   798→function InsuranceDashboardTab({ policies, claims }: { policies: Policy[]; claims: Claim[] }) {
+   799→  const activePolicies = policies.filter(p => p.status === 'active')
+   800→  const pendingClaims = claims.filter(c => ['submitted', 'reviewing'].includes(c.status))
+   801→  const totalPremium = activePolicies.reduce((s, p) => s + (p.premium || 0), 0)
+   802→  const avgRisk = 35
+   803→
+   804→  const summary = [
+   805→    { label: 'Polices actives', value: activePolicies.length, icon: <FileCheck className="w-5 h-5" />, color: 'text-emerald-400', bg: 'bg-emerald-600/10' },
+   806→    { label: 'Sinistres en cours', value: pendingClaims.length, icon: <Clock className="w-5 h-5" />, color: 'text-amber-400', bg: 'bg-amber-600/10' },
+   807→    { label: 'Prime totale/an', value: `${totalPremium.toLocaleString('fr-FR')} €`, icon: <CircleDollarSign className="w-5 h-5" />, color: 'text-blue-400', bg: 'bg-blue-600/10' },
+   808→    { label: 'Niveau de risque', value: avgRisk <= 30 ? 'Faible' : avgRisk <= 60 ? 'Moyen' : 'Élevé', icon: <Target className="w-5 h-5" />, color: avgRisk <= 30 ? 'text-emerald-400' : avgRisk <= 60 ? 'text-amber-400' : 'text-red-400', bg: avgRisk <= 30 ? 'bg-emerald-600/10' : avgRisk <= 60 ? 'bg-amber-600/10' : 'bg-red-600/10' },
+   809→  ]
+   810→
+   811→  const claimsOverview = [
+   812→    { label: 'Soumis', count: claims.filter(c => c.status === 'submitted').length, color: 'bg-blue-500' },
+   813→    { label: 'En cours', count: claims.filter(c => c.status === 'reviewing').length, color: 'bg-amber-500' },
+   814→    { label: 'Approuvés', count: claims.filter(c => c.status === 'approved').length, color: 'bg-emerald-500' },
+   815→    { label: 'Payés', count: claims.filter(c => c.status === 'paid').length, color: 'bg-emerald-400' },
+   816→  ]
+   817→
+   818→  return (
+   819→    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+   820→      {/* Summary Cards */}
+   821→      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+   822→        {summary.map((s) => (
+   823→          <Card key={s.label} className="bg-slate-900 border border-slate-800 rounded-xl">
+   824→            <CardContent className="p-4">
+   825→              <div className={`w-10 h-10 rounded-lg ${s.bg} flex items-center justify-center mb-3 ${s.color}`}>
+   826→                {s.icon}
+   827→              </div>
+   828→              <p className="text-slate-400 text-xs">{s.label}</p>
+   829→              <p className={`text-xl font-bold ${s.color} mt-1`}>{s.value}</p>
+   830→            </CardContent>
+   831→          </Card>
+   832→        ))}
+   833→      </div>
+   834→
+   835→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+   836→        {/* Active Policies */}
+   837→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+   838→          <CardHeader>
+   839→            <CardTitle className="text-white text-lg flex items-center gap-2">
+   840→              <FileText className="w-5 h-5 text-emerald-400" />
+   841→              Polices actives
+   842→            </CardTitle>
+   843→          </CardHeader>
+   844→          <CardContent>
+   845→            <div className="space-y-3 max-h-96 overflow-y-auto">
+   846→              {policies.map((p) => (
+   847→                <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
+   848→                  <div className="min-w-0 flex-1">
+   849→                    <div className="flex items-center gap-2 mb-1">
+   850→                      <span className="text-white text-sm font-medium truncate">{p.policyNumber}</span>
+   851→                      {getStatusBadge(p.status)}
+   852→                    </div>
+   853→                    <div className="flex items-center gap-3 text-xs text-slate-400">
+   854→                      <span>{p.type}</span>
+   855→                      <span>•</span>
+   856→                      <span>{p.vehicleType}</span>
+   857→                    </div>
+   858→                  </div>
+   859→                  <div className="text-right ml-3 shrink-0">
+   860→                    <p className="text-white font-medium">{p.premium?.toLocaleString('fr-FR')} €</p>
+   861→                    <p className="text-slate-500 text-xs">/an</p>
+   862→                  </div>
+   863→                </div>
+   864→              ))}
+   865→            </div>
+   866→          </CardContent>
+   867→        </Card>
+   868→
+   869→        {/* Claims Overview */}
+   870→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+   871→          <CardHeader>
+   872→            <CardTitle className="text-white text-lg flex items-center gap-2">
+   873→              <BarChart3 className="w-5 h-5 text-emerald-400" />
+   874→              Aperçu des sinistres
+   875→            </CardTitle>
+   876→          </CardHeader>
+   877→          <CardContent className="space-y-4">
+   878→            <div className="grid grid-cols-2 gap-3">
+   879→              {claimsOverview.map((co) => (
+   880→                <div key={co.label} className="p-4 rounded-lg bg-slate-800/50 border border-slate-700/50">
+   881→                  <div className={`w-3 h-3 rounded-full ${co.color} mb-2`} />
+   882→                  <p className="text-2xl font-bold text-white">{co.count}</p>
+   883→                  <p className="text-slate-400 text-xs">{co.label}</p>
+   884→                </div>
+   885→              ))}
+   886→            </div>
+   887→            <Separator className="bg-slate-800" />
+   888→            <div>
+   889→              <h4 className="text-slate-300 text-sm font-medium mb-2">Derniers sinistres</h4>
+   890→              <div className="space-y-2 max-h-48 overflow-y-auto">
+   891→                {claims.slice(0, 4).map((c) => (
+   892→                  <div key={c.id} className="flex items-center justify-between py-2 border-b border-slate-800 last:border-0">
+   893→                    <div>
+   894→                      <p className="text-white text-sm">{getClaimTypeLabel(c.type)}</p>
+   895→                      <p className="text-slate-500 text-xs">{c.createdAt ? new Date(c.createdAt).toLocaleDateString('fr-FR') : ''}</p>
+   896→                    </div>
+   897→                    {getStatusBadge(c.status)}
+   898→                  </div>
+   899→                ))}
+   900→              </div>
+   901→            </div>
+   902→          </CardContent>
+   903→        </Card>
+   904→      </div>
+   905→    </motion.div>
+   906→  )
+   907→}
+   908→
+   909→// ═══════════════════════════════════════════════════════════════
+   910→// TAB 3: CLAIMS CENTER
+   911→// ═══════════════════════════════════════════════════════════════
+   912→function ClaimsCenterTab({
+   913→  claims,
+   914→  policies,
+   915→  pipeline,
+   916→  selectedClaim,
+   917→  onSelectClaim,
+   918→  newClaimOpen,
+   919→  setNewClaimOpen,
+   920→  claimForm,
+   921→  setClaimForm,
+   922→  onFileClaim,
+   923→}: {
+   924→  claims: Claim[]
+   925→  policies: Policy[]
+   926→  pipeline: { key: string; label: string; count: number; color: string }[]
+   927→  selectedClaim: Claim | null
+   928→  onSelectClaim: (c: Claim | null) => void
+   929→  newClaimOpen: boolean
+   930→  setNewClaimOpen: (v: boolean) => void
+   931→  claimForm: { type: string; description: string; date: string; location: string }
+   932→  setClaimForm: (f: { type: string; description: string; date: string; location: string }) => void
+   933→  onFileClaim: () => void
+   934→}) {
+   935→  const [viewMode, setViewMode] = useState<'pipeline' | 'list'>('pipeline')
+   936→
+   937→  return (
+   938→    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+   939→      {/* Header with actions */}
+   940→      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+   941→        <div>
+   942→          <h2 className="text-white text-lg font-semibold">Centre des Sinistres</h2>
+   943→          <p className="text-slate-400 text-sm">Gérez vos déclarations de sinistres</p>
+   944→        </div>
+   945→        <Dialog open={newClaimOpen} onOpenChange={setNewClaimOpen}>
+   946→          <DialogTrigger asChild>
+   947→            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
+   948→              <Plus className="w-4 h-4 mr-2" />Nouveau sinistre
+   949→            </Button>
+   950→          </DialogTrigger>
+   951→          <DialogContent className="bg-slate-900 border-slate-800 max-w-lg">
+   952→            <DialogHeader>
+   953→              <DialogTitle className="text-white">Déclarer un sinistre</DialogTitle>
+   954→              <DialogDescription className="text-slate-400">Remplissez les informations du sinistre</DialogDescription>
+   955→            </DialogHeader>
+   956→            <div className="space-y-4 pt-2">
+   957→              <div className="space-y-2">
+   958→                <Label className="text-slate-300">Type de sinistre</Label>
+   959→                <Select value={claimForm.type} onValueChange={(v) => setClaimForm({ ...claimForm, type: v })}>
+   960→                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+   961→                    <SelectValue />
+   962→                  </SelectTrigger>
+   963→                  <SelectContent className="bg-slate-800 border-slate-700">
+   964→                    <SelectItem value="collision">Collision</SelectItem>
+   965→                    <SelectItem value="theft">Vol</SelectItem>
+   966→                    <SelectItem value="vandalism">Vandalisme</SelectItem>
+   967→                    <SelectItem value="weather">Intempérie</SelectItem>
+   968→                    <SelectItem value="fire">Incendie</SelectItem>
+   969→                    <SelectItem value="flood">Inondation</SelectItem>
+   970→                    <SelectItem value="liability">Responsabilité civile</SelectItem>
+   971→                  </SelectContent>
+   972→                </Select>
+   973→              </div>
+   974→              <div className="space-y-2">
+   975→                <Label className="text-slate-300">Description</Label>
+   976→                <Textarea
+   977→                  value={claimForm.description}
+   978→                  onChange={(e) => setClaimForm({ ...claimForm, description: e.target.value })}
+   979→                  placeholder="Décrivez les circonstances du sinistre..."
+   980→                  className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 min-h-[80px]"
+   981→                />
+   982→              </div>
+   983→              <div className="grid grid-cols-2 gap-4">
+   984→                <div className="space-y-2">
+   985→                  <Label className="text-slate-300">Date</Label>
+   986→                  <Input
+   987→                    type="date"
+   988→                    value={claimForm.date}
+   989→                    onChange={(e) => setClaimForm({ ...claimForm, date: e.target.value })}
+   990→                    className="bg-slate-800 border-slate-700 text-white"
+   991→                  />
+   992→                </div>
+   993→                <div className="space-y-2">
+   994→                  <Label className="text-slate-300">Lieu</Label>
+   995→                  <Input
+   996→                    value={claimForm.location}
+   997→                    onChange={(e) => setClaimForm({ ...claimForm, location: e.target.value })}
+   998→                    placeholder="Adresse ou ville"
+   999→                    className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+  1000→                  />
+  1001→                </div>
+  1002→              </div>
+  1003→              <div className="space-y-2">
+  1004→                <Label className="text-slate-300">Photos</Label>
+  1005→                <div className="border-2 border-dashed border-slate-700 rounded-lg p-6 text-center hover:border-emerald-500/50 transition-colors cursor-pointer">
+  1006→                  <Camera className="w-8 h-8 text-slate-500 mx-auto mb-2" />
+  1007→                  <p className="text-slate-400 text-sm">Cliquez ou glissez les photos</p>
+  1008→                  <p className="text-slate-500 text-xs mt-1">JPG, PNG — Max 10 Mo</p>
+  1009→                </div>
+  1010→              </div>
+  1011→              <Button onClick={onFileClaim} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
+  1012→                <Send className="w-4 h-4 mr-2" />Soumettre la déclaration
+  1013→              </Button>
+  1014→            </div>
+  1015→          </DialogContent>
+  1016→        </Dialog>
+  1017→      </div>
+  1018→
+  1019→      {/* Pipeline / List Toggle */}
+  1020→      <div className="flex gap-2">
+  1021→        <Button
+  1022→          variant={viewMode === 'pipeline' ? 'default' : 'outline'}
+  1023→          size="sm"
+  1024→          onClick={() => setViewMode('pipeline')}
+  1025→          className={viewMode === 'pipeline' ? 'bg-emerald-600 text-white' : 'border-slate-700 text-slate-300'}
+  1026→        >
+  1027→          Pipeline
+  1028→        </Button>
+  1029→        <Button
+  1030→          variant={viewMode === 'list' ? 'default' : 'outline'}
+  1031→          size="sm"
+  1032→          onClick={() => setViewMode('list')}
+  1033→          className={viewMode === 'list' ? 'bg-emerald-600 text-white' : 'border-slate-700 text-slate-300'}
+  1034→        >
+  1035→          Liste
+  1036→        </Button>
+  1037→      </div>
+  1038→
+  1039→      {viewMode === 'pipeline' ? (
+  1040→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1041→          <CardContent className="p-6">
+  1042→            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+  1043→              {pipeline.map((step) => (
+  1044→                <div
+  1045→                  key={step.key}
+  1046→                  className={`rounded-xl border-l-4 p-3 ${step.color}`}
+  1047→                >
+  1048→                  <p className="text-2xl font-bold text-white">{step.count}</p>
+  1049→                  <p className="text-slate-400 text-xs mt-1">{step.label}</p>
+  1050→                </div>
+  1051→              ))}
+  1052→            </div>
+  1053→          </CardContent>
+  1054→        </Card>
+  1055→      ) : (
+  1056→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1057→          <CardContent className="p-0">
+  1058→            <Table>
+  1059→              <TableHeader>
+  1060→                <TableRow className="border-slate-800 hover:bg-transparent">
+  1061→                  <TableHead className="text-slate-400">Type</TableHead>
+  1062→                  <TableHead className="text-slate-400">Statut</TableHead>
+  1063→                  <TableHead className="text-slate-400 hidden sm:table-cell">Date</TableHead>
+  1064→                  <TableHead className="text-slate-400 hidden md:table-cell">Coût estimé</TableHead>
+  1065→                  <TableHead className="text-slate-400">Actions</TableHead>
+  1066→                </TableRow>
+  1067→              </TableHeader>
+  1068→              <TableBody>
+  1069→                {claims.map((c) => (
+  1070→                  <TableRow key={c.id} className="border-slate-800 hover:bg-slate-800/50">
+  1071→                    <TableCell className="text-white text-sm">{getClaimTypeLabel(c.type)}</TableCell>
+  1072→                    <TableCell>{getStatusBadge(c.status)}</TableCell>
+  1073→                    <TableCell className="text-slate-300 text-sm hidden sm:table-cell">
+  1074→                      {c.incidentDate ? new Date(c.incidentDate).toLocaleDateString('fr-FR') : '-'}
+  1075→                    </TableCell>
+  1076→                    <TableCell className="text-slate-300 text-sm hidden md:table-cell">
+  1077→                      {c.estimatedCost ? `${c.estimatedCost.toLocaleString('fr-FR')} €` : '-'}
+  1078→                    </TableCell>
+  1079→                    <TableCell>
+  1080→                      <Button
+  1081→                        variant="ghost"
+  1082→                        size="sm"
+  1083→                        onClick={() => onSelectClaim(c)}
+  1084→                        className="text-emerald-400 hover:text-emerald-300"
+  1085→                      >
+  1086→                        <Eye className="w-4 h-4" />
+  1087→                      </Button>
+  1088→                    </TableCell>
+  1089→                  </TableRow>
+  1090→                ))}
+  1091→              </TableBody>
+  1092→            </Table>
+  1093→          </CardContent>
+  1094→        </Card>
+  1095→      )}
+  1096→
+  1097→      {/* Selected Claim Detail */}
+  1098→      {selectedClaim && (
+  1099→        <ClaimDetailDialog claim={selectedClaim} policies={policies} onClose={() => onSelectClaim(null)} />
+  1100→      )}
+  1101→    </motion.div>
+  1102→  )
+  1103→}
+  1104→
+  1105→// ─── Claim Detail Dialog ─────────────────────────────────────
+  1106→function ClaimDetailDialog({ claim, policies, onClose }: { claim: Claim; policies: Policy[]; onClose: () => void }) {
+  1107→  const policy = policies.find(p => p.id === claim.policyId)
+  1108→  let damage = null
+  1109→  try { damage = claim.damageAssessment ? JSON.parse(claim.damageAssessment) : null } catch { /* */ }
+  1110→
+  1111→  const timeline = [
+  1112→    { label: 'Sinistre déclaré', date: claim.incidentDate, icon: <AlertTriangle className="w-4 h-4" />, color: 'text-red-400' },
+  1113→    { label: 'Prise en charge', date: claim.createdAt, icon: <Clock className="w-4 h-4" />, color: 'text-blue-400' },
+  1114→    { label: 'Évaluation en cours', date: claim.status !== 'submitted' ? claim.createdAt : null, icon: <Search className="w-4 h-4" />, color: 'text-amber-400' },
+  1115→    { label: 'Décision', date: ['approved', 'denied', 'paid', 'closed'].includes(claim.status) ? claim.createdAt : null, icon: ['approved', 'paid'].includes(claim.status) ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />, color: ['approved', 'paid'].includes(claim.status) ? 'text-emerald-400' : 'text-red-400' },
+  1116→  ]
+  1117→
+  1118→  return (
+  1119→    <Dialog open={!!claim} onOpenChange={() => onClose()}>
+  1120→      <DialogContent className="bg-slate-900 border-slate-800 max-w-2xl max-h-[80vh] overflow-y-auto">
+  1121→        <DialogHeader>
+  1122→          <DialogTitle className="text-white flex items-center gap-2">
+  1123→            Détail du sinistre
+  1124→            {getStatusBadge(claim.status)}
+  1125→          </DialogTitle>
+  1126→          <DialogDescription className="text-slate-400">Référence : {claim.id}</DialogDescription>
+  1127→        </DialogHeader>
+  1128→        <div className="space-y-4 pt-2">
+  1129→          <div className="grid grid-cols-2 gap-4">
+  1130→            <div className="space-y-1">
+  1131→              <p className="text-slate-500 text-xs">Type</p>
+  1132→              <p className="text-white text-sm font-medium">{getClaimTypeLabel(claim.type)}</p>
+  1133→            </div>
+  1134→            <div className="space-y-1">
+  1135→              <p className="text-slate-500 text-xs">Police</p>
+  1136→              <p className="text-white text-sm font-medium">{policy?.policyNumber || '-'}</p>
+  1137→            </div>
+  1138→            <div className="space-y-1">
+  1139→              <p className="text-slate-500 text-xs">Date du sinistre</p>
+  1140→              <p className="text-white text-sm font-medium">{claim.incidentDate ? new Date(claim.incidentDate).toLocaleDateString('fr-FR') : '-'}</p>
+  1141→            </div>
+  1142→            <div className="space-y-1">
+  1143→              <p className="text-slate-500 text-xs">Lieu</p>
+  1144→              <p className="text-white text-sm font-medium">{claim.location || '-'}</p>
+  1145→            </div>
+  1146→          </div>
+  1147→
+  1148→          <Separator className="bg-slate-800" />
+  1149→
+  1150→          <div>
+  1151→            <p className="text-slate-500 text-xs mb-1">Description</p>
+  1152→            <p className="text-slate-300 text-sm">{claim.description}</p>
+  1153→          </div>
+  1154→
+  1155→          {damage && (
+  1156→            <>
+  1157→              <Separator className="bg-slate-800" />
+  1158→              <div>
+  1159→                <h4 className="text-white text-sm font-medium mb-3 flex items-center gap-2">
+  1160→                  <BrainCircuit className="w-4 h-4 text-emerald-400" />
+  1161→                  Évaluation des dommages (IA)
+  1162→                </h4>
+  1163→                <div className="grid grid-cols-2 gap-3">
+  1164→                  <div className="p-3 rounded-lg bg-slate-800/50">
+  1165→                    <p className="text-slate-500 text-xs">Sévérité</p>
+  1166→                    <p className={`text-sm font-medium capitalize ${damage.severity === 'léger' ? 'text-emerald-400' : damage.severity === 'modéré' ? 'text-amber-400' : 'text-red-400'}`}>{damage.severity}</p>
+  1167→                  </div>
+  1168→                  <div className="p-3 rounded-lg bg-slate-800/50">
+  1169→                    <p className="text-slate-500 text-xs">Délai de réparation</p>
+  1170→                    <p className="text-white text-sm font-medium">{damage.repairTime}</p>
+  1171→                  </div>
+  1172→                  <div className="p-3 rounded-lg bg-slate-800/50 col-span-2">
+  1173→                    <p className="text-slate-500 text-xs mb-1">Zones endommagées</p>
+  1174→                    <div className="flex flex-wrap gap-1">
+  1175→                      {damage.zones?.map((z: string, i: number) => (
+  1176→                        <Badge key={i} variant="outline" className="border-slate-600 text-slate-300 text-xs">{z}</Badge>
+  1177→                      ))}
+  1178→                    </div>
+  1179→                  </div>
+  1180→                  <div className="p-3 rounded-lg bg-slate-800/50 col-span-2">
+  1181→                    <p className="text-slate-500 text-xs mb-1">Pièces nécessaires</p>
+  1182→                    <div className="flex flex-wrap gap-1">
+  1183→                      {damage.parts?.map((p: string, i: number) => (
+  1184→                        <Badge key={i} variant="outline" className="border-emerald-500/30 text-emerald-400 text-xs">{p}</Badge>
+  1185→                      ))}
+  1186→                    </div>
+  1187→                  </div>
+  1188→                </div>
+  1189→              </div>
+  1190→            </>
+  1191→          )}
+  1192→
+  1193→          <div className="grid grid-cols-2 gap-3">
+  1194→            <div className="p-3 rounded-lg bg-slate-800/50">
+  1195→              <p className="text-slate-500 text-xs">Coût estimé</p>
+  1196→              <p className="text-white font-bold">{claim.estimatedCost ? `${claim.estimatedCost.toLocaleString('fr-FR')} €` : 'En attente'}</p>
+  1197→            </div>
+  1198→            <div className="p-3 rounded-lg bg-slate-800/50">
+  1199→              <p className="text-slate-500 text-xs">Montant approuvé</p>
+  1200→              <p className="text-emerald-400 font-bold">{claim.approvedAmount != null ? `${claim.approvedAmount.toLocaleString('fr-FR')} €` : 'En attente'}</p>
+  1201→            </div>
+  1202→          </div>
+  1203→
+  1204→          <Separator className="bg-slate-800" />
+  1205→
+  1206→          {/* Timeline */}
+  1207→          <div>
+  1208→            <h4 className="text-white text-sm font-medium mb-3">Chronologie</h4>
+  1209→            <div className="space-y-3">
+  1210→              {timeline.map((step, i) => (
+  1211→                <div key={i} className="flex items-start gap-3">
+  1212→                  <div className={`${step.color} mt-0.5`}>{step.icon}</div>
+  1213→                  <div>
+  1214→                    <p className="text-slate-300 text-sm">{step.label}</p>
+  1215→                    {step.date && <p className="text-slate-500 text-xs">{new Date(step.date).toLocaleDateString('fr-FR')}</p>}
+  1216→                  </div>
+  1217→                </div>
+  1218→              ))}
+  1219→            </div>
+  1220→          </div>
+  1221→        </div>
+  1222→      </DialogContent>
+  1223→    </Dialog>
+  1224→  )
+  1225→}
+  1226→
+  1227→// ═══════════════════════════════════════════════════════════════
+  1228→// TAB 4: FRAUD DETECTION CENTER
+  1229→// ═══════════════════════════════════════════════════════════════
+  1230→function FraudDetectionTab({ trustScore }: { trustScore: TrustScoreData }) {
+  1231→  const fraudRisk = trustScore.fraudRisk
+  1232→
+  1233→  const indicators = [
+  1234→    { name: 'Cohérence des déclarations', status: 'ok', detail: 'Aucune incohérence détectée' },
+  1235→    { name: 'Fréquence des sinistres', status: 'warning', detail: 'Légèrement au-dessus de la moyenne' },
+  1236→    { name: 'Patterns de conduite', status: 'ok', detail: 'Comportement normal' },
+  1237→    { name: 'Historique de localisation', status: 'ok', detail: 'Déplacements cohérents' },
+  1238→    { name: 'Données télématiques', status: 'ok', detail: 'Aucune anomalie détectée' },
+  1239→    { name: 'Vérification documentaire', status: 'ok', detail: 'Tous les documents validés' },
+  1240→  ]
+  1241→
+  1242→  const suspiciousActivities = [
+  1243→    { date: '15/06/2024', description: 'Déclaration tardive du sinistre CLM-001 (4h après)', level: 'low' },
+  1244→    { date: '02/08/2024', description: 'Deuxième sinistre vandalisme en 3 mois — surveillance active', level: 'medium' },
+  1245→  ]
+  1246→
+  1247→  const anomalies = [
+  1248→    { metric: 'Vitesse au moment de l\'impact', expected: '20-40 km/h', detected: '45 km/h', verdict: 'normal' },
+  1249→    { metric: 'Heure du sinistre', expected: 'Période de trafic', detected: '14h30', verdict: 'normal' },
+  1250→    { metric: 'Distance entre sinistres', expected: '> 50 km', detected: '12 km', verdict: 'attention' },
+  1251→  ]
+  1252→
+  1253→  const getRiskLevel = (r: number) => {
+  1254→    if (r <= 15) return { label: 'Très faible', color: 'text-emerald-400', bg: 'bg-emerald-600/10', border: 'border-emerald-500/30' }
+  1255→    if (r <= 30) return { label: 'Faible', color: 'text-emerald-400', bg: 'bg-emerald-600/10', border: 'border-emerald-500/30' }
+  1256→    if (r <= 50) return { label: 'Moyen', color: 'text-amber-400', bg: 'bg-amber-600/10', border: 'border-amber-500/30' }
+  1257→    if (r <= 75) return { label: 'Élevé', color: 'text-orange-400', bg: 'bg-orange-600/10', border: 'border-orange-500/30' }
+  1258→    return { label: 'Critique', color: 'text-red-400', bg: 'bg-red-600/10', border: 'border-red-500/30' }
+  1259→  }
+  1260→
+  1261→  const riskLevel = getRiskLevel(fraudRisk)
+  1262→
+  1263→  return (
+  1264→    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+  1265→      {/* Risk Assessment Header */}
+  1266→      <Card className={`border ${riskLevel.border} rounded-xl`}>
+  1267→        <CardContent className="p-6">
+  1268→          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+  1269→            <div className="flex items-center gap-4">
+  1270→              <div className={`w-16 h-16 rounded-xl ${riskLevel.bg} flex items-center justify-center`}>
+  1271→                <ShieldAlert className={`w-8 h-8 ${riskLevel.color}`} />
+  1272→              </div>
+  1273→              <div>
+  1274→                <h3 className="text-white text-lg font-semibold">Niveau de risque de fraude</h3>
+  1275→                <p className={`text-sm font-medium ${riskLevel.color}`}>{riskLevel.label}</p>
+  1276→              </div>
+  1277→            </div>
+  1278→            <div className="text-right">
+  1279→              <p className={`text-4xl font-bold ${riskLevel.color}`}>{fraudRisk}</p>
+  1280→              <p className="text-slate-500 text-xs">sur 100</p>
+  1281→            </div>
+  1282→          </div>
+  1283→        </CardContent>
+  1284→      </Card>
+  1285→
+  1286→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  1287→        {/* Fraud Indicators */}
+  1288→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1289→          <CardHeader>
+  1290→            <CardTitle className="text-white text-lg flex items-center gap-2">
+  1291→              <Search className="w-5 h-5 text-emerald-400" />
+  1292→              Indicateurs de fraude
+  1293→            </CardTitle>
+  1294→          </CardHeader>
+  1295→          <CardContent className="space-y-3">
+  1296→            {indicators.map((ind) => (
+  1297→              <div key={ind.name} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50">
+  1298→                <div className="flex items-center gap-3">
+  1299→                  {ind.status === 'ok' ? (
+  1300→                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+  1301→                  ) : (
+  1302→                    <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+  1303→                  )}
+  1304→                  <div>
+  1305→                    <p className="text-white text-sm font-medium">{ind.name}</p>
+  1306→                    <p className="text-slate-500 text-xs">{ind.detail}</p>
+  1307→                  </div>
+  1308→                </div>
+  1309→                <Badge
+  1310→                  variant="outline"
+  1311→                  className={ind.status === 'ok'
+  1312→                    ? 'border-emerald-500/30 text-emerald-400'
+  1313→                    : 'border-amber-500/30 text-amber-400'
+  1314→                  }
+  1315→                >
+  1316→                  {ind.status === 'ok' ? 'OK' : 'Attention'}
+  1317→                </Badge>
+  1318→              </div>
+  1319→            ))}
+  1320→          </CardContent>
+  1321→        </Card>
+  1322→
+  1323→        {/* Suspicious Activities & Anomalies */}
+  1324→        <div className="space-y-6">
+  1325→          <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1326→            <CardHeader>
+  1327→              <CardTitle className="text-white text-lg flex items-center gap-2">
+  1328→                <Bell className="w-5 h-5 text-amber-400" />
+  1329→                Activités suspectes
+  1330→              </CardTitle>
+  1331→            </CardHeader>
+  1332→            <CardContent className="space-y-3">
+  1333→              {suspiciousActivities.length === 0 ? (
+  1334→                <p className="text-slate-500 text-sm text-center py-4">Aucune activité suspecte détectée</p>
+  1335→              ) : (
+  1336→                suspiciousActivities.map((a, i) => (
+  1337→                  <div key={i} className={`p-3 rounded-lg border-l-4 ${a.level === 'high' ? 'border-red-500 bg-red-500/5' : 'border-amber-500 bg-amber-500/5'}`}>
+  1338→                    <div className="flex items-center justify-between mb-1">
+  1339→                      <p className="text-white text-sm font-medium">{a.description}</p>
+  1340→                    </div>
+  1341→                    <p className="text-slate-500 text-xs">{a.date}</p>
+  1342→                  </div>
+  1343→                ))
+  1344→              )}
+  1345→            </CardContent>
+  1346→          </Card>
+  1347→
+  1348→          <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1349→            <CardHeader>
+  1350→              <CardTitle className="text-white text-lg flex items-center gap-2">
+  1351→                <BrainCircuit className="w-5 h-5 text-emerald-400" />
+  1352→                Détection d'anomalies
+  1353→              </CardTitle>
+  1354→            </CardHeader>
+  1355→            <CardContent>
+  1356→              <div className="space-y-3">
+  1357→                {anomalies.map((a, i) => (
+  1358→                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50">
+  1359→                    <div>
+  1360→                      <p className="text-white text-sm font-medium">{a.metric}</p>
+  1361→                      <p className="text-slate-500 text-xs">Attendu : {a.expected} → Détecté : {a.detected}</p>
+  1362→                    </div>
+  1363→                    <Badge
+  1364→                      variant="outline"
+  1365→                      className={a.verdict === 'normal'
+  1366→                        ? 'border-emerald-500/30 text-emerald-400'
+  1367→                        : 'border-amber-500/30 text-amber-400'
+  1368→                      }
+  1369→                    >
+  1370→                      {a.verdict === 'normal' ? 'Normal' : 'Attention'}
+  1371→                    </Badge>
+  1372→                  </div>
+  1373→                ))}
+  1374→              </div>
+  1375→            </CardContent>
+  1376→          </Card>
+  1377→        </div>
+  1378→      </div>
+  1379→    </motion.div>
+  1380→  )
+  1381→}
+  1382→
+  1383→// ═══════════════════════════════════════════════════════════════
+  1384→// TAB 5: RISK ASSESSMENT
+  1385→// ═══════════════════════════════════════════════════════════════
+  1386→function RiskAssessmentTab({ riskData }: { riskData: RiskData | null }) {
+  1387→  if (!riskData) return null
+  1388→
+  1389→  const getRiskColor = (v: number) => {
+  1390→    if (v <= 25) return 'text-emerald-400'
+  1391→    if (v <= 50) return 'text-amber-400'
+  1392→    if (v <= 75) return 'text-orange-400'
+  1393→    return 'text-red-400'
+  1394→  }
+  1395→
+  1396→  return (
+  1397→    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+  1398→      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+  1399→        {/* Vehicle Risk */}
+  1400→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1401→          <CardContent className="p-6">
+  1402→            <div className="flex items-center gap-3 mb-4">
+  1403→              <div className="w-10 h-10 rounded-lg bg-emerald-600/10 flex items-center justify-center">
+  1404→                <CarCrash className="w-5 h-5 text-emerald-400" />
+  1405→              </div>
+  1406→              <div>
+  1407→                <p className="text-slate-400 text-xs">Score risque véhicule</p>
+  1408→                <p className={`text-3xl font-bold ${getRiskColor(riskData.vehicleRiskScore)}`}>{riskData.vehicleRiskScore}</p>
+  1409→              </div>
+  1410→            </div>
+  1411→            <Progress value={riskData.vehicleRiskScore} className={`h-2 ${getProgressColor(100 - riskData.vehicleRiskScore)}`} />
+  1412→          </CardContent>
+  1413→        </Card>
+  1414→
+  1415→        {/* Driver Risk */}
+  1416→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1417→          <CardContent className="p-6">
+  1418→            <div className="flex items-center gap-3 mb-4">
+  1419→              <div className="w-10 h-10 rounded-lg bg-emerald-600/10 flex items-center justify-center">
+  1420→                <Users className="w-5 h-5 text-emerald-400" />
+  1421→              </div>
+  1422→              <div>
+  1423→                <p className="text-slate-400 text-xs">Profil risque conducteur</p>
+  1424→                <p className="text-2xl font-bold text-white mt-1">{riskData.driverRiskLevel}</p>
+  1425→              </div>
+  1426→            </div>
+  1427→            <div className="flex gap-1 mt-2">
+  1428→              {['Faible', 'Moyen', 'Élevé', 'Très élevé'].map((level, i) => (
+  1429→                <div
+  1430→                  key={level}
+  1431→                  className={`h-2 flex-1 rounded-full ${
+  1432→                    riskData.driverRiskLevel === 'Faible' && i === 0 ? 'bg-emerald-500' :
+  1433→                    riskData.driverRiskLevel === 'Moyen' && i === 1 ? 'bg-amber-500' :
+  1434→                    riskData.driverRiskLevel === 'Élevé' && i === 2 ? 'bg-orange-500' :
+  1435→                    riskData.driverRiskLevel === 'Très élevé' && i === 3 ? 'bg-red-500' :
+  1436→                    'bg-slate-700'
+  1437→                  }`}
+  1438→                />
+  1439→              ))}
+  1440→            </div>
+  1441→          </CardContent>
+  1442→        </Card>
+  1443→
+  1444→        {/* Premium Recommendation */}
+  1445→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1446→          <CardContent className="p-6">
+  1447→            <div className="flex items-center gap-3 mb-4">
+  1448→              <div className="w-10 h-10 rounded-lg bg-emerald-600/10 flex items-center justify-center">
+  1449→                <CircleDollarSign className="w-5 h-5 text-emerald-400" />
+  1450→              </div>
+  1451→              <div>
+  1452→                <p className="text-slate-400 text-xs">Prime recommandée</p>
+  1453→                <p className="text-3xl font-bold text-white">{riskData.premiumRecommendation} €</p>
+  1454→                <p className="text-slate-500 text-xs">/an — basé sur votre profil</p>
+  1455→              </div>
+  1456→            </div>
+  1457→            <Button variant="outline" className="w-full border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 text-sm">
+  1458→              <ArrowRight className="w-4 h-4 mr-1" />Comparer les offres
+  1459→            </Button>
+  1460→          </CardContent>
+  1461→        </Card>
+  1462→      </div>
+  1463→
+  1464→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  1465→        {/* Risk Factors */}
+  1466→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1467→          <CardHeader>
+  1468→            <CardTitle className="text-white text-lg flex items-center gap-2">
+  1469→              <BarChart3 className="w-5 h-5 text-emerald-400" />
+  1470→              Facteurs de risque
+  1471→            </CardTitle>
+  1472→          </CardHeader>
+  1473→          <CardContent className="space-y-3 max-h-96 overflow-y-auto">
+  1474→            {riskData.riskFactors.map((f) => (
+  1475→              <div key={f.name} className="space-y-1">
+  1476→                <div className="flex items-center justify-between">
+  1477→                  <span className="text-slate-300 text-sm">{f.name}</span>
+  1478→                  <span className={`text-sm font-medium ${getRiskColor(f.value)}`}>{f.value}%</span>
+  1479→                </div>
+  1480→                <Progress value={f.value} className={`h-1.5 ${getProgressColor(100 - f.value)}`} />
+  1481→                <p className="text-slate-500 text-xs">{f.description}</p>
+  1482→              </div>
+  1483→            ))}
+  1484→          </CardContent>
+  1485→        </Card>
+  1486→
+  1487→        {/* Location Risk Map Placeholder */}
+  1488→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1489→          <CardHeader>
+  1490→            <CardTitle className="text-white text-lg flex items-center gap-2">
+  1491→              <MapPin className="w-5 h-5 text-emerald-400" />
+  1492→              Carte de risque par zone
+  1493→            </CardTitle>
+  1494→            <CardDescription className="text-slate-400">Risque basé sur la localisation géographique</CardDescription>
+  1495→          </CardHeader>
+  1496→          <CardContent>
+  1497→            <div className="relative rounded-xl overflow-hidden bg-slate-800 h-72 flex items-center justify-center">
+  1498→              <div className="absolute inset-0 opacity-20">
+  1499→                <div className="absolute top-4 left-4 w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
+  1500→                <div className="absolute top-12 left-16 w-3 h-3 rounded-full bg-amber-500 animate-pulse" />
+  1501→                <div className="absolute bottom-16 right-12 w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+  1502→                <div className="absolute bottom-8 left-1/3 w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
+  1503→                <div className="absolute top-1/3 right-1/4 w-3 h-3 rounded-full bg-amber-500 animate-pulse" />
+  1504→              </div>
+  1505→              <div className="text-center z-10">
+  1506→                <MapPin className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+  1507→                <p className="text-slate-400 text-sm">Carte interactive des zones à risque</p>
+  1508→                <p className="text-slate-500 text-xs mt-1">Votre zone : {riskData.locationRisk}% de risque</p>
+  1509→                <div className="flex items-center justify-center gap-4 mt-3">
+  1510→                  <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500" /><span className="text-slate-500 text-xs">Faible</span></div>
+  1511→                  <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-amber-500" /><span className="text-slate-500 text-xs">Moyen</span></div>
+  1512→                  <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-red-500" /><span className="text-slate-500 text-xs">Élevé</span></div>
+  1513→                </div>
+  1514→              </div>
+  1515→            </div>
+  1516→          </CardContent>
+  1517→        </Card>
+  1518→      </div>
+  1519→    </motion.div>
+  1520→  )
+  1521→}
+  1522→
+  1523→// ═══════════════════════════════════════════════════════════════
+  1524→// TAB 6: ACCIDENT CENTER
+  1525→// ═══════════════════════════════════════════════════════════════
+  1526→function AccidentCenterTab() {
+  1527→  const [autoDetect, setAutoDetect] = useState(false)
+  1528→
+  1529→  const emergencyContacts = [
+  1530→    { label: 'Police', number: '17', iconName: 'siren', color: 'text-blue-400', bg: 'bg-blue-600/10' },
+  1531→    { label: 'Ambulance', number: '15', iconName: 'heart', color: 'text-red-400', bg: 'bg-red-600/10' },
+  1532→    { label: 'Famille', number: '06 XX XX XX XX', iconName: 'phone', color: 'text-emerald-400', bg: 'bg-emerald-600/10' },
+  1533→    { label: 'Assureur', number: '01 XX XX XX XX', iconName: 'shield', color: 'text-amber-400', bg: 'bg-amber-600/10' },
+  1534→  ]
+  1535→
+  1536→  const getEmergencyIcon = (name: string) => {
+  1537→    switch (name) {
+  1538→      case 'siren': return <Siren className="w-5 h-5" />
+  1539→      case 'heart': return <Heart className="w-5 h-5" />
+  1540→      case 'phone': return <Phone className="w-5 h-5" />
+  1541→      case 'shield': return <Shield className="w-5 h-5" />
+  1542→      default: return <Phone className="w-5 h-5" />
+  1543→    }
+  1544→  }
+  1545→
+  1546→  const damageZones = [
+  1547→    { zone: 'Avant', severity: 'Aucun', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+  1548→    { zone: 'Arrière', severity: 'Léger', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
+  1549→    { zone: 'Côté gauche', severity: 'Aucun', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+  1550→    { zone: 'Côté droit', severity: 'Modéré', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
+  1551→    { zone: 'Toit', severity: 'Aucun', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+  1552→  ]
+  1553→
+  1554→  const repairEstimate = [
+  1555→    { item: 'Remplacement pare-chocs arrière', cost: 320 },
+  1556→    { item: 'Réparation aile droite', cost: 450 },
+  1557→    { item: 'Peinture et finition', cost: 180 },
+  1558→    { item: 'Main-d\'œuvre (3h)', cost: 210 },
+  1559→  ]
+  1560→
+  1561→  const totalEstimate = repairEstimate.reduce((s, r) => s + r.cost, 0)
+  1562→
+  1563→  return (
+  1564→    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+  1565→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  1566→        {/* AI Accident Detection */}
+  1567→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1568→          <CardHeader>
+  1569→            <CardTitle className="text-white text-lg flex items-center gap-2">
+  1570→              <BrainCircuit className="w-5 h-5 text-emerald-400" />
+  1571→              Détection d'accident IA
+  1572→            </CardTitle>
+  1573→            <CardDescription className="text-slate-400">Détection automatique en temps réel via capteurs et télématique</CardDescription>
+  1574→          </CardHeader>
+  1575→          <CardContent className="space-y-4">
+  1576→            <div className={`p-4 rounded-xl border-2 ${autoDetect ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-slate-700 bg-slate-800/50'}`}>
+  1577→              <div className="flex items-center justify-between mb-3">
+  1578→                <div className="flex items-center gap-3">
+  1579→                  <div className={`w-3 h-3 rounded-full ${autoDetect ? 'bg-emerald-500 animate-pulse' : 'bg-slate-500'}`} />
+  1580→                  <span className={`text-sm font-medium ${autoDetect ? 'text-emerald-400' : 'text-slate-400'}`}>
+  1581→                    {autoDetect ? 'Surveillance active' : 'Désactivé'}
+  1582→                  </span>
+  1583→                </div>
+  1584→                <Button
+  1585→                  size="sm"
+  1586→                  variant={autoDetect ? 'default' : 'outline'}
+  1587→                  onClick={() => setAutoDetect(!autoDetect)}
+  1588→                  className={autoDetect ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'border-slate-700 text-slate-300'}
+  1589→                >
+  1590→                  {autoDetect ? 'Désactiver' : 'Activer'}
+  1591→                </Button>
+  1592→              </div>
+  1593→              <div className="grid grid-cols-3 gap-3 text-center">
+  1594→                <div>
+  1595→                  <Gauge className="w-5 h-5 text-slate-500 mx-auto mb-1" />
+  1596→                  <p className="text-white text-xs font-medium">Accéléromètre</p>
+  1597→                  <p className="text-emerald-400 text-xs">OK</p>
+  1598→                </div>
+  1599→                <div>
+  1600→                  <Activity className="w-5 h-5 text-slate-500 mx-auto mb-1" />
+  1601→                  <p className="text-white text-xs font-medium">Gyroscope</p>
+  1602→                  <p className="text-emerald-400 text-xs">OK</p>
+  1603→                </div>
+  1604→                <div>
+  1605→                  <MapPin className="w-5 h-5 text-slate-500 mx-auto mb-1" />
+  1606→                  <p className="text-white text-xs font-medium">GPS</p>
+  1607→                  <p className="text-emerald-400 text-xs">OK</p>
+  1608→                </div>
+  1609→              </div>
+  1610→            </div>
+  1611→
+  1612→            {/* Crash Reconstruction */}
+  1613→            <div>
+  1614→              <h4 className="text-white text-sm font-medium mb-3 flex items-center gap-2">
+  1615→                <Route className="w-4 h-4 text-emerald-400" />
+  1616→                Reconstitution de crash
+  1617→              </h4>
+  1618→              <div className="rounded-xl bg-slate-800/50 border border-slate-700/50 p-4 h-40 flex items-center justify-center">
+  1619→                <div className="text-center">
+  1620→                  <CarCrash className="w-10 h-10 text-slate-600 mx-auto mb-2" />
+  1621→                  <p className="text-slate-400 text-sm">Visualisation 3D de la reconstitution</p>
+  1622→                  <p className="text-slate-500 text-xs mt-1">Disponible après détection d'un accident</p>
+  1623→                </div>
+  1624→              </div>
+  1625→            </div>
+  1626→          </CardContent>
+  1627→        </Card>
+  1628→
+  1629→        {/* AI Damage Detection & Repair Cost */}
+  1630→        <div className="space-y-6">
+  1631→          <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1632→            <CardHeader>
+  1633→              <CardTitle className="text-white text-lg flex items-center gap-2">
+  1634→                <Eye className="w-5 h-5 text-emerald-400" />
+  1635→                Détection de dommages IA
+  1636→              </CardTitle>
+  1637→            </CardHeader>
+  1638→            <CardContent>
+  1639→              <div className="space-y-2">
+  1640→                {damageZones.map((dz) => (
+  1641→                  <div key={dz.zone} className="flex items-center justify-between p-3 rounded-lg border border-slate-700/50">
+  1642→                    <span className="text-slate-300 text-sm">{dz.zone}</span>
+  1643→                    <Badge variant="outline" className={dz.color}>{dz.severity}</Badge>
+  1644→                  </div>
+  1645→                ))}
+  1646→              </div>
+  1647→            </CardContent>
+  1648→          </Card>
+  1649→
+  1650→          <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1651→            <CardHeader>
+  1652→              <CardTitle className="text-white text-lg flex items-center gap-2">
+  1653→                <Wrench className="w-5 h-5 text-emerald-400" />
+  1654→                Estimation du coût de réparation
+  1655→              </CardTitle>
+  1656→            </CardHeader>
+  1657→            <CardContent>
+  1658→              <div className="space-y-2">
+  1659→                {repairEstimate.map((r) => (
+  1660→                  <div key={r.item} className="flex items-center justify-between text-sm">
+  1661→                    <span className="text-slate-300">{r.item}</span>
+  1662→                    <span className="text-white font-medium">{r.cost} €</span>
+  1663→                  </div>
+  1664→                ))}
+  1665→                <Separator className="bg-slate-800" />
+  1666→                <div className="flex items-center justify-between pt-1">
+  1667→                  <span className="text-white font-semibold">Total estimé</span>
+  1668→                  <span className="text-emerald-400 font-bold text-lg">{totalEstimate.toLocaleString('fr-FR')} €</span>
+  1669→                </div>
+  1670→              </div>
+  1671→            </CardContent>
+  1672→          </Card>
+  1673→        </div>
+  1674→      </div>
+  1675→
+  1676→      {/* Emergency Dispatch */}
+  1677→      <Card className="bg-slate-900 border border-red-500/30 rounded-xl">
+  1678→        <CardHeader>
+  1679→          <CardTitle className="text-white text-lg flex items-center gap-2">
+  1680→            <Siren className="w-5 h-5 text-red-400" />
+  1681→            Alerte d'urgence
+  1682→          </CardTitle>
+  1683→          <CardDescription className="text-slate-400">Notification automatique des services d'urgence en cas d'accident</CardDescription>
+  1684→        </CardHeader>
+  1685→        <CardContent>
+  1686→          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+  1687→            {emergencyContacts.map((ec) => (
+  1688→              <div key={ec.label} className={`p-4 rounded-xl border border-slate-700/50 ${ec.bg} flex flex-col items-center text-center`>
+  1689→                <div className={`${ec.color} mb-2`}>{getEmergencyIcon(ec.iconName)}</div>
+  1690→                <p className="text-white text-sm font-medium">{ec.label}</p>
+  1691→                <p className={`${ec.color} text-sm font-bold mt-1`}>{ec.number}</p>
+  1692→                <Button
+  1693→                  variant="outline"
+  1694→                  size="sm"
+  1695→                  className="mt-2 border-slate-600 text-slate-300 hover:bg-slate-800 text-xs w-full"
+  1696→                >
+  1697→                  <Phone className="w-3 h-3 mr-1" />Appeler
+  1698→                </Button>
+  1699→              </div>
+  1700→            ))}
+  1701→          </div>
+  1702→          <div className="mt-4 p-3 rounded-lg bg-red-500/5 border border-red-500/20">
+  1703→            <div className="flex items-start gap-2">
+  1704→              <Info className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
+  1705→              <p className="text-slate-300 text-sm">En cas de détection d'accident grave, ADSO notifie automatiquement les secours avec votre position GPS et les données du véhicule.</p>
+  1706→            </div>
+  1707→          </div>
+  1708→        </CardContent>
+  1709→      </Card>
+  1710→    </motion.div>
+  1711→  )
+  1712→}
+  1713→
+  1714→// ═══════════════════════════════════════════════════════════════
+  1715→// TAB 7: TELEMATICS CENTER
+  1716→// ═══════════════════════════════════════════════════════════════
+  1717→function TelematicsCenterTab() {
+  1718→  const paydMetrics = {
+  1719→    kmParcourus: 1847,
+  1720→    kmPrevu: 2400,
+  1721→    primeEconomisee: 118,
+  1722→    joursRestants: 45,
+  1723→    scoreMoyen: 79,
+  1724→  }
+  1725→
+  1726→  const phydMetrics = [
+  1727→    { name: 'Freinage progressif', score: 85, icon: <Gauge className="w-4 h-4" /> },
+  1728→    { name: 'Accélération fluide', score: 78, icon: <Zap className="w-4 h-4" /> },
+  1729→    { name: 'Respect des limitations', score: 92, icon: <ShieldCheck className="w-4 h-4" /> },
+  1730→    { name: 'Anticipation virages', score: 72, icon: <Route className="w-4 h-4" /> },
+  1731→    { name: 'Distance de sécurité', score: 88, icon: <CarCrash className="w-4 h-4" /> },
+  1732→    { name: 'Conduite de nuit', score: 65, icon: <Star className="w-4 h-4" /> },
+  1733→  ]
+  1734→
+  1735→  return (
+  1736→    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+  1737→      {/* PAYD & PHYD Overview */}
+  1738→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  1739→        {/* PAYD Metrics */}
+  1740→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1741→          <CardHeader>
+  1742→            <CardTitle className="text-white text-lg flex items-center gap-2">
+  1743→              <Route className="w-5 h-5 text-emerald-400" />
+  1744→              Payez selon votre distance (PAYD)
+  1745→            </CardTitle>
+  1746→            <CardDescription className="text-slate-400">Prime proportionnelle au kilométrage parcouru</CardDescription>
+  1747→          </CardHeader>
+  1748→          <CardContent className="space-y-4">
+  1749→            <div className="grid grid-cols-2 gap-3">
+  1750→              <div className="p-3 rounded-lg bg-slate-800/50">
+  1751→                <p className="text-slate-500 text-xs">KM parcourus</p>
+  1752→                <p className="text-white text-xl font-bold">{paydMetrics.kmParcourus.toLocaleString('fr-FR')}</p>
+  1753→                <p className="text-slate-500 text-xs">sur {paydMetrics.kmPrevu.toLocaleString('fr-FR')} prévus</p>
+  1754→              </div>
+  1755→              <div className="p-3 rounded-lg bg-slate-800/50">
+  1756→                <p className="text-slate-500 text-xs">Économie réalisée</p>
+  1757→                <p className="text-emerald-400 text-xl font-bold">-{paydMetrics.primeEconomisee} €</p>
+  1758→                <p className="text-slate-500 text-xs">sur la prime annuelle</p>
+  1759→              </div>
+  1760→              <div className="p-3 rounded-lg bg-slate-800/50">
+  1761→                <p className="text-slate-500 text-xs">Score moyen</p>
+  1762→                <p className="text-white text-xl font-bold">{paydMetrics.scoreMoyen}/100</p>
+  1763→              </div>
+  1764→              <div className="p-3 rounded-lg bg-slate-800/50">
+  1765→                <p className="text-slate-500 text-xs">Jours restants</p>
+  1766→                <p className="text-white text-xl font-bold">{paydMetrics.joursRestants}</p>
+  1767→              </div>
+  1768→            </div>
+  1769→            <Progress
+  1770→              value={(paydMetrics.kmParcourus / paydMetrics.kmPrevu) * 100}
+  1771→              className="h-3 [&>div]:bg-emerald-500"
+  1772→            />
+  1773→            <p className="text-slate-500 text-xs text-center">{Math.round((paydMetrics.kmParcourus / paydMetrics.kmPrevu) * 100)}% du kilométrage prévu</p>
+  1774→          </CardContent>
+  1775→        </Card>
+  1776→
+  1777→        {/* PHYD Metrics */}
+  1778→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1779→          <CardHeader>
+  1780→            <CardTitle className="text-white text-lg flex items-center gap-2">
+  1781→              <Activity className="w-5 h-5 text-emerald-400" />
+  1782→              Payez selon votre conduite (PHYD)
+  1783→            </CardTitle>
+  1784→            <CardDescription className="text-slate-400">Prime ajustée selon votre comportement de conduite</CardDescription>
+  1785→          </CardHeader>
+  1786→          <CardContent className="space-y-3">
+  1787→            {phydMetrics.map((m) => (
+  1788→              <div key={m.name} className="space-y-1">
+  1789→                <div className="flex items-center justify-between">
+  1790→                  <div className="flex items-center gap-2">
+  1791→                    <span className="text-slate-500">{m.icon}</span>
+  1792→                    <span className="text-slate-300 text-sm">{m.name}</span>
+  1793→                  </div>
+  1794→                  <span className={`text-sm font-medium ${getScoreColor(m.score)}`}>{m.score}%</span>
+  1795→                </div>
+  1796→                <Progress value={m.score} className={`h-2 ${getProgressColor(m.score)}`} />
+  1797→              </div>
+  1798→            ))}
+  1799→          </CardContent>
+  1800→        </Card>
+  1801→      </div>
+  1802→
+  1803→      {/* Driving Behavior Analysis */}
+  1804→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  1805→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1806→          <CardHeader>
+  1807→            <CardTitle className="text-white text-lg flex items-center gap-2">
+  1808→              <BarChart3 className="w-5 h-5 text-emerald-400" />
+  1809→              Analyse comportementale hebdomadaire
+  1810→            </CardTitle>
+  1811→          </CardHeader>
+  1812→          <CardContent>
+  1813→            <div className="h-64">
+  1814→              <ResponsiveContainer width="100%" height="100%">
+  1815→                <BarChart data={telematicsWeekly}>
+  1816→                  <CartesianGrid strokeDasharray="3 3" stroke="rgb(51,65,85)" />
+  1817→                  <XAxis dataKey="jour" stroke="rgb(100,116,139)" fontSize={12} />
+  1818→                  <YAxis stroke="rgb(100,116,139)" fontSize={12} />
+  1819→                  <Tooltip
+  1820→                    contentStyle={{ backgroundColor: 'rgb(15,23,42)', border: '1px solid rgb(51,65,85)', borderRadius: '8px' }}
+  1821→                    labelStyle={{ color: 'rgb(148,163,184)' }}
+  1822→                  />
+  1823→                  <Bar dataKey="score" fill="rgb(16,185,129)" radius={[4, 4, 0, 0]} name="Score" />
+  1824→                </BarChart>
+  1825→              </ResponsiveContainer>
+  1826→            </div>
+  1827→          </CardContent>
+  1828→        </Card>
+  1829→
+  1830→        <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1831→          <CardHeader>
+  1832→            <CardTitle className="text-white text-lg flex items-center gap-2">
+  1833→              <Target className="w-5 h-5 text-emerald-400" />
+  1834→              Profil de conduite radar
+  1835→            </CardTitle>
+  1836→          </CardHeader>
+  1837→          <CardContent>
+  1838→            <div className="h-64">
+  1839→              <ResponsiveContainer width="100%" height="100%">
+  1840→                <RadarChart data={radarData}>
+  1841→                  <PolarGrid stroke="rgb(51,65,85)" />
+  1842→                  <PolarAngleAxis dataKey="subject" stroke="rgb(100,116,139)" fontSize={11} />
+  1843→                  <PolarRadiusAxis angle={30} domain={[0, 100]} stroke="rgb(71,85,105)" fontSize={10} />
+  1844→                  <Radar name="Score" dataKey="A" stroke="rgb(16,185,129)" fill="rgb(16,185,129)" fillOpacity={0.2} strokeWidth={2} />
+  1845→                  <Tooltip
+  1846→                    contentStyle={{ backgroundColor: 'rgb(15,23,42)', border: '1px solid rgb(51,65,85)', borderRadius: '8px' }}
+  1847→                  />
+  1848→                </RadarChart>
+  1849→              </ResponsiveContainer>
+  1850→            </div>
+  1851→          </CardContent>
+  1852→        </Card>
+  1853→      </div>
+  1854→
+  1855→      {/* Trip-Based Scoring */}
+  1856→      <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1857→        <CardHeader>
+  1858→          <CardTitle className="text-white text-lg flex items-center gap-2">
+  1859→            <Route className="w-5 h-5 text-emerald-400" />
+  1860→            Scoring par trajet
+  1861→          </CardTitle>
+  1862→        </CardHeader>
+  1863→        <CardContent className="p-0">
+  1864→          <Table>
+  1865→            <TableHeader>
+  1866→              <TableRow className="border-slate-800 hover:bg-transparent">
+  1867→                <TableHead className="text-slate-400">Date</TableHead>
+  1868→                <TableHead className="text-slate-400">Trajet</TableHead>
+  1869→                <TableHead className="text-slate-400 hidden sm:table-cell">Distance</TableHead>
+  1870→                <TableHead className="text-slate-400 hidden md:table-cell">Durée</TableHead>
+  1871→                <TableHead className="text-slate-400">Score</TableHead>
+  1872→              </TableRow>
+  1873→            </TableHeader>
+  1874→            <TableBody>
+  1875→              {tripScores.map((t) => (
+  1876→                <TableRow key={t.id} className="border-slate-800 hover:bg-slate-800/50">
+  1877→                  <TableCell className="text-slate-300 text-sm">{t.date}</TableCell>
+  1878→                  <TableCell className="text-white text-sm">{t.depart} → {t.arrivee}</TableCell>
+  1879→                  <TableCell className="text-slate-300 text-sm hidden sm:table-cell">{t.distance}</TableCell>
+  1880→                  <TableCell className="text-slate-300 text-sm hidden md:table-cell">{t.duree}</TableCell>
+  1881→                  <TableCell>
+  1882→                    <Badge
+  1883→                      variant="outline"
+  1884→                      className={t.score >= 80
+  1885→                        ? 'border-emerald-500/30 text-emerald-400'
+  1886→                        : t.score >= 65
+  1887→                          ? 'border-amber-500/30 text-amber-400'
+  1888→                          : 'border-red-500/30 text-red-400'
+  1889→                      }
+  1890→                    >
+  1891→                      {t.score}/100
+  1892→                    </Badge>
+  1893→                  </TableCell>
+  1894→                </TableRow>
+  1895→              ))}
+  1896→            </TableBody>
+  1897→          </Table>
+  1898→        </CardContent>
+  1899→      </Card>
+  1900→
+  1901→      {/* Safe Driver Rewards */}
+  1902→      <Card className="bg-slate-900 border border-slate-800 rounded-xl">
+  1903→        <CardHeader>
+  1904→          <CardTitle className="text-white text-lg flex items-center gap-2">
+  1905→            <Award className="w-5 h-5 text-emerald-400" />
+  1906→            Récompenses conducteur prudent
+  1907→          </CardTitle>
+  1908→          <CardDescription className="text-slate-400">Économies mensuelles basées sur votre conduite sécuritaire</CardDescription>
+  1909→        </CardHeader>
+  1910→        <CardContent>
+  1911→          <div className="h-48">
+  1912→            <ResponsiveContainer width="100%" height="100%">
+  1913→              <BarChart data={safeDriverRewards}>
+  1914→                <CartesianGrid strokeDasharray="3 3" stroke="rgb(51,65,85)" />
+  1915→                <XAxis dataKey="mois" stroke="rgb(100,116,139)" fontSize={12} />
+  1916→                <YAxis stroke="rgb(100,116,139)" fontSize={12} />
+  1917→                <Tooltip
+  1918→                  contentStyle={{ backgroundColor: 'rgb(15,23,42)', border: '1px solid rgb(51,65,85)', borderRadius: '8px' }}
+  1919→                  labelStyle={{ color: 'rgb(148,163,184)' }}
+  1920→                />
+  1921→                <Bar dataKey="niveau" fill="rgb(16,185,129)" radius={[4, 4, 0, 0]} name="Niveau" />
+  1922→              </BarChart>
+  1923→            </ResponsiveContainer>
+  1924→          </div>
+  1925→          <div className="mt-4 grid grid-cols-3 gap-3">
+  1926→            {safeDriverRewards.slice(-3).map((r) => (
+  1927→              <div key={r.mois} className="p-3 rounded-lg bg-slate-800/50 text-center">
+  1928→                <p className="text-slate-500 text-xs">{r.mois}</p>
+  1929→                <p className="text-emerald-400 font-bold text-sm mt-1">{r.prime}</p>
+  1930→                <Badge variant="outline" className="border-amber-500/30 text-amber-400 text-xs mt-1">{r.niveau}</Badge>
+  1931→              </div>
+  1932→            ))}
+  1933→          </div>
+  1934→        </CardContent>
+  1935→      </Card>
+  1936→    </motion.div>
+  1937→  )
+  1938→}
+  1939→
