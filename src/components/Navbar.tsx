@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Car, ArrowLeft, FileCode } from 'lucide-react';
+import {
+  Menu, X, Car, ArrowLeft, FileCode, Home, GraduationCap,
+  Wrench, Scan, MapPin, Shield, Store, ChevronDown
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useViewStore } from '@/stores/view-store';
+import { useViewStore, type AppModule, mainModules, moduleLabels } from '@/stores/view-store';
 
-const navLinks = [
-  { label: 'Accueil', href: '#hero' },
+const homeNavLinks = [
   { label: 'Statistiques', href: '#stats' },
   { label: 'Écosystème', href: '#ecosystem' },
   { label: 'Intelligence IA', href: '#ai-features' },
@@ -18,20 +20,25 @@ const navLinks = [
   { label: 'Roadmap', href: '#roadmap' },
 ];
 
+const moduleIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+  Home, GraduationCap, Wrench, Scan, MapPin, Shield, Store, FileCode,
+};
+
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('hero');
   const { currentView, setView } = useViewStore();
+  const [modulesOpen, setModulesOpen] = useState(false);
 
+  const isHome = currentView === 'home';
   const isBlueprint = currentView === 'blueprint';
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
-
-      if (!isBlueprint) {
-        const sections = navLinks.map((l) => l.href.replace('#', ''));
+      if (isHome) {
+        const sections = ['stats', 'ecosystem', 'ai-features', 'dashboard', 'quiz', 'ai-chat', 'pricing', 'roadmap'];
         for (let i = sections.length - 1; i >= 0; i--) {
           const el = document.getElementById(sections[i]);
           if (el && el.getBoundingClientRect().top <= 120) {
@@ -41,23 +48,34 @@ export default function Navbar() {
         }
       }
     };
-
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [isBlueprint]);
+  }, [isHome]);
 
   const handleNavClick = (href: string) => {
     setIsMobileOpen(false);
-    const el = document.querySelector(href);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
+    if (currentView !== 'home') setView('home');
+    setTimeout(() => {
+      const el = document.querySelector(href);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
-  const handleViewToggle = () => {
+  const handleModuleClick = (module: AppModule) => {
     setIsMobileOpen(false);
-    setView(isBlueprint ? 'app' : 'blueprint');
+    setModulesOpen(false);
+    setView(module);
   };
+
+  const navBg = isBlueprint
+    ? 'bg-slate-950/95 backdrop-blur-md shadow-lg border-b border-slate-800'
+    : isScrolled
+      ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-slate-200'
+      : 'bg-transparent';
+
+  const textPrimary = isBlueprint ? 'text-white' : isScrolled ? 'text-slate-900' : 'text-white';
+  const textSecondary = isBlueprint ? 'text-slate-300' : isScrolled ? 'text-slate-600' : 'text-white/80';
+  const hoverBg = isBlueprint ? 'hover:bg-slate-800 hover:text-white' : isScrolled ? 'hover:text-slate-900 hover:bg-slate-100' : 'text-white/80 hover:text-white hover:bg-white/10';
 
   return (
     <>
@@ -65,43 +83,26 @@ export default function Navbar() {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isBlueprint
-            ? 'bg-slate-950/95 backdrop-blur-md shadow-lg border-b border-slate-800'
-            : isScrolled
-              ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-slate-200'
-              : 'bg-transparent'
-        }`}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navBg}`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 lg:h-18">
+          <div className="flex items-center justify-between h-14 lg:h-16">
             {/* Logo */}
             <button
-              onClick={() => {
-                if (isBlueprint) {
-                  setView('app');
-                } else {
-                  handleNavClick('#hero');
-                }
-              }}
+              onClick={() => setView('home')}
               className="flex items-center gap-2 group"
             >
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
-                isBlueprint
-                  ? 'bg-emerald-600 group-hover:bg-emerald-700'
-                  : isScrolled
-                    ? 'bg-emerald-600 group-hover:bg-emerald-700'
-                    : 'bg-emerald-600 group-hover:bg-emerald-700'
-              }`}>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-600 group-hover:bg-emerald-700 transition-colors">
                 <Car className="w-5 h-5 text-white" />
               </div>
-              <span
-                className={`text-xl font-bold tracking-tight transition-colors ${
-                  isBlueprint ? 'text-white' : isScrolled ? 'text-slate-900' : 'text-white'
-                }`}
-              >
+              <span className={`text-lg font-bold tracking-tight transition-colors ${textPrimary}`}>
                 ADSO
               </span>
+              {!isHome && !isBlueprint && (
+                <span className="hidden sm:inline-flex ml-2 px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/20 text-emerald-600">
+                  {moduleLabels[currentView]?.label}
+                </span>
+              )}
               {isBlueprint && (
                 <span className="hidden sm:inline-flex ml-2 px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/20 text-emerald-300">
                   Blueprint
@@ -109,77 +110,74 @@ export default function Navbar() {
               )}
             </button>
 
-            {/* Desktop Nav — only in app view */}
-            {!isBlueprint && (
-              <div className="hidden lg:flex items-center gap-1">
-                {navLinks.map((link) => (
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center gap-1">
+              {/* Module Tabs */}
+              {mainModules.map((mod) => {
+                const Icon = moduleIcons[moduleLabels[mod]?.icon || 'Home'];
+                const isActive = currentView === mod;
+                return (
                   <button
-                    key={link.href}
-                    onClick={() => handleNavClick(link.href)}
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      activeSection === link.href.replace('#', '')
-                        ? isScrolled
-                          ? 'text-emerald-700 bg-emerald-50'
-                          : 'text-emerald-300 bg-white/10'
-                        : isScrolled
-                          ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                          : 'text-white/80 hover:text-white hover:bg-white/10'
+                    key={mod}
+                    onClick={() => handleModuleClick(mod)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      isActive
+                        ? isBlueprint
+                          ? 'bg-emerald-600/20 text-emerald-300'
+                          : isScrolled
+                            ? 'bg-emerald-50 text-emerald-700'
+                            : 'bg-white/15 text-white'
+                        : `${textSecondary} ${hoverBg}`
                     }`}
                   >
-                    {link.label}
+                    {Icon && <Icon className="w-4 h-4" />}
+                    <span>{moduleLabels[mod]?.label}</span>
                   </button>
-                ))}
-              </div>
-            )}
+                );
+              })}
+
+              {/* Blueprint button */}
+              <button
+                onClick={() => handleModuleClick('blueprint')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                  isBlueprint
+                    ? 'bg-slate-800 text-emerald-300'
+                    : `${textSecondary} ${hoverBg}`
+                }`}
+              >
+                <FileCode className="w-4 h-4" />
+                <span>Architecture</span>
+              </button>
+            </div>
 
             {/* CTA + Mobile Toggle */}
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2">
               {isBlueprint ? (
                 <Button
                   size="sm"
                   variant="outline"
                   className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
-                  onClick={handleViewToggle}
+                  onClick={() => setView('home')}
                 >
                   <ArrowLeft className="w-4 h-4 mr-1.5" />
-                  <span className="hidden sm:inline">Retour à l&apos;app</span>
-                  <span className="sm:hidden">Retour</span>
+                  <span className="hidden sm:inline">Retour</span>
                 </Button>
-              ) : (
-                <>
-                  <Button
-                    size="sm"
-                    className="hidden md:inline-flex bg-emerald-600 hover:bg-emerald-700 text-white"
-                    onClick={() => handleNavClick('#dashboard')}
-                  >
-                    Essai gratuit
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className={`hidden lg:inline-flex ${
-                      isScrolled
-                        ? 'border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                        : 'border-white/30 text-white/80 hover:bg-white/10 hover:text-white'
-                    }`}
-                    onClick={handleViewToggle}
-                  >
-                    <FileCode className="w-4 h-4 mr-1.5" />
-                    Architecture
-                  </Button>
-                </>
-              )}
+              ) : isHome ? (
+                <Button
+                  size="sm"
+                  className="hidden md:inline-flex bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={() => handleNavClick('#dashboard')}
+                >
+                  Essai gratuit
+                </Button>
+              ) : null}
               <button
                 onClick={() => setIsMobileOpen(!isMobileOpen)}
                 className={`lg:hidden p-2 rounded-md transition-colors ${
-                  isBlueprint
-                    ? 'text-slate-300 hover:bg-slate-800'
-                    : isScrolled
-                      ? 'text-slate-700 hover:bg-slate-100'
-                      : 'text-white hover:bg-white/10'
+                  isBlueprint ? 'text-slate-300 hover:bg-slate-800' : textSecondary
                 }`}
               >
-                {isMobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
             </div>
           </div>
@@ -196,56 +194,57 @@ export default function Navbar() {
             transition={{ duration: 0.2 }}
             className="fixed inset-0 z-40 lg:hidden"
           >
-            <div
-              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-              onClick={() => setIsMobileOpen(false)}
-            />
-            <div className={`absolute top-16 left-0 right-0 shadow-xl border-b max-h-[80vh] overflow-y-auto ${
-              isBlueprint
-                ? 'bg-slate-950 border-slate-800'
-                : 'bg-white border-slate-200'
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileOpen(false)} />
+            <div className={`absolute top-14 left-0 right-0 shadow-xl border-b max-h-[85vh] overflow-y-auto ${
+              isBlueprint ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-200'
             }`}>
               <div className="px-4 py-3 space-y-1">
-                {!isBlueprint ? (
+                {/* Module list */}
+                {[...mainModules, 'blueprint'].map((mod) => {
+                  const Icon = moduleIcons[moduleLabels[mod]?.icon || 'Home'];
+                  const isActive = currentView === mod;
+                  return (
+                    <button
+                      key={mod}
+                      onClick={() => handleModuleClick(mod)}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                        isActive
+                          ? 'text-emerald-700 bg-emerald-50'
+                          : 'text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      {Icon && <Icon className="w-5 h-5" />}
+                      <span>{moduleLabels[mod]?.label}</span>
+                      <span className="ml-auto text-xs text-slate-400">{moduleLabels[mod]?.description}</span>
+                    </button>
+                  );
+                })}
+
+                {/* Home sub-nav (only show when on home view) */}
+                {isHome && (
                   <>
-                    {navLinks.map((link) => (
+                    <div className="pt-2 mt-2 border-t border-slate-100">
+                      <p className="px-4 py-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">Navigation</p>
+                    </div>
+                    {homeNavLinks.map((link) => (
                       <button
                         key={link.href}
                         onClick={() => handleNavClick(link.href)}
-                        className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                          isBlueprint
-                            ? 'text-slate-300 hover:bg-slate-800'
-                            : activeSection === link.href.replace('#', '')
-                              ? 'text-emerald-700 bg-emerald-50'
-                              : 'text-slate-700 hover:bg-slate-100'
+                        className={`w-full text-left px-4 py-2.5 pl-8 rounded-lg text-sm transition-colors ${
+                          activeSection === link.href.replace('#', '')
+                            ? 'text-emerald-700 bg-emerald-50'
+                            : 'text-slate-600 hover:bg-slate-100'
                         }`}
                       >
                         {link.label}
                       </button>
                     ))}
-                    <div className="pt-3 border-t border-slate-100 space-y-2">
+                    <div className="pt-2 mt-2 border-t border-slate-100 space-y-2">
                       <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
                         Essai gratuit
                       </Button>
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={handleViewToggle}
-                      >
-                        <FileCode className="w-4 h-4 mr-1.5" />
-                        Architecture
-                      </Button>
                     </div>
                   </>
-                ) : (
-                  <Button
-                    variant="outline"
-                    className={`w-full border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white`}
-                    onClick={handleViewToggle}
-                  >
-                    <ArrowLeft className="w-4 h-4 mr-1.5" />
-                    Retour à l&apos;application
-                  </Button>
                 )}
               </div>
             </div>
