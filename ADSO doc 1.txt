@@ -1,0 +1,8 @@
+ADSO_Production_Hardening_Pack/
+
+├── README.md
+├── .env.example
+├── vercel.json
+└── .github/
+    └── workflows/
+        └── ci.yml
