@@ -1,0 +1,1630 @@
+     1→import { PrismaClient } from '@prisma/client'
+     2→
+     3→const db = new PrismaClient()
+     4→
+     5→async function main() {
+     6→  console.log('🌱 Seeding ADSO database...')
+     7→
+     8→  // ─── Clean existing data ───
+     9→  await db.studentProgress.deleteMany()
+    10→  await db.enrollment.deleteMany()
+    11→  await db.chatMessage.deleteMany()
+    12→  await db.quizAttempt.deleteMany()
+    13→  await db.question.deleteMany()
+    14→  await db.module.deleteMany()
+    15→  await db.course.deleteMany()
+    16→  await db.user.deleteMany()
+    17→  await db.analyticsEvent.deleteMany()
+    18→  await db.school.deleteMany()
+    19→
+    20→  console.log('  ✓ Cleaned existing data')
+    21→
+    22→  // ═══════════════════════════════════════
+    23→  // COURSES
+    24→  // ═══════════════════════════════════════
+    25→
+    26→  const coursesData = [
+    27→    {
+    28→      title: 'Code de la route',
+    29→      description:
+    30→        'Maîtrisez l\'ensemble du code de la route français : signalisation, priorités, limitations de vitesse et règles essentielles pour réussir l\'examen théorique.',
+    31→      category: 'theory',
+    32→      level: 'beginner',
+    33→      duration: 120,
+    34→      order: 1,
+    35→      icon: 'BookOpen',
+    36→      isPremium: false,
+    37→    },
+    38→    {
+    39→      title: 'Conduite pratique',
+    40→      description:
+    41→        'Apprenez les bases de la conduite : démarrage, freinage, virages, manœuvres de stationnement et conduite en milieu urbain.',
+    42→      category: 'practice',
+    43→      level: 'intermediate',
+    44→      duration: 180,
+    45→      order: 2,
+    46→      icon: 'Car',
+    47→      isPremium: true,
+    48→    },
+    49→    {
+    50→      title: 'Sécurité routière',
+    51→      description:
+    52→        'Comprenez les comportements à risque, l\'importance des équipements de sécurité et les gestes qui sauvent des vies sur la route.',
+    53→      category: 'safety',
+    54→      level: 'beginner',
+    55→      duration: 90,
+    56→      order: 3,
+    57→      icon: 'Shield',
+    58→      isPremium: false,
+    59→    },
+    60→    {
+    61→      title: 'Conduite sur autoroute',
+    62→      description:
+    63→        'Techniques spécifiques pour rouler en toute sécurité sur autoroute : insertions, dépassements, distances de sécurité à haute vitesse.',
+    64→      category: 'practice',
+    65→      level: 'advanced',
+    66→      duration: 60,
+    67→      order: 4,
+    68→      icon: 'Route',
+    69→      isPremium: true,
+    70→    },
+    71→    {
+    72→      title: 'Conduite écologique',
+    73→      description:
+    74→      'Réduisez votre consommation de carburant et votre impact environnemental grâce à l\'éco-conduite : anticipation, régimes moteur optimaux.',
+    75→      category: 'eco-driving',
+    76→      level: 'intermediate',
+    77→      duration: 45,
+    78→      order: 5,
+    79→      icon: 'Leaf',
+    80→      isPremium: true,
+    81→    },
+    82→    {
+    83→      title: 'Premiers secours',
+    84→      description:
+    85→        'Les gestes de premiers secours essentiels en cas d\'accident de la route : protéger, alerter, secourir selon le protocole PASE.',
+    86→      category: 'safety',
+    87→      level: 'beginner',
+    88→      duration: 60,
+    89→      order: 6,
+    90→      icon: 'Heart',
+    91→      isPremium: false,
+    92→    },
+    93→    {
+    94→      title: 'Panneaux et signalisation',
+    95→      description:
+    96→        'Apprenez à reconnaître et interpréter tous les panneaux de signalisation routière français : danger, obligation, interdiction, indication.',
+    97→      category: 'regulations',
+    98→      level: 'beginner',
+    99→      duration: 75,
+   100→      order: 7,
+   101→      icon: 'SignpostBig',
+   102→      isPremium: false,
+   103→    },
+   104→    {
+   105→      title: 'Conduite nocturne',
+   106→      description:
+   107→        'Spécificités de la conduite de nuit : utilisation des feux, adaptation de la vitesse, vigilance accrue face à l\'éblouissement et la fatigue.',
+   108→      category: 'practice',
+   109→      level: 'advanced',
+   110→      duration: 45,
+   111→      order: 8,
+   112→      icon: 'Moon',
+   113→      isPremium: true,
+   114→    },
+   115→  ]
+   116→
+   117→  const courses: Record<string, string> = {}
+   118→
+   119→  for (const c of coursesData) {
+   120→    const course = await db.course.create({ data: c })
+   121→    courses[course.title] = course.id
+   122→  }
+   123→
+   124→  console.log(`  ✓ Created ${coursesData.length} courses`)
+   125→
+   126→  // ═══════════════════════════════════════
+   127→  // MODULES
+   128→  // ═══════════════════════════════════════
+   129→
+   130→  const modulesData: Array<{
+   131→    courseId: string
+   132→    title: string
+   133→    content: string
+   134→    type: string
+   135→    order: number
+   136→    duration: number
+   137→  }> = [
+   138→    // ─── Code de la route ───
+   139→    {
+   140→      courseId: courses['Code de la route'],
+   141→      title: 'Introduction au code de la route',
+   142→      content: `# Introduction au code de la route
+   143→
+   144→## Pourquoi le code de la route ?
+   145→
+   146→Le code de la route est l'ensemble des règles qui régissent la circulation sur les voies publiques en France. Sa connaissance est **obligatoire** pour obtenir le permis de conduire.
+   147→
+   148→## Les principes fondamentaux
+   149→
+   150→- **Sécurité avant tout** : chaque règle a pour objectif de protéger les usagers
+   151→- **Partage de l'espace** : la route est un espace partagé entre piétons, cyclistes, motards et automobilistes
+   152→- **Respect des autres** : courtoisie et prudence sont les maîtres-mots
+   153→
+   154→## L'examen théorique (ETG)
+   155→
+   156→L'Épreuve Théorique Générale (ETG) comporte **40 questions** à choix multiples. Vous devez répondre correctement à au moins **35 questions** pour réussir (soit un score de 35/40).
+   157→
+   158→> 💡 **Conseil** : Entraînez-vous régulièrement avec des séries de questions pour vous familiariser avec les situations présentées.
+   159→
+   160→## Les catégories de permis
+   161→
+   162→| Permis | Âge minimum | Véhicule concerné |
+   163→|--------|------------|-------------------|
+   164→| B      | 18 ans     | Voiture (PTAC ≤ 3 500 kg) |
+   165→| A1     | 16 ans     | Moto 125 cm³ |
+   166→| A2     | 18 ans     | Moto ≤ 35 kW |
+   167→| AM     | 14 ans     | Cyclomoteur 50 cm³ |`,
+   168→      type: 'lesson',
+   169→      order: 1,
+   170→      duration: 25,
+   171→    },
+   172→    {
+   173→      courseId: courses['Code de la route'],
+   174→      title: 'Priorités et croisements',
+   175→      content: `# Priorités et croisements
+   176→
+   177→## Règle de priorité à droite
+   178→
+   179→En l'absence de signalisation, le véhicule venant de la **droite** est prioritaire. Cette règle fondamentale s'applique dans les carrefours non signalés.
+   180→
+   181→## Les cas particuliers
+   182→
+   183→### Priorité à droite supprimée
+   184→Un panneau **cédez-le-passage** (triangle rouge bordé de blanc avec point d'exclamation) ou un **stop** annule la priorité à droite.
+   185→
+   186→### Le panneau « route prioritaire »
+   187→Le panneau carré jaune avec barre blanche centrale indique que vous êtes sur une route prioritaire. Vous n'avez pas à céder le passage aux véhicules venant de droite aux intersections.
+   188→
+   189→## Ronds-points et carrefours à sens giratoire
+   190→
+   191→Dans un carrefour à sens giratoire (gyro-rond-point) signalé par un panneau, les véhicules circulant à l'intérieur sont **prioritaires** sur ceux qui s'insèrent.
+   192→
+   193→> ⚠️ **Attention** : Certains anciens ronds-points français fonctionnent encore en priorité à droite. Vérifiez toujours la signalisation.
+   194→
+   195→## Les passages pour piétons
+   196→
+   197→Les piétons sont **toujours prioritaires** sur les passages pour piétons, qu'ils soient signalés ou non. Vous devez ralentir et vous arrêter si nécessaire.
+   198→
+   199→## Véhicules prioritaires
+   200→
+   201→Les véhicules d'urgence (police, pompiers, SAMU) avec gyrophares et/ou sirènes en fonctionnement sont **toujours prioritaires**. Serrez à droite et laissez passer.`,
+   202→      type: 'lesson',
+   203→      order: 2,
+   204→      duration: 30,
+   205→    },
+   206→    {
+   207→      courseId: courses['Code de la route'],
+   208→      title: 'Vitesse et limitations',
+   209→      content: `# Vitesses et limitations
+   210→
+   211→## Limitations générales en France
+   212→
+   213→### En agglomération
+   214→- **50 km/h** par défaut (peut être réduit à 30 km/h dans les zones 30)
+   215→
+   216→### Hors agglomération
+   217→
+   218→| Conditions | Route à 2 voies | Autoroute |
+   219→|------------|-----------------|-----------|
+   220→| Temps normal | 80 km/h | 130 km/h |
+   221→| Temps de pluie / autres précipitations | 80 km/h | 110 km/h |
+   222→| Jeunes conducteurs (permis < 3 ans) | 80 km/h | 110 km/h |
+   223→| Visibilité < 50 m | 50 km/h | 50 km/h |
+   224→
+   225→## Dépassement des limitations
+   226→
+   227→Le dépassement de la vitesse maximale autorisée de **plus de 50 km/h** constitue un **délit** passible d'une amende de **1 500 €** et d'une suspension de permis pouvant aller jusqu'à **3 ans**.
+   228→
+   229→## Vitesse adaptée
+   230→
+   231→Même en dessous de la limite, vous devez adapter votre vitesse aux :
+   232→- **Conditions de trafic**
+   233→- **Conditions météorologiques** (brouillard, pluie, neige)
+   234→- **État de la chaussée**
+   235→- **Visibilité**
+   236→
+   237→> 💡 **Rappel** : La vitesse est le premier facteur d'accident mortel sur les routes françaises. Réduisez votre vitesse, c'est la meilleure assurance.`,
+   238→      type: 'lesson',
+   239→      order: 3,
+   240→      duration: 30,
+   241→    },
+   242→    {
+   243→      courseId: courses['Code de la route'],
+   244→      title: 'Stationnement et arrêt',
+   245→      content: `# Stationnement et arrêt
+   246→
+   247→## Différence entre arrêt et stationnement
+   248→
+   249→- **Arrêt** : immobilisation momentanée du véhicule (montée/descente de passagers, chargement/déchargement)
+   250→- **Stationnement** : immobilisation du véhicule qui n'est pas un arrêt
+   251→
+   252→## Règles de stationnement
+   253→
+   254→### Interdictions
+   255→- Sur les trottoirs et passages pour piétons
+   256→- Sur les pistes cyclables
+   257→- Aux emplacements réservés (handicapés, livraisons, taxis)
+   258→- À moins de 5 m d'un passage pour piétons
+   259→- Devant les entrées de garage et sorties d'immeubles
+   260→- Sur les bandes d'arrêt d'urgence
+   261→
+   262→### Stationnement en angle
+   263→En ville, le stationnement en épi (perpendiculaire au trottoir) est obligatoire quand la signalisation l'indique.
+   264→
+   265→### Le stationnement alterné
+   266→Dans certaines rues, le stationnement est alterné selon les jours (côté pair les jours pairs, côté impair les jours impairs).
+   267→
+   268→## Les feux de position
+   269→
+   270→À l'arrêt ou en stationnement la nuit (ou par visibilité insuffisante) hors agglomération, vous devez allumer vos **feux de position** si le stationnement est autorisé.
+   271→
+   272→> ⚠️ **Attention** : Le stationnement gênant est puni d'une amende de **135 €** (contravention de 2ème classe). Le stationnement dangereux peut entraîner la mise en fourrière.`,
+   273→      type: 'lesson',
+   274→      order: 4,
+   275→      duration: 35,
+   276→    },
+   277→
+   278→    // ─── Conduite pratique ───
+   279→    {
+   280→      courseId: courses['Conduite pratique'],
+   281→      title: 'Premiers pas au volant',
+   282→      content: `# Premiers pas au volant
+   283→
+   284→## Avant de démarrer
+   285→
+   286→### Réglage du siège
+   287→- Distance pédalier : jambe légèrement fléchie sur la pédale d'embrayage
+   288→- Dos droit contre le dossier
+   289→- Bras légèrement fléchis sur le volant
+   290→
+   291→### Les rétroviseurs
+   292→- **Rétroviseur intérieur** : voir l'arrière de la voie
+   293→- **Rétroviseurs extérieurs** : voir une petite bande de la carrosserie
+   294→
+   295→### La ceinture de sécurité
+   296→Obligatoire pour **tous les passagers**, à l'avant comme à l'arrière. L'amende est de **135 €** par passager non attaché.
+   297→
+   298→## Démarrer le véhicule
+   299→
+   300→1. Vérifiez que le **levier de vitesses** est au point mort
+   301→2. **Enfoncez la pédale d'embrayage** à fond
+   302→3. **Démarrez le moteur**
+   303→4. **Sélectionnez la 1ère vitesse**
+   304→5. **Vérifiez les alentours** (rétroviseurs + angle mort)
+   305→6. Mettez le **clignotant**
+   306→7. **Lâchez l'embrayage progressivement** tout en accélérant doucement
+   307→
+   308→> 💡 **Conseil** : Pour trouver le point de patinage de l'embrayage, relâchez très lentement la pédale jusqu'à sentir le véhicule vibrer légèrement.
+   309→
+   310→## Les pieds sur les pédales
+   311→
+   312→- **Pied gauche** : uniquement sur l'embrayage (jamais sur le frein !)
+   313→- **Pied droit** : alternativement sur le frein et l'accélérateur`,
+   314→      type: 'lesson',
+   315→      order: 1,
+   316→      duration: 35,
+   317→    },
+   318→    {
+   319→      courseId: courses['Conduite pratique'],
+   320→      title: 'Freinage et distances d\'arrêt',
+   321→      content: `# Freinage et distances d'arrêt
+   322→
+   323→## Les 3 composantes de la distance d'arrêt
+   324→
+   325→La **distance d'arrêt** = **distance de réaction** + **distance de freinage**
+   326→
+   327→### Distance de réaction
+   328→Temps de réaction moyen : **1 seconde**. Pendant ce temps, le véhicule continue d'avancer.
+   329→
+   330→À 50 km/h, vous parcourez environ **14 m** avant même de commencer à freiner.
+   331→
+   332→### Distance de freinage
+   333→C'est la distance parcourue entre le début du freinage et l'arrêt complet. Elle dépend de :
+   334→- La **vitesse** (proportionnelle au carré de la vitesse)
+   335→- L'**état de la chaussée** (sèche, mouillée, enneigée)
+   336→- L'**état des pneus** et des freins
+   337→- La **pente** de la route
+   338→
+   339→## Tableau récapitulatif
+   340→
+   341→| Vitesse | Temps sec (route sèche) | Temps sec (route mouillée) |
+   342→|---------|------------------------|---------------------------|
+   343→| 30 km/h | 14 m                   | 28 m                      |
+   344→| 50 km/h | 25 m                   | 50 m                      |
+   345→| 90 km/h | 81 m                   | 162 m                     |
+   346→| 130 km/h| 169 m                  | 338 m                     |
+   347→
+   348→## La distance de sécurité
+   349→
+   350→Sur route, la distance minimale entre deux véhicules est de **2 secondes**. Sur autoroute, comptez **au moins 91 mètres** (soit 2 bandes de marquage au sol).
+   351→
+   352→> ⚠️ **En cas de pluie**, doublez la distance de sécurité !`,
+   353→      type: 'lesson',
+   354→      order: 2,
+   355→      duration: 40,
+   356→    },
+   357→    {
+   358→      courseId: courses['Conduite pratique'],
+   359→      title: 'Les manœuvres de stationnement',
+   360→      content: `# Les manœuvres de stationnement
+   361→
+   362→## Le créneau
+   363→
+   364→La manœuvre de stationnement en créneau est l'une des plus redoutées, mais elle devient naturelle avec de la pratique.
+   365→
+   366→### Étapes
+   367→1. **Alignez-vous** parallèlement au véhicule devant l'emplacement
+   368→2. Reculez **lentement** en braquant vers la place
+   369→3. Quand votre siège est à hauteur de l'arrière du véhicule voisin, **contre-braquez**
+   370→4. **Redressez** le volant progressivement
+   371→5. Ajustez votre position
+   372→
+   373→> 💡 **Astuce** : Laissez environ 50 cm entre votre véhicule et celui de devant avant de commencer la manœuvre.
+   374→
+   375→## Le stationnement en épi
+   376→
+   377→1. Avancez jusqu'à ce que l'arrière de votre véhicule dépasse légèrement l'emplacement
+   378→2. Braquez **à fond** du côté de la place
+   379→3. Reculez lentement
+   380→4. Redressez quand le véhicule est parallèle aux lignes
+   381→
+   382→## Le stationnement en bataille
+   383→
+   384→Le plus simple : braquez vers la place avant d'entrer, puis redressez une fois engagé.
+   385→
+   386→## La marche arrière
+   387→
+   388→- Toujours **tourner la tête** pour regarder en arrière
+   389→- Contrôlez aussi les **rétroviseurs**
+   390→- Allez lentement (1ère vitesse ou embrayage pointé)
+   391→- Vérifiez les **angles morts**`,
+   392→      type: 'lesson',
+   393→      order: 3,
+   394→      duration: 45,
+   395→    },
+   396→    {
+   397→      courseId: courses['Conduite pratique'],
+   398→      title: 'Conduite en milieu urbain',
+   399→      content: `# Conduite en milieu urbain
+   400→
+   401→## Les spécificités de la ville
+   402→
+   403→La conduite en ville demande une **attention permanente**. Les dangers sont nombreux :
+   404→- Piétons imprévisibles
+   405→- Cyclistes et trottinettes
+   406→- Véhicules stationnés qui masquent la vue
+   407→- Trams et bus
+   408→- Travaux et déviations
+   409→
+   410→## Les feux tricolores
+   411→
+   412→### Signification
+   413→- **Rouge** : obligation de s'arrêter
+   414→- **Orange** : obligation de s'arrêter sauf si le freinage présente un danger
+   415→- **Vert** : passage autorisé, mais prudence
+   416→
+   417→### Le feu orange clignotant
+   418→Il impose de **ralentir** et de céder le passage si nécessaire. Il ne signifie pas que vous pouvez passer.
+   419→
+   420→## Les cédez-le-passage
+   421→Un panneau cédez-le-passage **n'oblige pas à s'arrêter**, sauf si un véhicule approche. Vous devez simplement ralentir suffisamment pour vous arrêter si nécessaire.
+   422→
+   423→## Les zones de rencontre
+   424→
+   425→Dans les zones de rencontre (signalées par un panneau carré bleu avec silhouette), la vitesse est limitée à **20 km/h**. Les piétons ont la priorité sur toute la largeur de la chaussée.
+   426→
+   427→## Les couloirs de bus
+   428→
+   429→Interdits aux voitures sauf s'ils sont signalés par un panneau « voitures autorisées ». L'amende pour emprunter un couloir de bus est de **135 €**.`,
+   430→      type: 'lesson',
+   431→      order: 4,
+   432→      duration: 60,
+   433→    },
+   434→
+   435→    // ─── Sécurité routière ───
+   436→    {
+   437→      courseId: courses['Sécurité routière'],
+   438→      title: 'Les équipements de sécurité',
+   439→      content: `# Les équipements de sécurité
+   440→
+   441→## Obligations du conducteur
+   442→
+   443→### Ceinture de sécurité
+   444→Obligatoire pour le conducteur et **tous les passagers**. En cas de non-port :
+   445→- Amende de **135 €** par personne non attachée
+   446→- Retrait de **3 points** sur le permis (conducteur non attaché)
+   447→
+   448→### Casque (2 roues)
+   449→Obligatoire pour les cyclomoteurs et motos. Le casque doit être **homologué** et **attaché**.
+   450→
+   451→### Équipements obligatoires du véhicule
+   452→Votre véhicule doit comporter :
+   453→- Un **triangle de pré-signalisation**
+   454→- Un **gilet de haute visibilité**
+   455→- Un **extincteur** (véhicules de transport de personnes)
+   456→
+   457→## Obligations des passagers
+   458→
+   459→### Enfants
+   460→- Moins de 10 ans : doivent être transportés à l'**arrière**
+   461→- Jusqu'à 10 ans (ou 135 cm) : utilisation d'un **dispositif de retenue** adapté (siège auto, réhausseur)
+   462→
+   463→### Moto
+   464→- Le passager doit porter un casque homologué
+   465→- Le passager doit avoir des **repose-pieds**
+   466→
+   467→## Les aides à la conduite
+   468→
+   469→- **ABS** (Antiblockier System) : évite le blocage des roues au freinage
+   470→- **ESP** (Electronic Stability Program) : aide à maintenir la trajectoire
+   471→- **Airbags** : protection en cas de choc frontal
+   472→- **AFU** (Aide au Freinage d'Urgence) : renforce le freinage en cas d'urgence
+   473→
+   474→> ⚠️ **Rappel** : Ces systèmes aident mais ne remplacent pas la vigilance du conducteur.`,
+   475→      type: 'lesson',
+   476→      order: 1,
+   477→      duration: 25,
+   478→    },
+   479→    {
+   480→      courseId: courses['Sécurité routière'],
+   481→      title: 'Alcool, drogues et conduite',
+   482→      content: `# Alcool, drogues et conduite
+   483→
+   484→## Les limites légales d'alcoolémie
+   485→
+   486→| Catégorie | Taux max (sang) | Taux max (air) |
+   487→|-----------|-----------------|----------------|
+   488→| Conducteur général | 0,5 g/L | 0,25 mg/L |
+   489→| Jeune conducteur (< 3 ans) | 0,2 g/L | 0,10 mg/L |
+   490→| Transport en commun | 0,2 g/L | 0,10 mg/L |
+   491→
+   492→## Les sanctions
+   493→
+   494→### Délit (≥ 0,8 g/L ou refus de souffler)
+   495→- Amende de **4 500 €**
+   496→- Retrait de **6 points**
+   497→- Suspension du permis jusqu'à **3 ans**
+   498→- Peine de prison jusqu'à **2 ans**
+   499→
+   500→### Contravention (0,5 à 0,79 g/L)
+   501→- Amende de **135 €**
+   502→- Retrait de **6 points**
+   503→
+   504→## Délai d'élimination de l'alcool
+   505→Le corps élimine en moyenne **0,15 g/L par heure**. Un repas festif peut mettre **plusieurs heures** avant de pouvoir reprendre le volant.
+   506→
+   507→## Les stupéfiants
+   508→La conduite sous l'emprise de stupéfiants est un **délit** :
+   509→- Amende de **4 500 €**
+   510→- Retrait de **6 points**
+   511→- Suspension du permis jusqu'à **3 ans**
+   512→- Peine de prison jusqu'à **2 ans**
+   513→
+   514→> ⚠️ **Cumul alcool + drogues** : Les sanctions sont **aggravées**. Peine de prison pouvant atteindre **3 ans** et amende de **9 000 €**.
+   515→
+   516→## Éthylotest antidémarrage (EAD)
+   517→
+   518→Depuis 2019, les condamnés pour conduite en état d'ivresse peuvent être obligés d'installer un EAD dans leur véhicule.`,
+   519→      type: 'lesson',
+   520→      order: 2,
+   521→      duration: 25,
+   522→    },
+   523→    {
+   524→      courseId: courses['Sécurité routière'],
+   525→      title: 'Fatigue et conduite',
+   526→      content: `# Fatigue et conduite
+   527→
+   528→## Un danger mortel sous-estimé
+   529→
+   530→La fatigue est impliquée dans environ **20 % des accidents mortels** sur autoroute. C'est la **première cause** d'accident sur les longs trajets.
+   531→
+   532→## Les signes de fatigue
+   533→
+   534→- **Bâillements** répétés
+   535→- **Paupières lourdes**
+   536→- Difficulté à **maintenir sa trajectoire**
+   537→- Difficulté à **concentrer**
+   538→- Sensations de **vide** ou d'irritabilité
+   539→
+   540→## Les facteurs aggravants
+   541→
+   542→- Conduite entre **2h et 6h du matin** et entre **14h et 16h** (baisses physiologiques)
+   543→- Trajets **longs et monotones** (autoroute)
+   544→- Manque de **sommeil** la nuit précédente
+   545→- **Médicaments** (somnolence)
+   546→- Repas **copieux**
+   547→
+   548→## Les préventions
+   549→
+   550→- Faites une **pause toutes les 2 heures** (15 minutes minimum)
+   551→- Ne conduisez pas aux **heures creuses** si possible
+   552→- **Partagez la conduite** sur les longs trajets
+   553→- Hydratez-vous régulièrement
+   554→- Si la fatigue s'installe : **arrêtez-vous et dormez** (20 minutes de sieste suffisent)
+   555→
+   556→> 💡 **Le café n'est efficace** qu'après 20 minutes. Il ne remplace pas le sommeil.`,
+   557→      type: 'lesson',
+   558→      order: 3,
+   559→      duration: 20,
+   560→    },
+   561→    {
+   562→      courseId: courses['Sécurité routière'],
+   563→      title: 'Téléphone au volant',
+   564→      content: `# Téléphone au volant
+   565→
+   566→## Interdiction formelle
+   567→
+   568→Il est **strictement interdit** de tenir un téléphone en main pendant la conduite, même à l'arrêt à un feu rouge.
+   569→
+   570→### Sanctions
+   571→- Amende de **135 €**
+   572→- Retrait de **3 points** sur le permis
+   573→- Suspension de permis possible pour récidive
+   574→
+   575→## Le kit mains libres
+   576→
+   577→L'utilisation d'un kit **mains libres** intégrée au véhicule est autorisée, mais **pas les écouteurs** (oreillettes). Cependant, l'utilisation du téléphone, même en mains libres, **diminue fortement l'attention**.
+   578→
+   579→## Les chiffres
+   580→
+   581→- Temps d'attention détournée en regardant son téléphone : **4 à 5 secondes**
+   582→- À 130 km/h, le véhicule parcourt **plus de 180 m** les yeux rivés sur l'écran
+   583→- Risque d'accident multiplié par **23**
+   584→
+   585→## Les réseaux sociaux et la conduite
+   586→
+   587→Filmer ou prendre des photos en conduisant est un **délit** puni de :
+   588→- Amende de **1 500 €**
+   589→- Retrait de **3 points**
+   590→- Suspension de permis possible
+   591→
+   592→> ⚠️ **Conseil** : Mettez votre téléphone en mode « Ne pas déranger » avant de prendre le volant. Aucun message ne vaut une vie.`,
+   593→      type: 'lesson',
+   594→      order: 4,
+   595→      duration: 20,
+   596→    },
+   597→
+   598→    // ─── Conduite sur autoroute ───
+   599→    {
+   600→      courseId: courses['Conduite sur autoroute'],
+   601→      title: 'Entrée et insertion sur autoroute',
+   602→      content: `# Entrée et insertion sur autoroute
+   603→
+   604→## L'accélération d'insertion
+   605→
+   606→L'autoroute est une voie **à sens unique**, sans carrefour. L'insertion se fait par une **bande d'accélération**.
+   607→
+   608→### Étapes d'insertion
+   609→1. Sur la bande d'accélération, **accélérez** pour atteindre la vitesse des véhicules sur la voie de droite
+   610→2. **Regardez dans le rétroviseur gauche** et vérifiez l'angle mort
+   611→3. **Mettez le clignotant gauche**
+   612→4. Insérez-vous **sans gêner** les véhicules déjà sur l'autoroute
+   613→5. Une fois inséré, **coupez le clignotant**
+   614→
+   615→## Vitesse minimum
+   616→
+   617→La vitesse minimum sur autoroute est de **80 km/h** sauf circonstances exceptionnelles (embouteillage, intempéries).
+   618→
+   619→## Ce qui est interdit sur autoroute
+   620→
+   621→- **Faire demi-tour**
+   622→- **Reculer**
+   623→- **S'arrêter** sur la chaussée (sauf urgence)
+   624→- **Emprunter la bande d'arrêt d'urgence** pour circuler
+   625→- **Circuler à contre-sens**
+   626→
+   627→> 💡 **Astuce** : L'angle mort gauche est particulièrement dangereux lors de l'insertion. Tournez brièvement la tête pour vérifier.`,
+   628→      type: 'lesson',
+   629→      order: 1,
+   630→      duration: 20,
+   631→    },
+   632→    {
+   633→      courseId: courses['Conduite sur autoroute'],
+   634→      title: 'Dépassement sur autoroute',
+   635→      content: `# Dépassement sur autoroute
+   636→
+   637→## Les voies de circulation
+   638→
+   639→- **Voie de droite** : voie de circulation normale
+   640→- **Voie du milieu** : dépassement et circulation fluide
+   641→- **Voie de gauche** : uniquement pour le dépassement
+   642→
+   643→## Règles de dépassement
+   644→
+   645→1. **Vérifiez** les rétroviseurs et l'angle mort gauche
+   646→2. **Mettez le clignotant gauche**
+   647→3. Dépassez en **accélérant** pour ne pas rester trop longtemps sur la voie de gauche
+   648→4. Une fois le véhicule dépassé avec une marge suffisante, **mettez le clignotant droit**
+   649→5. **Reprenez la voie de droite** dès que possible
+   650→
+   651→## Règle de la voie de gauche
+   652→
+   653→La voie de gauche est **strictement réservée au dépassement**. Vous ne devez pas y circuler de manière prolongée. En cas de non-respect :
+   654→- Amende de **135 €**
+   655→- Retrait de **3 points** si la manœuvre est dangereuse
+   656→
+   657→## Distances de sécurité sur autoroute
+   658→
+   659→La distance minimale est de **2 secondes**, soit environ **91 mètres** à 130 km/h (2 bandes de marquage).
+   660→
+   661→> ⚠️ **Par temps de pluie**, la distance passe à **3 secondes** et la vitesse est limitée à **110 km/h**.`,
+   662→      type: 'lesson',
+   663→      order: 2,
+   664→      duration: 20,
+   665→    },
+   666→    {
+   667→      courseId: courses['Conduite sur autoroute'],
+   668→      title: 'Panne et urgences sur autoroute',
+   669→      content: `# Panne et urgences sur autoroute
+   670→
+   671→## En cas de panne
+   672→
+   673→### Les 3 étapes obligatoires
+   674→
+   675→1. **Allumez les feux de détresse** (warnings)
+   676→2. **Garez-vous** le plus à droite possible, sur la bande d'arrêt d'urgence
+   677→3. **Mettez le gilet de sécurité** **avant** de sortir du véhicule
+   678→
+   679→### Se signaler
+   680→
+   681→- Placez le **triangle de pré-signalisation** à **30 m minimum** derrière votre véhicule (100 m recommandé)
+   682→- **Restez derrière la glissière de sécurité**, du côté droit de la route
+   683→- **Appelez le 112** (numéro d'urgence européen)
+   684→
+   685→## Les numéros d'urgence
+   686→
+   687→- **112** : numéro d'urgence européen (tous réseaux)
+   688→- **15** : SAMU
+   689→- **17** : Police / Gendarmerie
+   690→- **18** : Pompiers
+   691→
+   692→## La bande d'arrêt d'urgence
+   693→
+   694→Elle n'est **pas une voie de circulation**. Son utilisation pour rouler est punie d'une amende de **135 €** et d'un retrait de **3 points**.
+   695→
+   696→## Les postes d'appel d'urgence
+   697→
+   698→Ils sont situés tous les **2 kilomètres** sur l'autoroute. Ils permettent de contacter directement le poste de surveillance le plus proche.
+   699→
+   700→> ⚠️ **Ne jamais** rester dans le véhicule sur la bande d'arrêt d'urgence. Un choc arrière à 130 km/h est souvent mortel.`,
+   701→      type: 'lesson',
+   702→      order: 3,
+   703→      duration: 20,
+   704→    },
+   705→
+   706→    // ─── Conduite écologique ───
+   707→    {
+   708→      courseId: courses['Conduite écologique'],
+   709→      title: 'Principes de l\'éco-conduite',
+   710→      content: `# Principes de l'éco-conduite
+   711→
+   712→## Qu'est-ce que l'éco-conduite ?
+   713→
+   714→L'éco-conduite est un ensemble de pratiques de conduite qui permettent de :
+   715→- **Réduire la consommation** de carburant de 15 à 20 %
+   716→- **Diminuer les émissions** de CO₂
+   717→- **Préserver** le véhicule (moins d'usure des freins et pneus)
+   718→- **Améliorer** la sécurité
+   719→
+   720→## Les 5 règles d'or
+   721→
+   722→### 1. Anticiper
+   723→Le regard doit être **loin devant** (10 à 15 secondes de trajet). Repérez les feux, les ralentissements et les panneaux à l'avance pour éviter les freinages brutaux.
+   724→
+   725→### 2. Passer les vitesses rapidement
+   726→- Passez la **2ème** dès **10 km/h**
+   727→- Passez la **3ème** dès **25 km/h**
+   728→- Passez la **4ème** dès **40 km/h**
+   729→- Passez la **5ème** dès **50 km/h**
+   730→
+   731→### 3. Maintenir une vitesse régulière
+   732→Utilisez le **régulateur de vitesse** sur route et autoroute. Les accélérations et freinages consomment énormément.
+   733→
+   734→### 4. Couper le moteur à l'arrêt
+   735→Coupez le moteur si vous êtes à l'arrêt plus de **30 secondes** (feux, passages à niveau). Le système Start & Stop le fait automatiquement.
+   736→
+   737→### 5. Vérifier la pression des pneus
+   738→Des pneus **sous-gonflés** augmentent la consommation de **3 à 5 %**. Vérifiez la pression chaque mois.
+   739→
+   740→> 💡 **Bon à savoir** : L'éco-conduite peut faire économiser **300 à 500 €** par an en carburant.`,
+   741→      type: 'lesson',
+   742→      order: 1,
+   743→      duration: 15,
+   744→    },
+   745→    {
+   746→      courseId: courses['Conduite écologique'],
+   747→      title: 'Régimes moteur et consommation',
+   748→      content: `# Régimes moteur et consommation
+   749→
+   750→## Le régime moteur optimal
+   751→
+   752→Le **régime moteur** (en tours/minute, tr/min) influence directement la consommation :
+   753→
+   754→- **Régime bas (1 000 - 1 500 tr/min)** : risque de calage, mauvais couple
+   755→- **Régime optimal (1 500 - 2 500 tr/min)** : meilleur rendement, consommation minimale
+   756→- **Régime élevé (> 2 500 tr/min)** : surconsommation, usure prématurée
+   757→
+   758→## Le compte-tours
+   759→
+   760→Surveillez le compte-tours pour maintenir le régime dans la **zone verte**. Changez de vitesse avant d'atteindre la zone rouge.
+   761→
+   762→## Impact des rapports de vitesse
+   763→
+   764→| Rapport | Consommation relative |
+   765→|---------|----------------------|
+   766→| 1ère    | Très élevée          |
+   767→| 2ème    | Élevée               |
+   768→| 3ème    | Modérée              |
+   769→| 4ème    | Faible               |
+   770→| 5ème    | Minimale             |
+   771→
+   772→## Le frein moteur
+   773→
+   774→Privilégiez le **frein moteur** (rétrogradage) au freinage sur pédale :
+   775→- Zéro consommation de carburant (coupure d'injection)
+   776→- Moins d'usure des plaquettes de frein
+   777→- Prévisibilité pour les véhicules derrière
+   778→
+   779→> 💡 **Astuce** : En descente, rétrogradez plutôt que de freiner. Votre véhicule ne consomme rien en décélération.`,
+   780→      type: 'lesson',
+   781→      order: 2,
+   782→      duration: 15,
+   783→    },
+   784→    {
+   785→      courseId: courses['Conduite écologique'],
+   786→      title: 'Impact environnemental et alternatives',
+   787→      content: `# Impact environnemental et alternatives
+   788→
+   789→## Le bilan carbone de la voiture
+   790→
+   791→Un véhicule moyen émet environ **120 g de CO₂ par km**. Pour 15 000 km par an, cela représente **1,8 tonne de CO₂**.
+   792→
+   793→## Les alternatives écologiques
+   794→
+   795→### Véhicules électriques
+   796→- **Zéro émission** à l'utilisation
+   797→- Coût au km très faible (environ 2-3 €/100 km)
+   798→- Aide à l'achat de l'État jusqu'à **7 000 €** (bonus écologique)
+   799→
+   800→### Véhicules hybrides
+   801→- Consommation réduite en ville (jusqu'à -40 %)
+   802→- Pas d'anxiété d'autonomie
+   803→- Récupération d'énergie au freinage
+   804→
+   805→### Le covoiturage
+   806→- Réduction des coûts et des émissions par **2 ou plus**
+   807→- Lanes réservées dans certaines villes
+   808→- Aide de l'État via la prime covoiturage
+   809→
+   810→## Les transports en commun
+   811→
+   812→En France :
+   813→- Le réseau **TGV** est l'un des moins polluants au monde
+   814→- Les métros et tramways produisent peu de CO₂
+   815→- Le vélo est idéal pour les trajets courts (< 5 km)
+   816→
+   817→> 💡 **Le saviez-vous ?** Si chaque Français roulait 10 km/h moins vite sur autoroute, la France économiserait **2,5 millions de tonnes de CO₂ par an**.`,
+   818→      type: 'lesson',
+   819→      order: 3,
+   820→      duration: 15,
+   821→    },
+   822→
+   823→    // ─── Premiers secours ───
+   824→    {
+   825→      courseId: courses['Premiers secours'],
+   826→      title: 'Le protocole PASE',
+   827→      content: `# Le protocole PASE
+   828→
+   829→## Protéger — Alerter — Secourir — Évaluer
+   830→
+   831→Le protocole PASE est la méthode à suivre en cas d'accident de la route.
+   832→
+   833→### 1. PROTÉGER
+   834→
+   835→La sécurité est la **priorité absolue**.
+   836→
+   837→- **Allumez vos feux de détresse**
+   838→- **Garez-vous** en sécurité (derrière l'accident si possible)
+   839→- **Enfilez votre gilet** de haute visibilité
+   840→- **Demandez aux autres** de se mettre en sécurité
+   841→- **Balisez** la zone avec un triangle (30 m minimum en amont)
+   842→
+   843→### 2. ALERTER
+   844→
+   845→Appelez le **112** (numéro d'urgence européen) ou le **15** (SAMU).
+   846→
+   847→Informations à communiquer :
+   848→- **Localisation** précise (autoroute, borne kilométrique, sens)
+   849→- **Nombre de véhicules** impliqués
+   850→- **Nombre de victimes** et état apparent
+   851→- **Risques particuliers** (feu, fuite, produits dangereux)
+   852→
+   853→### 3. SECOURIR
+   854→
+   855→**Ne déplacez pas un blessé** sauf :
+   856→- Danger immédiat (incendie, explosion)
+   857→- Nécessité de pratiquer un massage cardiaque sur un sol dur
+   858→
+   859→Actions possibles :
+   860→- **Ouvrez les voies aériennes** (basculer la tête en arrière)
+   861→- **Arrêtez une hémorragie** par compression directe
+   862→- **Pratiquez un massage cardiaque** si la personne ne respire plus
+   863→
+   864→### 4. ÉVALUER
+   865→
+   866→- Surveillez l'état de la victime en attendant les secours
+   867→- **Parlez-lui** et rassurez-la
+   868→- Notez tout changement d'état
+   869→
+   870→> ⚠️ **Important** : En cas de doute sur les actions à mener, le 112 vous guidera par téléphone.`,
+   871→      type: 'lesson',
+   872→      order: 1,
+   873→      duration: 20,
+   874→    },
+   875→    {
+   876→      courseId: courses['Premiers secours'],
+   877→      title: 'Massage cardiaque et réanimation',
+   878→      content: `# Massage cardiaque et réanimation
+   879→
+   880→## Quand pratiquer un massage cardiaque ?
+   881→
+   882→Un massage cardiaque est nécessaire quand une personne est **inconsciente** et **ne respire pas** (ou respire de façon anormale, hoquets). C'est une **urgence vitale**.
+   883→
+   884→## Les étapes du massage cardiaque
+   885→
+   886→### Vérifier la conscience
+   887→Tapez doucement les épaules et demandez : « Vous m'entendez ? »
+   888→
+   889→### Vérifier la respiration
+   890→- Baissez-vous, regardez la poitrine
+   891→- Écoutez et ressentez le souffle pendant **10 secondes maximum**
+   892→
+   893→### Appeler les secours
+   894→Appelez le **112** ou demandez à quelqu'un de le faire.
+   895→
+   896→### Le massage cardiaque
+   897→1. **Allongez** la victime sur le dos sur un sol **dur**
+   898→2. Mettez-vous **à genoux** à côté de la victime
+   899→3. Placez le **talon d'une main** au centre de la poitrine (sur le sternum)
+   900→4. Placez l'autre main **par-dessus**, doigts entrelacés
+   901→5. Comprimez le sternum de **5 à 6 cm**
+   902→6. Rythme : **100 à 120 compressions par minute**
+   903→7. Continuez **sans interruption** jusqu'à l'arrivée des secours
+   904→
+   905→## Le DAE (Défibrillateur Automatisé Externe)
+   906→
+   907→- Suivez les **instructions vocales** de l'appareil
+   908→- Tout le monde peut l'utiliser, **aucune formation n'est requise**
+   909→- Appliquez les électrodes comme indiqué
+   910→- Le DAE analyse et décide s'il faut administrer un choc
+   911→
+   912→> 💡 **Rythme** : Pensez à la chanson « Stayin' Alive » des Bee Gees (103 BPM) pour maintenir le bon rythme de compressions.`,
+   913→      type: 'lesson',
+   914→      order: 2,
+   915→      duration: 20,
+   916→    },
+   917→    {
+   918→      courseId: courses['Premiers secours'],
+   919→      title: 'Gestes d\'urgence courants',
+   920→      content: `# Gestes d'urgence courants
+   921→
+   922→## Hémorragie externe
+   923→
+   924→### Compressez immédiatement
+   925→1. Appuyez **fortement** sur la blessure avec un linge propre
+   926→2. Maintenez la **pression en continu** (ne relâchez surtout pas)
+   927→3. Si le linge est imbibé, **ajoutez-en un autre par-dessus** sans retirer le premier
+   928→4. Allongez la personne et **surélévez le membre** blessé si possible
+   929→
+   930→> ⚠️ **Ne jamais utiliser de garrot** sauf en cas de sauvetage extrême ( membre arraché). Le garrot doit être noté avec l'heure de pose.
+   931→
+   932→## Brûlures
+   933→
+   934→- **Arrosez** abondamment à l'eau froide pendant **15 minutes minimum**
+   935→- Retirez les vêtements autour de la brûlure (sauf s'ils sont collés)
+   936→- **Couvrez** avec un linge propre
+   937→- **Ne percez pas** les cloques
+   938→- **N'appliquez jamais** de pommade, beurre ou dentifrice
+   939→
+   940→## Malaise cardiaque
+   941→
+   942→- Asseyez la personne dans une **position demi-assise**
+   943→- **Desserrez** ses vêtements
+   944→- Demandez-lui si elle a un traitement et **aidez-la à le prendre**
+   945→- Si elle a un spray de nitroglycérine, **aidez-la à l'utiliser**
+   946→- Appelez le **15** (SAMU) immédiatement
+   947→
+   948→## Perte de connaissance
+   949→
+   950→### Position Latérale de Sécurité (PLS)
+   951→1. Placez le bras le plus proche du sauveteur à **angle droit**
+   952→2. Ramenez l'autre main contre la **joue**
+   953→3. Pliez la **jambe la plus éloignée**
+   954→4. **Tirez** sur la jambe fléchie pour faire rouler la personne
+   955→5. **Ouvrez les voies aériennes** (tête basculée en arrière)
+   956→6. **Surveillez** la respiration en permanence`,
+   957→      type: 'lesson',
+   958→      order: 3,
+   959→      duration: 20,
+   960→    },
+   961→
+   962→    // ─── Panneaux et signalisation ───
+   963→    {
+   964→      courseId: courses['Panneaux et signalisation'],
+   965→      title: 'Les panneaux de danger',
+   966→      content: `# Les panneaux de danger
+   967→
+   968→## Forme et couleur
+   969→
+   970→Les panneaux de danger sont de forme **triangulaire** avec un fond **blanc**, un bord **rouge** et un **symbole noir** au centre.
+   971→
+   972→## Les principaux panneaux de danger
+   973→
+   974→### Virages et intersections
+   975→- **Virage dangereux** : flèche courbée
+   976→- **Succession de virages** : double flèche courbée
+   977→- **Intersection** : croisement de routes
+   978→- **Cédant le passage** : triangle inversé (pointe vers le bas)
+   979→
+   980→### Profil de la route
+   981→- **Ralentisseur** (dos d'âne)
+   982→- **Descente dangereuse** (pente avec pourcentage)
+   983→- **Montée raide**
+   984→- **Passage à niveau** (croix de Saint-André)
+   985→
+   986→### Autres dangers
+   987→- **Piétons** : silhouette piéton
+   988→- **Enfants** : silhouettes d'enfants
+   989→- **Cyclistes** : silhouette cycliste
+   990→- **Animaux sauvages** : silhouette de cerf
+   991→- **Chute de pierres** : rochers
+   992→- **Vent latéral** : drapeau
+   993→- **Neige / glace** : flocon
+   994→- **Brouillard** : lignes ondulées
+   995→
+   996→> 💡 **Règle** : En voyant un panneau de danger, **réduisez votre vitesse** et soyez particulièrement vigilant.`,
+   997→      type: 'lesson',
+   998→      order: 1,
+   999→      duration: 20,
+  1000→    },
+  1001→    {
+  1002→      courseId: courses['Panneaux et signalisation'],
+  1003→      title: 'Les panneaux d\'interdiction et d\'obligation',
+  1004→      content: `# Les panneaux d'interdiction et d'obligation
+  1005→
+  1006→## Panneaux d'interdiction
+  1007→
+  1008→### Forme
+  1009→Ronds à fond **blanc**, bord **rouge**, avec un ou plusieurs **symboles noirs** barrés d'une **barre rouge diagonale**.
+  1010→
+  1011→### Principaux panneaux
+  1012→
+  1013→| Panneau | Signification |
+  1014→|---------|--------------|
+  1015→| Sens interdit | Accès interdit dans ce sens |
+  1016→| Cercle rouge vide | Interdiction de circuler (tous véhicules) |
+  1017→| Vitesse barrée | Limitation de vitesse |
+  1018→| Camion barré | Interdiction aux poids lourds |
+  1019→| Voiture + remorque | Interdiction aux véhicules avec remorque |
+  1020→| Cycliste barré | Interdiction aux cyclistes |
+  1021→| Corne de brume barrée | Interdiction de klaxonner |
+  1022→
+  1023→### Les panneaux de fin d'interdiction
+  1024→Les panneaux de fin d'interdiction sont de forme **ronde** avec un bord **gris** (noir) et des **bandes grises** (noires) en diagonale.
+  1025→
+  1026→## Panneaux d'obligation
+  1027→
+  1028→### Forme
+  1029→Ronds à fond **bleu** avec un **symbole blanc**.
+  1030→
+  1031→### Principaux panneaux
+  1032→
+  1033→| Panneau | Signification |
+  1034→|---------|--------------|
+  1035→| Flèche blanche | Obligation de suivre cette direction |
+  1036→| Vélo blanc | Piste cyclable obligatoire |
+  1037→| Chaînes à neige | Équipement en chaînes obligatoire |
+  1038→| Cercle bleu vide | Obligation d'aller tout droit |
+  1039→
+  1040→> ⚠️ **Attention** : L'absence de panneau de fin d'interdiction signifie que l'interdiction reste en vigueur jusqu'au prochain carrefour.`,
+  1041→      type: 'lesson',
+  1042→      order: 2,
+  1043→      duration: 25,
+  1044→    },
+  1045→    {
+  1046→      courseId: courses['Panneaux et signalisation'],
+  1047→      title: 'Les panneaux de direction et d\'indication',
+  1048→      content: `# Les panneaux de direction et d'indication
+  1049→
+  1050→## Panneaux d'indication
+  1051→
+  1052→### Forme
+  1053→Carrés ou rectangulaires à fond **bleu**, **vert**, **blanc** ou **brun** avec des **symboles blancs** ou **noirs**.
+  1054→
+  1055→### Panneaux bleus (obligation / service)
+  1056→- **Autoroute** : rectangle bleu avec pont
+  1057→- **Stationnement** : P bleu (stationnement réglementé)
+  1058→- **Sens giratoire** : flèches circulaires
+  1059→
+  1060→### Panneaux verts (direction)
+  1061→
+  1062→Utilisés pour l'**orientation** et les **distances** :
+  1063→- **Direction** : nom des villes
+  1064→- **Confirmation** : distance vers une ville
+  1065→- **Dernier sorti** : information sur la prochaine sortie
+  1066→
+  1067→### Panneaux blancs ( indication)
+  1068→
+  1069→- **Rappel de limitation de vitesse**
+  1070→- **Fin de zone** (agglomération, etc.)
+  1071→- **Zones de rencontre** (carré bleu avec piéton et vélo)
+  1072→
+  1073→### Panneaux bruns (tourisme)
+  1074→
+  1075→- Sites touristiques
+  1076→- Musées et monuments
+  1077→- Aire de repos panoramique
+  1078→
+  1079→## Le marquage au sol
+  1080→
+  1081→| Marquage | Signification |
+  1082→|----------|-------------|
+  1083→| Ligne blanche continue | Interdiction de franchir |
+  1084→| Ligne blanche discontinue | Autorisation de franchir |
+  1085→| Ligne jaune | Stationnement ou arrêt interdit |
+  1086→| Zébra (passage piéton) | Priorité aux piétons |
+  1087→| Flèches peintes | Obligation de direction |
+  1088→| Cédez-le-passage (triangles) | Marquage au sol complétant le panneau |
+  1089→
+  1090→> 💡 **Rappel** : Un marquage au sol a la **même valeur juridique** qu'un panneau.`,
+  1091→      type: 'lesson',
+  1092→      order: 3,
+  1093→      duration: 30,
+  1094→    },
+  1095→
+  1096→    // ─── Conduite nocturne ───
+  1097→    {
+  1098→      courseId: courses['Conduite nocturne'],
+  1099→      title: 'Éclairage du véhicule',
+  1100→      content: `# Éclairage du véhicule
+  1101→
+  1102→## Les différents feux
+  1103→
+  1104→### Feux de position (veilleuse)
+  1105→- **Usage** : stationnement la nuit hors agglomération
+  1106→- **Portée** : environ 30 m
+  1107→- **Vitesse maximale** : impossible de circuler avec les seuls feux de position
+  1108→
+  1109→### Feux de croisement (codes)
+  1110→- **Usage** : nuit, brouillard, neige, tunnels
+  1111→- **Obligation** : dès que la visibilité est < 200 m
+  1112→- **Portée** : environ 30 m
+  1113→- **Vitesse max recommandée** : 50 km/h en pleine nuit hors éclairage public
+  1114→
+  1115→### Feux de route (pleins phares)
+  1116→- **Usage** : routes non éclairées, hors agglomération
+  1117→- **Portée** : environ 100 m
+  1118→- **Interdiction** : en agglomération, en cas de croisement, derrière un véhicule, brouillard
+  1119→
+  1120→### Feux de brouillard avant
+  1121→- **Usage** : brouillard épais, neige forte, pluie battante
+  1122→- Peuvent remplacer ou compléter les feux de croisement
+  1123→
+  1124→### Feux de brouillard arrière
+  1125→- **Usage** : brouillard épais (visibilité < 50 m)
+  1126→- Obligatoires si vous utilisez les feux de brouillard avant
+  1127→
+  1128→## Réglage des feux
+  1129→
+  1130→Les feux doivent être **régulièrement vérifiés et réglés**. Un mauvais réglage peut éblouir les autres conducteurs ou réduire votre visibilité.
+  1131→
+  1132→> ⚠️ **Oublier d'allumer ses feux** la nuit est puni d'une amende de **135 €** et d'un retrait de **4 points**.`,
+  1133→      type: 'lesson',
+  1134→      order: 1,
+  1135→      duration: 15,
+  1136→    },
+  1137→    {
+  1138→      courseId: courses['Conduite nocturne'],
+  1139→      title: 'S\'adapter à la conduite de nuit',
+  1140→      content: `# S'adapter à la conduite de nuit
+  1141→
+  1142→## Les défis de la nuit
+  1143→
+  1144→- **Réduction de la visibilité** : le champ de vision est considérablement réduit
+  1145→- **Éblouissement** : feux des autres véhicules, reflets
+  1146→- **Fatigue accrue** : la nuit perturbe le rythme circadien
+  1147→- **Effet de surprise** : obstacles et piétons plus difficiles à apercevoir
+  1148→
+  1149→## Adapter sa conduite
+  1150→
+  1151→### Vitesse
+  1152→Réduisez votre vitesse pour pouvoir **s'arrêter dans la distance éclairée** par vos feux de croisement (environ 30 m).
+  1153→
+  1154→### La fatigue nocturne
+  1155→
+  1156→- La conduite entre **2h et 6h** est particulièrement dangereuse
+  1157→- Faites une pause toutes les **2 heures**
+  1158→- Si vous ressentez des signes de somnolence : **arrêtez-vous et dormez 20 minutes**
+  1159→
+  1160→### Faire face à l'éblouissement
+  1161→
+  1162→- **Ne fixez pas** les phares des véhicules venant en face
+  1163→- **Regardez le bord droit** de la route
+  1164→- Si vous êtes ébloui : **ralentissez** sans vous arrêter brutalement
+  1165→- **Nettoyez régulièrement** votre pare-brise (intérieur et extérieur)
+  1166→
+  1167→## Les animaux la nuit
+  1168→
+  1169→- Les yeux des animaux **réfléchissent** la lumière (points lumineux)
+  1170→- En cas de présence animale : **klaxonnez longuement** et **ralentissez**
+  1171→- Ne faites **jamais d'évitement brusque** : risquez de perdre le contrôle
+  1172→
+  1173→> 💡 **Astuce** : Un pare-brise propre à l'intérieur réduit considérablement l'éblouissement. Nettoyez-le régulièrement avec un produit adapté.`,
+  1174→      type: 'lesson',
+  1175→      order: 2,
+  1176→      duration: 15,
+  1177→    },
+  1178→    {
+  1179→      courseId: courses['Conduite nocturne'],
+  1180→      title: 'Véhicules lents et convois exceptionnels',
+  1181→      content: `# Véhicules lents et convois exceptionnels de nuit
+  1182→
+  1183→## Les véhicules lents la nuit
+  1184→
+  1185→Les véhicules lents (tracteurs, engins agricoles, véhicules de travaux) doivent être signalés :
+  1186→- **Panneau de véhicule lent** (triangle rouge avec un véhicule noir)
+  1187→- **Gyrophare** ou **feux d'accompagnement**
+  1188→- Marquage réfléchissant
+  1189→
+  1190→### Comportement à adopter
+  1191→- **Repérez-les de loin** grâce à leurs feux
+  1192→- **Ralentissez** à l'approche
+  1193→- **Dépassez avec prudence** : vérifiez la visibilité et l'espace
+  1194→- Signalez votre dépassement avec un **appel de phares** (coup bref)
+  1195→
+  1196→## Les convois exceptionnels
+  1197→
+  1198→Les convois exceptionnels (transports de charges volumineuses) sont signalés par :
+  1199→- Un **gyrophare jaune**
+  1200→- Des **panneaux d'accompagnement**
+  1201→- Des **véhicules pilotes** à l'avant et/ou à l'arrière
+  1202→
+  1203→### Comportement à adopter
+  1204→- **Ne dépassez jamais** un convoi exceptionnel sans l'autorisation du véhicule pilote
+  1205→- **Maintenez vos distances** : les convois freinent plus lentement
+  1206→- **Suivez les indications** des véhicules pilotes
+  1207→
+  1208→## La signalisation d'urgence
+  1209→
+  1210→En cas de danger la nuit :
+  1211→- **Allumez les feux de détresse** (warnings)
+  1212→- **Utilisez le triangle** de pré-signalisation
+  1213→- **Portez votre gilet** haute visibilité
+  1214→- **Appelez le 112**
+  1215→
+  1216→> ⚠️ **À retenir** : La nuit, votre principal ennemi est la surprise. Anticipez, ralentissez et soyez visible.`,
+  1217→      type: 'lesson',
+  1218→      order: 3,
+  1219→      duration: 15,
+  1220→    },
+  1221→  ]
+  1222→
+  1223→  for (const m of modulesData) {
+  1224→    await db.module.create({ data: m })
+  1225→  }
+  1226→
+  1227→  console.log(`  ✓ Created ${modulesData.length} modules`)
+  1228→
+  1229→  // ═══════════════════════════════════════
+  1230→  // QUESTIONS (20)
+  1231→  // ═══════════════════════════════════════
+  1232→
+  1233→  const questionsData = [
+  1234→    {
+  1235→      courseId: courses['Code de la route'],
+  1236→      question: 'Quelle est la vitesse maximale autorisée hors agglomération sur une route à deux voies (temps sec) ?',
+  1237→      options: JSON.stringify([
+  1238→        '90 km/h',
+  1239→        '80 km/h',
+  1240→        '110 km/h',
+  1241→        '70 km/h',
+  1242→      ]),
+  1243→      correctIndex: 1,
+  1244→      explanation:
+  1245→        'Depuis le 1er juillet 2018, la vitesse maximale sur les routes à deux voies sans séparateur central est de 80 km/h par temps sec.',
+  1246→      difficulty: 'easy',
+  1247→      category: 'regulation',
+  1248→    },
+  1249→    {
+  1250→      courseId: courses['Code de la route'],
+  1251→      question: 'En l\'absence de signalisation, quel véhicule est prioritaire à une intersection ?',
+  1252→      options: JSON.stringify([
+  1253→        'Le véhicule venant de gauche',
+  1254→        'Le véhicule venant de droite',
+  1255→        'Le véhicule le plus gros',
+  1256→        'Le véhicule qui arrive en premier',
+  1257→      ]),
+  1258→      correctIndex: 1,
+  1259→      explanation:
+  1260→        'La règle générale de la priorité à droite s\'applique en l\'absence de toute signalisation. Le véhicule abordant l\'intersection par la droite est prioritaire.',
+  1261→      difficulty: 'easy',
+  1262→      category: 'priority',
+  1263→    },
+  1264→    {
+  1265→      courseId: courses['Code de la route'],
+  1266→      question: 'Quelle est la vitesse maximale autorisée sur autoroute par temps de pluie ?',
+  1267→      options: JSON.stringify([
+  1268→        '100 km/h',
+  1269→        '110 km/h',
+  1270→        '130 km/h',
+  1271→        '90 km/h',
+  1272→      ]),
+  1273→      correctIndex: 1,
+  1274→      explanation:
+  1275→        'Par temps de pluie ou autres précipitations, la vitesse sur autoroute est limitée à 110 km/h au lieu de 130 km/h.',
+  1276→      difficulty: 'easy',
+  1277→      category: 'regulation',
+  1278→    },
+  1279→    {
+  1280→      courseId: courses['Code de la route'],
+  1281→      question: 'À quelle distance minimum d\'un passage pour piétons le stationnement est-il interdit ?',
+  1282→      options: JSON.stringify([
+  1283→        '3 mètres',
+  1284→        '10 mètres',
+  1285→        '5 mètres',
+  1286→        '1 mètre',
+  1287→      ]),
+  1288→      correctIndex: 2,
+  1289→      explanation:
+  1290→        'Le stationnement est interdit à moins de 5 mètres d\'un passage pour piétons, mesurés du début ou de la fin du marquage.',
+  1291→      difficulty: 'medium',
+  1292→      category: 'regulation',
+  1293→    },
+  1294→    {
+  1295→      courseId: courses['Sécurité routière'],
+  1296→      question: 'Quel est le taux maximum d\'alcoolémie autorisé pour un jeune conducteur (permis de moins de 3 ans) ?',
+  1297→      options: JSON.stringify([
+  1298→        '0,5 g/L de sang',
+  1299→        '0,8 g/L de sang',
+  1300→        '0,2 g/L de sang',
+  1301→        '0,0 g/L de sang',
+  1302→      ]),
+  1303→      correctIndex: 2,
+  1304→      explanation:
+  1305→        'Pour les jeunes conducteurs (permis probatoire, moins de 3 ans), le taux d\'alcoolémie maximal est de 0,2 g/L de sang (soit 0,10 mg/L d\'air expiré).',
+  1306→      difficulty: 'medium',
+  1307→      category: 'regulation',
+  1308→    },
+  1309→    {
+  1310→      courseId: courses['Sécurité routière'],
+  1311→      question: 'Quelle est la distance de sécurité minimale à respecter sur autoroute à 130 km/h ?',
+  1312→      options: JSON.stringify([
+  1313→        '50 mètres',
+  1314→        '73 mètres',
+  1315→        '91 mètres',
+  1316→        '120 mètres',
+  1317→      ]),
+  1318→      correctIndex: 2,
+  1319→      explanation:
+  1320→        'Sur autoroute, la distance de sécurité correspond à 2 secondes, soit environ 91 mètres à 130 km/h. Cela correspond à 2 bandes de marquage au sol.',
+  1321→      difficulty: 'medium',
+  1322→      category: 'safety',
+  1323→    },
+  1324→    {
+  1325→      courseId: courses['Code de la route'],
+  1326→      question: 'Que signifie un panneau rond avec un fond bleu et une flèche blanche ?',
+  1327→      options: JSON.stringify([
+  1328→        'Une direction conseillée',
+  1329→        'Une obligation de suivre cette direction',
+  1330→        'Une indication touristique',
+  1331→        'Une interdiction de tourner',
+  1332→      ]),
+  1333→      correctIndex: 1,
+  1334→      explanation:
+  1335→        'Un panneau rond à fond bleu avec un symbole blanc est un panneau d\'obligation. Il indique une direction que vous êtes obligé de suivre.',
+  1336→      difficulty: 'easy',
+  1337→      category: 'sign',
+  1338→    },
+  1339→    {
+  1340→      courseId: courses['Code de la route'],
+  1341→      question: 'Dans un carrefour à sens giratoire (gyro-rond-point), qui est prioritaire ?',
+  1342→      options: JSON.stringify([
+  1343→        'Les véhicules qui s\'insèrent',
+  1344→        'Les véhicules circulant à l\'intérieur',
+  1345→        'Le véhicule venant de droite',
+  1346→        'Le véhicule le plus gros',
+  1347→      ]),
+  1348→      correctIndex: 1,
+  1349→      explanation:
+  1350→        'Dans un carrefour à sens giratoire signalé par un panneau, les véhicules déjà engagés à l\'intérieur sont prioritaires sur ceux qui s\'apprêtent à s\'insérer.',
+  1351→      difficulty: 'easy',
+  1352→      category: 'priority',
+  1353→    },
+  1354→    {
+  1355→      courseId: courses['Sécurité routière'],
+  1356→      question: 'Quelle est l\'amende pour le non-port de la ceinture de sécurité par le conducteur ?',
+  1357→      options: JSON.stringify([
+  1358→        '68 €',
+  1359→        '90 €',
+  1360→        '135 €',
+  1361→        '200 €',
+  1362→      ]),
+  1363→      correctIndex: 2,
+  1364→      explanation:
+  1365→        'Le non-port de la ceinture de sécurité par le conducteur est puni d\'une amende de 135 € (contravention de 4ème classe) et d\'un retrait de 3 points.',
+  1366→      difficulty: 'medium',
+  1367→      category: 'regulation',
+  1368→    },
+  1369→    {
+  1370→      courseId: courses['Conduite pratique'],
+  1371→      question: 'À 50 km/h, quelle est la distance d\'arrêt approximative sur route sèche ?',
+  1372→      options: JSON.stringify([
+  1373→        '14 mètres',
+  1374→        '25 mètres',
+  1375→        '50 mètres',
+  1376→        '10 mètres',
+  1377→      ]),
+  1378→      correctIndex: 1,
+  1379→      explanation:
+  1380→        'À 50 km/h sur route sèche, la distance d\'arrêt est d\'environ 25 mètres (14 m de temps de réaction + 11 m de distance de freinage).',
+  1381→      difficulty: 'medium',
+  1382→      category: 'safety',
+  1383→    },
+  1384→    {
+  1385→      courseId: courses['Code de la route'],
+  1386→      question: 'Un feu orange fixe au carrefour impose :',
+  1387→      options: JSON.stringify([
+  1388→        'D\'accélérer pour passer avant le rouge',
+  1389→        'De s\'arrêter systématiquement',
+  1390→        'De s\'arrêter sauf si le freinage présente un danger',
+  1391→        'De ralentir sans s\'arrêter',
+  1392→      ]),
+  1393→      correctIndex: 2,
+  1394→      explanation:
+  1395→        'Le feu orange impose l\'arrêt, comme le feu rouge. Toutefois, le conducteur n\'est pas tenu de s\'arrêter si son véhicule est trop proche pour pouvoir le faire en sécurité.',
+  1396→      difficulty: 'easy',
+  1397→      category: 'sign',
+  1398→    },
+  1399→    {
+  1400→      courseId: courses['Panneaux et signalisation'],
+  1401→      question: 'Quelle est la forme des panneaux de danger ?',
+  1402→      options: JSON.stringify([
+  1403→        'Rond',
+  1404→        'Carré',
+  1405→        'Triangulaire',
+  1406→        'Octogonal',
+  1407→      ]),
+  1408→      correctIndex: 2,
+  1409→      explanation:
+  1410→        'Les panneaux de danger sont de forme triangulaire avec un fond blanc, un bord rouge et un pictogramme noir. Ils avertissent d\'un danger à proximité.',
+  1411→      difficulty: 'easy',
+  1412→      category: 'sign',
+  1413→    },
+  1414→    {
+  1415→      courseId: courses['Conduite sur autoroute'],
+  1416→      question: 'Sur autoroute, la voie de gauche est :',
+  1417→      options: JSON.stringify([
+  1418→        'Pour la circulation rapide',
+  1419→        'Réservée au dépassement uniquement',
+  1420→        'Pour les véhicules de plus de 3,5 tonnes',
+  1421→        'Pour les véhicules lents',
+  1422→      ]),
+  1423→      correctIndex: 1,
+  1424→      explanation:
+  1425→        'Sur autoroute, la voie de gauche est strictement réservée au dépassement. Une fois le dépassement effectué, vous devez reprendre la voie de droite.',
+  1426→      difficulty: 'easy',
+  1427→      category: 'regulation',
+  1428→    },
+  1429→    {
+  1430→      courseId: courses['Premiers secours'],
+  1431→      question: 'Quel est le premier réflexe à avoir en arrivant sur un accident de la route ?',
+  1432→      options: JSON.stringify([
+  1433→        'Secourir immédiatement les blessés',
+  1434→        'Appeler les secours',
+  1435→        'Protéger les lieux de l\'accident',
+  1436→        'Déplacer les véhicules',
+  1437→      ]),
+  1438→      correctIndex: 2,
+  1439→      explanation:
+  1440→        'Le protocole PASE commence par PROTÉGER. Avant toute chose, il faut sécuriser les lieux pour éviter un sur-accident (feux de détresse, gilet, triangle).',
+  1441→      difficulty: 'easy',
+  1442→      category: 'safety',
+  1443→    },
+  1444→    {
+  1445→      courseId: courses['Conduite nocturne'],
+  1446→      question: 'En conduisant de nuit avec les feux de croisement, quelle est la vitesse maximale recommandée hors agglomération ?',
+  1447→      options: JSON.stringify([
+  1448→        '90 km/h',
+  1449→        '70 km/h',
+  1450→        '80 km/h',
+  1451→        '50 km/h',
+  1452→      ]),
+  1453→      correctIndex: 2,
+  1454→      explanation:
+  1455→        'Avec les feux de croisement (portée d\'environ 30 m), la vitesse recommandée est de 80 km/h pour pouvoir s\'arrêter dans la distance éclairée. En l\'absence d\'éclairage public, on recommande 50 km/h.',
+  1456→      difficulty: 'medium',
+  1457→      category: 'safety',
+  1458→    },
+  1459→    {
+  1460→      courseId: courses['Sécurité routière'],
+  1461→      question: 'L\'utilisation du téléphone tenu en main en conduisant est punie de :',
+  1462→      options: JSON.stringify([
+  1463→        '68 € et 1 point',
+  1464→        '135 € et 3 points',
+  1465→        '90 € et 2 points',
+  1466→        '200 € et 4 points',
+  1467→      ]),
+  1468→      correctIndex: 1,
+  1469→      explanation:
+  1470→        'L\'utilisation d\'un téléphone tenu en main pendant la conduite est punie d\'une amende de 135 € et d\'un retrait de 3 points sur le permis de conduire.',
+  1471→      difficulty: 'easy',
+  1472→      category: 'regulation',
+  1473→    },
+  1474→    {
+  1475→      courseId: courses['Conduite écologique'],
+  1476→      question: 'En éco-conduite, à quel régime moteur la consommation est-elle la plus faible ?',
+  1477→      options: JSON.stringify([
+  1478→        '3 000 à 4 000 tr/min',
+  1479→        '4 000 à 5 000 tr/min',
+  1480→        '1 000 à 1 200 tr/min',
+  1481→        '1 500 à 2 500 tr/min',
+  1482→      ]),
+  1483→      correctIndex: 3,
+  1484→      explanation:
+  1485→        'Le régime moteur optimal pour la consommation se situe entre 1 500 et 2 500 tr/min. En dessous, le couple est insuffisant. Au-dessus, la surconsommation augmente.',
+  1486→      difficulty: 'medium',
+  1487→      category: 'safety',
+  1488→    },
+  1489→    {
+  1490→      courseId: courses['Code de la route'],
+  1491→      question: 'Quelle est la limitation de vitesse dans une zone de rencontre ?',
+  1492→      options: JSON.stringify([
+  1493→        '30 km/h',
+  1494→        '20 km/h',
+  1495→        '10 km/h',
+  1496→        '50 km/h',
+  1497→      ]),
+  1498→      correctIndex: 1,
+  1499→      explanation:
+  1500→        'Dans les zones de rencontre, la vitesse est limitée à 20 km/h. Les piétons ont la priorité sur toute la largeur de la chaussée et peuvent circuler librement.',
+  1501→      difficulty: 'medium',
+  1502→      category: 'regulation',
+  1503→    },
+  1504→    {
+  1505→      courseId: courses['Premiers secours'],
+  1506→      question: 'À quelle fréquence doit-on pratiquer les compressions thoraciques lors d\'un massage cardiaque ?',
+  1507→      options: JSON.stringify([
+  1508→        '60 à 80 par minute',
+  1509→        '80 à 100 par minute',
+  1510→        '100 à 120 par minute',
+  1511→        '120 à 140 par minute',
+  1512→      ]),
+  1513→      correctIndex: 2,
+  1514→      explanation:
+  1515→        'Le rythme recommandé pour les compressions thoraciques est de 100 à 120 par minute, avec une profondeur de 5 à 6 cm. Le rythme de la chanson « Stayin\' Alive » des Bee Gees (103 BPM) est un bon repère.',
+  1516→      difficulty: 'medium',
+  1517→      category: 'safety',
+  1518→    },
+  1519→    {
+  1520→      courseId: courses['Panneaux et signalisation'],
+  1521→      question: 'Un panneau carré bleu avec un « P » blanc indique :',
+  1522→      options: JSON.stringify([
+  1523→        'Un parking gratuit',
+  1524→        'Un parking payant et réglementé',
+  1525→        'Une zone piétonne',
+  1526→        'Un passage pour piétons',
+  1527→      ]),
+  1528→      correctIndex: 1,
+  1529→      explanation:
+  1530→        'Le panneau carré bleu avec un « P » blanc indique un stationnement réglementé. Il peut être payant ou soumis à un contrôle horaire. Consultez les panneaux additionnels pour les conditions.',
+  1531→      difficulty: 'easy',
+  1532→      category: 'sign',
+  1533→    },
+  1534→  ]
+  1535→
+  1536→  for (const q of questionsData) {
+  1537→    await db.question.create({ data: q })
+  1538→  }
+  1539→
+  1540→  console.log(`  ✓ Created ${questionsData.length} questions`)
+  1541→
+  1542→  // ═══════════════════════════════════════
+  1543→  // USERS
+  1544→  // ═══════════════════════════════════════
+  1545→
+  1546→  const demoUser = await db.user.create({
+  1547→    data: {
+  1548→      email: 'demo@adso.com',
+  1549→      name: 'Élève Démo',
+  1550→      role: 'student',
+  1551→      country: 'FR',
+  1552→      language: 'fr',
+  1553→      subscription: 'premium',
+  1554→    },
+  1555→  })
+  1556→  console.log(`  ✓ Created demo user: ${demoUser.email}`)
+  1557→
+  1558→  const instructorUser = await db.user.create({
+  1559→    data: {
+  1560→      email: 'instructor@adso.com',
+  1561→      name: 'Marie Dupont',
+  1562→      role: 'instructor',
+  1563→      country: 'FR',
+  1564→      language: 'fr',
+  1565→      subscription: 'premium',
+  1566→    },
+  1567→  })
+  1568→  console.log(`  ✓ Created instructor user: ${instructorUser.email}`)
+  1569→
+  1570→  // ═══════════════════════════════════════
+  1571→  // ENROLLMENTS (demo user enrolled in a few courses)
+  1572→  // ═══════════════════════════════════════
+  1573→
+  1574→  const enrollmentsData = [
+  1575→    { courseId: courses['Code de la route'], userId: demoUser.id },
+  1576→    { courseId: courses['Sécurité routière'], userId: demoUser.id },
+  1577→    { courseId: courses['Panneaux et signalisation'], userId: demoUser.id },
+  1578→  ]
+  1579→
+  1580→  for (const e of enrollmentsData) {
+  1581→    await db.enrollment.create({ data: e })
+  1582→  }
+  1583→  console.log(`  ✓ Created ${enrollmentsData.length} enrollments`)
+  1584→
+  1585→  // ═══════════════════════════════════════
+  1586→  // STUDENT PROGRESS
+  1587→  // ═══════════════════════════════════════
+  1588→
+  1589→  const progressData = [
+  1590→    {
+  1591→      userId: demoUser.id,
+  1592→      courseId: courses['Code de la route'],
+  1593→      progress: 65,
+  1594→      status: 'in_progress',
+  1595→      lastAccess: new Date(),
+  1596→    },
+  1597→    {
+  1598→      userId: demoUser.id,
+  1599→      courseId: courses['Sécurité routière'],
+  1600→      progress: 30,
+  1601→      status: 'in_progress',
+  1602→      lastAccess: new Date(),
+  1603→    },
+  1604→    {
+  1605→      userId: demoUser.id,
+  1606→      courseId: courses['Panneaux et signalisation'],
+  1607→      progress: 0,
+  1608→      status: 'not_started',
+  1609→      lastAccess: null,
+  1610→    },
+  1611→  ]
+  1612→
+  1613→  for (const p of progressData) {
+  1614→    await db.studentProgress.create({ data: p })
+  1615→  }
+  1616→  console.log(`  ✓ Created ${progressData.length} progress records`)
+  1617→
+  1618→  console.log('\n✅ Seed completed successfully!')
+  1619→}
+  1620→
+  1621→main()
+  1622→  .then(async () => {
+  1623→    await db.$disconnect()
+  1624→  })
+  1625→  .catch(async (e) => {
+  1626→    console.error('❌ Seed failed:', e)
+  1627→    await db.$disconnect()
+  1628→    process.exit(1)
+  1629→  })
+  1630→

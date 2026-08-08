@@ -1,0 +1,253 @@
+{
+  "common": {
+    "app_name": "ADSO",
+    "welcome": "Bienvenido",
+    "loading": "Cargando...",
+    "error": "Error",
+    "retry": "Reintentar",
+    "search": "Buscar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "back": "Volver",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "confirm": "Confirmar",
+    "yes": "Sí",
+    "no": "No",
+    "close": "Cerrar",
+    "submit": "Enviar",
+    "or": "o",
+    "see_more": "Ver más",
+    "see_less": "Ver menos",
+    "no_results": "Sin resultados",
+    "coming_soon": "Próximamente",
+    "free_trial": "Prueba gratuita",
+    "get_started": "Empezar",
+    "learn_more": "Más información",
+    "view_all": "Ver todo",
+    "per_month": "/ mes",
+    "per_year": "/ año"
+  },
+  "nav": {
+    "home": "Inicio",
+    "ecosystem": "Ecosistema",
+    "ai_features": "Inteligencia IA",
+    "platform": "Plataforma",
+    "quiz": "Cuestionario",
+    "ai_coach": "IA Coach",
+    "pricing": "Precios",
+    "roadmap": "Hoja de ruta",
+    "architecture": "Arquitectura",
+    "back_to_app": "Volver a la app"
+  },
+  "hero": {
+    "title": "ADSO — Auto Drive School Online",
+    "subtitle": "La primera plataforma inteligente de educación vial",
+    "description": "Democratizar la educación vial a través de la inteligencia artificial. Formación accesible, personalizada y de calidad para cada conductor en el mundo.",
+    "cta_primary": "Empezar gratis",
+    "cta_secondary": "Ver demo"
+  },
+  "stats": {
+    "title": "El desafío mundial de la seguridad vial",
+    "subtitle": "Cifras alarmantes que impulsan nuestra misión",
+    "deaths": "1,35 millones de muertes al año",
+    "injuries": "50 millones de heridos",
+    "youth_affected": "Jóvenes de 15-29 años los más afectados",
+    "economic_cost": "3% del PIB mundial en costes"
+  },
+  "ecosystem": {
+    "title": "Un ecosistema completo",
+    "subtitle": "6 componentes integrados para una formación vial exhaustiva",
+    "admin": "Administración",
+    "saas": "Plataforma SaaS",
+    "enterprise": "Empresa",
+    "monitor": "Instructor",
+    "partners": "Socios",
+    "student": "App del alumno"
+  },
+  "ai_features": {
+    "title": "Inteligencia Artificial en el corazón de la formación",
+    "subtitle": "8 productos IA dedicados para transformar cada aspecto del aprendizaje de la conducción",
+    "badge": "Impulsado por IA",
+    "coach": "Coach IA Personal",
+    "coach_desc": "Un asistente inteligente que se adapta al ritmo y nivel de cada alumno",
+    "teacher": "Profesor Virtual IA",
+    "teacher_desc": "Cursos interactivos generados por IA con explicaciones personalizadas",
+    "examiner": "Examinador IA",
+    "examiner_desc": "Simulaciones de exámenes realistas con análisis de errores",
+    "simulator": "Simulador de Conducción",
+    "simulator_desc": "Entorno de simulación inmersivo para la práctica",
+    "analyst": "Analista de Negocio IA",
+    "analyst_desc": "Cuadros de mando y análisis para autoescuelas",
+    "support": "Soporte IA 24/7",
+    "support_desc": "Asistencia instantánea multilingüe para todos los usuarios",
+    "scos_title": "AI-SCOS",
+    "scos_description": "Sistema Cognitivo Operativo Auto-Evolutivo — El cerebro de ADSO que orquesta 12 agentes IA especializados para una experiencia de aprendizaje holística"
+  },
+  "dashboard": {
+    "title": "Panel del alumno",
+    "subtitle": "Siga su progreso y alcance sus objetivos",
+    "stats": {
+      "courses_in_progress": "Cursos en progreso",
+      "quizzes_passed": "Cuestionarios aprobados",
+      "average_score": "Puntuación media",
+      "time_learned": "Tiempo de aprendizaje"
+    },
+    "my_courses": "Mis cursos",
+    "continue_btn": "Continuar",
+    "loading": "Cargando panel...",
+    "error_loading": "Error al cargar el panel"
+  },
+  "quiz": {
+    "title": "Cuestionarios interactivos",
+    "subtitle": "Pon a prueba tus conocimientos del código de circulación",
+    "ready_title": "¿Listo para empezar?",
+    "ready_description": "Este cuestionario tiene 20 preguntas sobre el código de circulación. Tienes 20 minutos para responder.",
+    "start_btn": "Iniciar cuestionario",
+    "question_of": "Pregunta {current} de {total}",
+    "timer": "Tiempo restante",
+    "validate_btn": "Validar",
+    "next_btn": "Siguiente pregunta",
+    "see_results": "Ver resultados",
+    "restart_btn": "Reiniciar",
+    "correct": "Correcto",
+    "incorrect": "Incorrecto",
+    "time_spent": "Tiempo empleado",
+    "passed_title": "¡Felicidades!",
+    "passed_description": "Has aprobado el cuestionario con una puntuación del {score}%.",
+    "failed_title": "Cuestionario no aprobado",
+    "failed_description": "Has obtenido un {score}%. La puntuación mínima requerida es del 80%."
+  },
+  "pricing": {
+    "title": "Precios adaptados a cada perfil",
+    "subtitle": "Elige el plan que mejor se adapte a tus necesidades",
+    "b2c_tab": "Particular",
+    "b2b_tab": "Empresa",
+    "starter": {
+      "name": "Starter",
+      "price": "0",
+      "features": [
+        "5 cursos gratuitos",
+        "Cuestionarios ilimitados",
+        "Soporte comunitario",
+        "App móvil"
+      ]
+    },
+    "pro": {
+      "name": "Pro",
+      "price": "9,99",
+      "features": [
+        "Todos los cursos",
+        "Coach IA personalizado",
+        "Exámenes blancos ilimitados",
+        "Soporte prioritario",
+        "Certificado de finalización"
+      ]
+    },
+    "premium": {
+      "name": "Premium",
+      "price": "19,99",
+      "features": [
+        "Todo en Pro",
+        "Simulador de conducción IA",
+        "Análisis de rendimiento avanzado",
+        "Sesiones de coaching en vivo",
+        "Garantía de devolución 30 días"
+      ]
+    },
+    "excellence": {
+      "name": "Excelencia",
+      "price": "39,99",
+      "features": [
+        "Todo en Premium",
+        "Plan de aprendizaje personalizado",
+        "Acceso API para socios",
+        "Soporte dedicado 24/7",
+        "Formación completa certificada"
+      ]
+    },
+    "cta": "Empezar",
+    "period_monthly": "Mensual",
+    "period_yearly": "Anual",
+    "popular_badge": "Popular",
+    "excellence_badge": "Excelencia",
+    "enterprise": {
+      "title": "Soluciones empresariales",
+      "description": "Para autoescuelas y organizaciones",
+      "starter": {
+        "name": "Autoescuela Starter",
+        "price": "99",
+        "description": "Hasta 50 alumnos"
+      },
+      "pro": {
+        "name": "Autoescuela Pro",
+        "price": "299",
+        "description": "Hasta 500 alumnos"
+      },
+      "enterprise": {
+        "name": "Empresa",
+        "price": "A medida",
+        "description": "Ilimitado, con API"
+      }
+    }
+  },
+  "roadmap": {
+    "title": "Hoja de ruta",
+    "subtitle": "El desarrollo de ADSO en 5 fases estratégicas",
+    "phase_1": "Fundamentos",
+    "phase_2": "Inteligencia IA",
+    "phase_3": "Expansión",
+    "phase_4": "Ecosistema",
+    "phase_5": "Dominación",
+    "done": "Completado",
+    "active": "En curso",
+    "planned": "Planificado"
+  },
+  "security": {
+    "title": "Seguridad empresarial",
+    "subtitle": "Protección de datos y cumplimiento normativo en el corazón de ADSO",
+    "features": [
+      "Cifrado AES-256 de extremo a extremo",
+      "Autenticación multifactor (MFA)",
+      "Control de acceso basado en roles (RBAC)",
+      "Cumplimiento RGPD y certificación ISO 27001",
+      "Registro de auditoría completo y trazabilidad",
+      "Copia de seguridad automatizada y recuperación ante desastres"
+    ],
+    "international": {
+      "title": "Presencia internacional",
+      "subtitle": "Diseñado para todo el mundo desde el primer día",
+      "stats": {
+        "countries": "120+ países",
+        "languages": "50+ idiomas",
+        "currencies": "135+ monedas"
+      }
+    }
+  },
+  "analytics": {
+    "title": "Analítica avanzada",
+    "subtitle": "Datos e insights para mejorar continuamente la experiencia de aprendizaje",
+    "kpis": {
+      "total_users": "Usuarios totales",
+      "available_courses": "Cursos disponibles",
+      "quizzes_passed": "Cuestionarios aprobados",
+      "average_score": "Puntuación media"
+    },
+    "charts": {
+      "progression": "Progresión",
+      "categories": "Categorías",
+      "difficulty": "Dificultad",
+      "leaderboard": "Clasificación"
+    }
+  },
+  "footer": {
+    "description": "Democratizar la educación vial a través de la inteligencia artificial para un mundo más seguro.",
+    "platform": "Plataforma",
+    "company": "Empresa",
+    "legal": "Legal",
+    "copyright": "© {year} ADSO Engineering. Todos los derechos reservados.",
+    "language_label": "Idioma"
+  }
+}

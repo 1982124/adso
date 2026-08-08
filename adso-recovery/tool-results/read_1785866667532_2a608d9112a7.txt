@@ -1,0 +1,989 @@
+     1→generator client {
+     2→  provider = "prisma-client-js"
+     3→}
+     4→
+     5→datasource db {
+     6→  provider = "sqlite"
+     7→  url      = env("DATABASE_URL")
+     8→}
+     9→
+    10→// ═══════════════════════════════════════════════════════════
+    11→// ADSO V4.1 — AI Mobility Operating System
+    12→// Prisma Schema — SQLite (development)
+    13→// ═══════════════════════════════════════════════════════════
+    14→
+    15→// ─── Users & Roles ───
+    16→// RBAC Roles: super_admin | admin | instructor | mechanic | insurer | fleet_manager | student | driver
+    17→model User {
+    18→  id           String   @id @default(cuid())
+    19→  email        String   @unique
+    20→  name         String
+    21→  avatar       String?
+    22→  role         String   @default("student") // super_admin | admin | instructor | mechanic | insurer | fleet_manager | student | driver
+    23→  country      String   @default("FR")
+    24→  language     String   @default("fr")
+    25→  subscription String   @default("free") // free | starter | pro | premium
+    26→  emailVerified DateTime?
+    27→  image        String?
+    28→  createdAt    DateTime @default(now())
+    29→  updatedAt    DateTime @updatedAt
+    30→
+    31→  // NextAuth relations
+    32→  accounts     Account[]
+    33→
+    34→  // V3 relations
+    35→  studentProgress StudentProgress[]
+    36→  quizAttempts    QuizAttempt[]
+    37→  enrollments     Enrollment[]
+    38→  chatMessages    ChatMessage[]
+    39→  skillRecords    SkillRecord[]
+    40→  certifications  Certification[]
+    41→
+    42→  // V4.1 new relations
+    43→  vehicleProfiles     VehicleProfile[]
+    44→  drivingSessions     DrivingSession[]
+    45→  diagnosticRecords   DiagnosticRecord[]
+    46→  securityEvents      SecurityEvent[]
+    47→  trustScores         TrustScore[]
+    48→  insurancePolicies   InsurancePolicy[]
+    49→  insuranceClaims     InsuranceClaim[]
+    50→  marketplaceListings MarketplaceListing[]
+    51→  listingReviews      ListingReview[]
+    52→  bookingRecords      BookingRecord[]
+    53→  fleetDrivers        FleetDriver[]
+    54→  maintenanceRecords  MaintenanceRecord[]
+    55→  fuelRecords         FuelRecord[]
+    56→  trafficViolations   TrafficViolation[]
+    57→  auditLogEntries     AuditLogEntry[]
+    58→  telematicsTrips     TelematicsTrip[]
+    59→  vehicleTwinsOwner   VehicleTwin[]        @relation("VehicleTwinOwner")
+    60→  accidentIncidents   AccidentIncident[]
+    61→  fraudAlerts         FraudAlert[]
+    62→  collaborationEvents CollaborationEvent[]
+    63→  apiKeys             ApiKey[]
+    64→}
+    65→
+    66→// ─── Countries & Regulations ───
+    67→model Country {
+    68→  id                String @id @default(cuid())
+    69→  code              String @unique
+    70→  name              String
+    71→  flag              String
+    72→  continent         String
+    73→  capital           String
+    74→  languages         String
+    75→  currency          String
+    76→  drivingSide       String @default("right")
+    77→  authority         String
+    78→  emergencyPhone    String
+    79→  minAge            Int    @default(18)
+    80→  speedUrban        Int
+    81→  speedRural        Int
+    82→  speedHighway      Int
+    83→  bloodAlcohol      Float
+    84→  requiredDocuments String
+    85→  requiredEquipment String
+    86→  specialFeatures   String
+    87→  licenseCategories String
+    88→  commonInfractions String
+    89→  sanctions         String
+    90→
+    91→  createdAt DateTime @default(now())
+    92→  updatedAt DateTime @updatedAt
+    93→}
+    94→
+    95→// ─── License Categories ───
+    96→model LicenseCategory {
+    97→  id                 String   @id @default(cuid())
+    98→  code               String   @unique
+    99→  name               String
+   100→  description        String
+   101→  category           String
+   102→  minAge             Int
+   103→  minAgeHeld         Int?
+   104→  vehicles           String
+   105→  prerequisites      String
+   106→  duration           Int
+   107→  theoryExam         Boolean  @default(true)
+   108→  practicalExam      Boolean  @default(true)
+   109→  evaluationCriteria String
+   110→  icon               String
+   111→  createdAt          DateTime @default(now())
+   112→  updatedAt          DateTime @updatedAt
+   113→}
+   114→
+   115→// ─── Courses & Content ───
+   116→model Course {
+   117→  id          String   @id @default(cuid())
+   118→  title       String
+   119→  description String
+   120→  category    String
+   121→  level       String   @default("beginner")
+   122→  duration    Int
+   123→  order       Int      @default(0)
+   124→  icon        String?
+   125→  isPremium   Boolean  @default(false)
+   126→  countryCode String   @default("FR")
+   127→  licenseCode String?
+   128→  createdAt   DateTime @default(now())
+   129→  updatedAt   DateTime @updatedAt
+   130→
+   131→  modules     Module[]
+   132→  enrollments Enrollment[]
+   133→}
+   134→
+   135→model Module {
+   136→  id             String   @id @default(cuid())
+   137→  courseId       String
+   138→  title          String
+   139→  content        String
+   140→  type           String   @default("lesson")
+   141→  order          Int      @default(0)
+   142→  duration       Int
+   143→  objectives     String?
+   144→  tips           String?
+   145→  commonMistakes String?
+   146→  createdAt      DateTime @default(now())
+   147→  updatedAt      DateTime @updatedAt
+   148→
+   149→  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+   150→}
+   151→
+   152→// ─── Student Progress ───
+   153→model StudentProgress {
+   154→  id               String    @id @default(cuid())
+   155→  userId           String
+   156→  courseId         String
+   157→  progress         Float     @default(0)
+   158→  status           String    @default("not_started")
+   159→  completedModules String?
+   160→  lastAccess       DateTime?
+   161→  createdAt        DateTime  @default(now())
+   162→  updatedAt        DateTime  @updatedAt
+   163→
+   164→  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+   165→  enrollment Enrollment @relation(fields: [courseId, userId], references: [courseId, userId])
+   166→
+   167→  @@unique([courseId, userId])
+   168→}
+   169→
+   170→model Enrollment {
+   171→  courseId   String
+   172→  userId     String
+   173→  enrolledAt DateTime @default(now())
+   174→  status     String   @default("active")
+   175→
+   176→  course   Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+   177→  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+   178→  progress StudentProgress?
+   179→
+   180→  @@id([courseId, userId])
+   181→}
+   182→
+   183→// ─── Road Signs ───
+   184→model RoadSign {
+   185→  id          String   @id @default(cuid())
+   186→  countryCode String   @default("FR")
+   187→  category    String
+   188→  subcategory String?
+   189→  name        String
+   190→  description String
+   191→  meaning     String
+   192→  useCase     String?
+   193→  shape       String
+   194→  colors      String
+   195→  imageUrl    String?
+   196→  questions   String?
+   197→  createdAt   DateTime @default(now())
+   198→  updatedAt   DateTime @updatedAt
+   199→}
+   200→
+   201→// ─── Question Bank ───
+   202→model Question {
+   203→  id           String   @id @default(cuid())
+   204→  countryCode  String   @default("FR")
+   205→  licenseCode  String?
+   206→  courseId     String?
+   207→  question     String
+   208→  options      String
+   209→  correctIndex Int
+   210→  explanation  String
+   211→  difficulty   String   @default("easy")
+   212→  category     String
+   213→  theme        String?
+   214→  tags         String?
+   215→  reference    String?
+   216→  hasImage     Boolean  @default(false)
+   217→  createdAt    DateTime @default(now())
+   218→}
+   219→
+   220→model QuizAttempt {
+   221→  id             String   @id @default(cuid())
+   222→  userId         String
+   223→  totalQuestions Int
+   224→  correctAnswers Int
+   225→  score          Float
+   226→  duration       Int
+   227→  passed         Boolean  @default(false)
+   228→  type           String   @default("practice")
+   229→  country        String   @default("FR")
+   230→  licenseCode    String?
+   231→  wrongAnswers   String?
+   232→  createdAt      DateTime @default(now())
+   233→
+   234→  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+   235→}
+   236→
+   237→// ─── Practical Exercises ───
+   238→model PracticalExercise {
+   239→  id          String   @id @default(cuid())
+   240→  title       String
+   241→  description String
+   242→  category    String
+   243→  difficulty  String   @default("beginner")
+   244→  objectives  String
+   245→  steps       String
+   246→  criteria    String
+   247→  tips        String?
+   248→  scoring     String?
+   249→  countryCode String   @default("FR")
+   250→  licenseCode String?
+   251→  createdAt   DateTime @default(now())
+   252→  updatedAt   DateTime @updatedAt
+   253→}
+   254→
+   255→// ─── Skill Tracking ───
+   256→model SkillRecord {
+   257→  id          String    @id @default(cuid())
+   258→  userId      String
+   259→  skill       String
+   260→  category    String
+   261→  level       Int       @default(0)
+   262→  attempts    Int       @default(0)
+   263→  lastAttempt DateTime?
+   264→  strengths   String?
+   265→  weaknesses  String?
+   266→  createdAt   DateTime  @default(now())
+   267→  updatedAt   DateTime  @updatedAt
+   268→
+   269→  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+   270→
+   271→  @@unique([userId, skill])
+   272→}
+   273→
+   274→// ─── Certifications ───
+   275→model Certification {
+   276→  id            String    @id @default(cuid())
+   277→  userId        String
+   278→  type          String
+   279→  title         String
+   280→  description   String
+   281→  countryCode   String    @default("FR")
+   282→  licenseCode   String?
+   283→  score         Float?
+   284→  qrCode        String?
+   285→  certificateId String    @unique
+   286→  issuedAt      DateTime  @default(now())
+   287→  expiresAt     DateTime?
+   288→  createdAt     DateTime  @default(now())
+   289→  updatedAt     DateTime  @updatedAt
+   290→
+   291→  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+   292→}
+   293→
+   294→// ─── AI Chat ───
+   295→model ChatMessage {
+   296→  id        String   @id @default(cuid())
+   297→  userId    String
+   298→  role      String
+   299→  content   String
+   300→  createdAt DateTime @default(now())
+   301→
+   302→  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+   303→}
+   304→
+   305→// ─── School (B2B) ───
+   306→model School {
+   307→  id          String   @id @default(cuid())
+   308→  name        String
+   309→  country     String
+   310→  city        String
+   311→  plan        String   @default("starter")
+   312→  maxStudents Int      @default(50)
+   313→  createdAt   DateTime @default(now())
+   314→  updatedAt   DateTime @updatedAt
+   315→}
+   316→
+   317→// ─── Analytics Events ───
+   318→model AnalyticsEvent {
+   319→  id        String   @id @default(cuid())
+   320→  eventType String
+   321→  userId    String?
+   322→  metadata  String
+   323→  createdAt DateTime @default(now())
+   324→}
+   325→
+   326→// ═══════════════════════════════════════════════════════════
+   327→// V4.1 — Phase 1: AI Driving Ecosystem
+   328→// ═══════════════════════════════════════════════════════════
+   329→
+   330→model VehicleProfile {
+   331→  id           String    @id @default(cuid())
+   332→  userId       String
+   333→  make         String
+   334→  model        String
+   335→  year         Int
+   336→  type         String    @default("car") // car | motorcycle | truck | bus | agricultural | construction | marine | electric | hybrid
+   337→  fuelType     String    @default("diesel") // diesel | gasoline | electric | hybrid | lpg | cng
+   338→  transmission String    @default("manual") // manual | automatic | cvt | dual_clutch
+   339→  engineSize   String? // e.g., "2.0L"
+   340→  vin          String?   @unique
+   341→  licensePlate String?
+   342→  color        String?
+   343→  mileage      Int       @default(0)
+   344→  lastService  DateTime?
+   345→  createdAt    DateTime  @default(now())
+   346→  updatedAt    DateTime  @updatedAt
+   347→
+   348→  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+   349→  drivingSessions   DrivingSession[]
+   350→  diagnosticRecords DiagnosticRecord[]
+   351→  telematicsTrips   TelematicsTrip[]
+   352→  vehicleTwin       VehicleTwin?
+   353→}
+   354→
+   355→model DrivingSession {
+   356→  id                String    @id @default(cuid())
+   357→  userId            String
+   358→  vehicleId         String?
+   359→  type              String    @default("lesson") // lesson | practice | exam | evaluation | free_drive
+   360→  status            String    @default("active") // active | paused | completed | cancelled
+   361→  startTime         DateTime  @default(now())
+   362→  endTime           DateTime?
+   363→  duration          Int       @default(0) // seconds
+   364→  distance          Float     @default(0) // km
+   365→  score             Float?
+   366→  maxSpeed          Float?
+   367→  avgSpeed          Float?
+   368→  harshBrakes       Int       @default(0)
+   369→  harshAccel        Int       @default(0)
+   370→  harshTurns        Int       @default(0)
+   371→  speedViolations   Int       @default(0)
+   372→  fatigueEvents     Int       @default(0)
+   373→  distractionEvents Int       @default(0)
+   374→  weather           String? // clear | rain | fog | snow | night | storm
+   375→  roadType          String? // urban | rural | highway | mountain
+   376→  feedback          String? // JSON: AI coach feedback
+   377→  aiEvaluation      String? // JSON: detailed AI evaluation
+   378→  createdAt         DateTime  @default(now())
+   379→  updatedAt         DateTime  @updatedAt
+   380→
+   381→  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+   382→  vehicle       VehicleProfile? @relation(fields: [vehicleId], references: [id])
+   383→  drivingEvents DrivingEvent[]
+   384→}
+   385→
+   386→model DrivingEvent {
+   387→  id        String   @id @default(cuid())
+   388→  sessionId String
+   389→  type      String // brake | accelerate | turn | lane_change | stop | start | overtake | park | reverse | signal
+   390→  severity  String   @default("normal") // smooth | normal | harsh | dangerous
+   391→  speed     Float?
+   392→  rpm       Float?
+   393→  latitude  Float?
+   394→  longitude Float?
+   395→  timestamp DateTime @default(now())
+   396→  metadata  String? // JSON: additional context
+   397→  createdAt DateTime @default(now())
+   398→
+   399→  session DrivingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+   400→}
+   401→
+   402→// ═══════════════════════════════════════════════════════════
+   403→// V4.1 — Phase 2: AI Mechanic Ecosystem
+   404→// ═══════════════════════════════════════════════════════════
+   405→
+   406→model DiagnosticRecord {
+   407→  id            String   @id @default(cuid())
+   408→  userId        String
+   409→  vehicleId     String?
+   410→  vehicleType   String   @default("car") // car | motorcycle | truck | bus | agricultural | construction | marine | electric | hybrid
+   411→  inputMethod   String   @default("text") // text | voice | photo | video | sound | dashboard | obd | smoke
+   412→  symptoms      String // JSON array of reported symptoms
+   413→  diagnosis     String // JSON: full AI diagnosis result
+   414→  faultCodes    String? // JSON array of OBD codes if applicable
+   415→  severity      String   @default("medium") // low | medium | high | critical
+   416→  estimatedCost Float?
+   417→  estimatedTime String? // e.g., "2h", "1 jour"
+   418→  requiredParts String? // JSON array of parts
+   419→  repairSteps   String? // JSON array of repair steps
+   420→  safetyRisks   String? // JSON array
+   421→  status        String   @default("pending") // pending | in_progress | completed
+   422→  createdAt     DateTime @default(now())
+   423→  updatedAt     DateTime @updatedAt
+   424→
+   425→  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+   426→  vehicle VehicleProfile? @relation(fields: [vehicleId], references: [id])
+   427→}
+   428→
+   429→// ═══════════════════════════════════════════════════════════
+   430→// V4.1 — Phase 5: Vehicle Security
+   431→// ═══════════════════════════════════════════════════════════
+   432→
+   433→model SecurityEvent {
+   434→  id         String    @id @default(cuid())
+   435→  userId     String
+   436→  vehicleId  String?
+   437→  type       String // movement | impact | tow | door | glass_break | engine_start | geofence_exit | geofence_enter | sos | theft_alert | recovery | speed_alert
+   438→  severity   String    @default("info") // info | warning | critical | emergency
+   439→  latitude   Float?
+   440→  longitude  Float?
+   441→  address    String?
+   442→  speed      Float?
+   443→  timestamp  DateTime  @default(now())
+   444→  resolved   Boolean   @default(false)
+   445→  resolvedAt DateTime?
+   446→  response   String? // JSON: action taken
+   447→  notified   String? // JSON array: who was notified
+   448→  createdAt  DateTime  @default(now())
+   449→  updatedAt  DateTime  @updatedAt
+   450→
+   451→  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+   452→}
+   453→
+   454→// ═══════════════════════════════════════════════════════════
+   455→// V4.1 — Phase 6: Insurance Intelligence
+   456→// ═══════════════════════════════════════════════════════════
+   457→
+   458→model TrustScore {
+   459→  id                 String   @id @default(cuid())
+   460→  userId             String
+   461→  overallScore       Float    @default(50) // 0-100
+   462→  drivingQuality     Float    @default(50)
+   463→  mechanicalHealth   Float    @default(50)
+   464→  maintenanceQuality Float    @default(50)
+   465→  learningProgress   Float    @default(50)
+   466→  examPerformance    Float    @default(50)
+   467→  telematicsScore    Float    @default(50)
+   468→  accidentHistory    Float    @default(50)
+   469→  fraudRisk          Float    @default(0) // 0-100 (higher = more risk)
+   470→  compliance         Float    @default(50)
+   471→  lastCalculated     DateTime @default(now())
+   472→  factors            String? // JSON: breakdown of all factors
+   473→  createdAt          DateTime @default(now())
+   474→  updatedAt          DateTime @updatedAt
+   475→
+   476→  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+   477→}
+   478→
+   479→model InsurancePolicy {
+   480→  id           String    @id @default(cuid())
+   481→  userId       String
+   482→  provider     String?
+   483→  policyNumber String?
+   484→  type         String    @default("third_party") // third_party | comprehensive | collision | theft | gap
+   485→  vehicleType  String    @default("car")
+   486→  coverage     String? // JSON: coverage details
+   487→  premium      Float?
+   488→  deductible   Float?
+   489→  startDate    DateTime?
+   490→  endDate      DateTime?
+   491→  status       String    @default("active") // active | expired | cancelled | pending
+   492→  paydEnabled  Boolean   @default(false)
+   493→  phydEnabled  Boolean   @default(false)
+   494→  createdAt    DateTime  @default(now())
+   495→  updatedAt    DateTime  @updatedAt
+   496→
+   497→  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+   498→  premiumCalculations PremiumCalculation[]
+   499→}
+   500→
+   501→model InsuranceClaim {
+   502→  id                 String    @id @default(cuid())
+   503→  userId             String
+   504→  policyId           String?
+   505→  type               String    @default("collision") // collision | theft | vandalism | weather | fire | flood | liability | uninsured
+   506→  status             String    @default("submitted") // submitted | reviewing | approved | denied | paid | closed
+   507→  description        String
+   508→  damageAssessment   String? // JSON: AI damage assessment
+   509→  estimatedCost      Float?
+   510→  approvedAmount     Float?
+   511→  faultDetermination String? // JSON: fault analysis
+   512→  photos             String? // JSON array of photo URLs
+   513→  videos             String? // JSON array of video URLs
+   514→  policeReport       String?
+   515→  witnessInfo        String? // JSON
+   516→  location           String?
+   517→  latitude           Float?
+   518→  longitude          Float?
+   519→  incidentDate       DateTime?
+   520→  createdAt          DateTime  @default(now())
+   521→  updatedAt          DateTime  @updatedAt
+   522→
+   523→  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+   524→}
+   525→
+   526→// ═══════════════════════════════════════════════════════════
+   527→// V4.1 — Phase 7: Enhanced Marketplace
+   528→// ═══════════════════════════════════════════════════════════
+   529→
+   530→model MarketplaceListing {
+   531→  id             String   @id @default(cuid())
+   532→  userId         String
+   533→  title          String
+   534→  description    String
+   535→  category       String // garage | mechanic | parts | accessories | fuel | charging | towing | inspection | insurance | driving_school | rental | vehicle_sales
+   536→  subcategory    String?
+   537→  price          Float?
+   538→  priceUnit      String? // hourly | daily | monthly | fixed | per_service
+   539→  currency       String   @default("EUR")
+   540→  location       String
+   541→  city           String?
+   542→  country        String   @default("FR")
+   543→  latitude       Float?
+   544→  longitude      Float?
+   545→  rating         Float    @default(0)
+   546→  reviewCount    Int      @default(0)
+   547→  contactPhone   String?
+   548→  contactEmail   String?
+   549→  contactWebsite String?
+   550→  openingHours   String? // JSON: opening hours
+   551→  services       String? // JSON: services offered
+   552→  certifications String? // JSON: certifications
+   553→  images         String? // JSON array of image URLs
+   554→  status         String   @default("active") // active | paused | suspended
+   555→  createdAt      DateTime @default(now())
+   556→  updatedAt      DateTime @updatedAt
+   557→
+   558→  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+   559→  reviews  ListingReview[]
+   560→  bookings BookingRecord[]
+   561→}
+   562→
+   563→model ListingReview {
+   564→  id        String   @id @default(cuid())
+   565→  userId    String
+   566→  listingId String
+   567→  rating    Int // 1-5
+   568→  title     String?
+   569→  comment   String?
+   570→  createdAt DateTime @default(now())
+   571→
+   572→  user    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+   573→  listing MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+   574→}
+   575→
+   576→model BookingRecord {
+   577→  id          String   @id @default(cuid())
+   578→  userId      String
+   579→  listingId   String
+   580→  serviceDate DateTime
+   581→  serviceTime String?
+   582→  duration    Int? // minutes
+   583→  status      String   @default("pending") // pending | confirmed | in_progress | completed | cancelled | no_show
+   584→  totalAmount Float?
+   585→  notes       String?
+   586→  createdAt   DateTime @default(now())
+   587→  updatedAt   DateTime @updatedAt
+   588→
+   589→  user    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+   590→  listing MarketplaceListing @relation(fields: [listingId], references: [id])
+   591→}
+   592→
+   593→// ═══════════════════════════════════════════════════════════
+   594→// V4.1 — Phase 8: Fleet Management
+   595→// ═══════════════════════════════════════════════════════════
+   596→
+   597→model FleetOrganization {
+   598→  id          String   @id @default(cuid())
+   599→  name        String
+   600→  description String?
+   601→  country     String   @default("FR")
+   602→  plan        String   @default("starter") // starter | professional | enterprise
+   603→  maxVehicles Int      @default(10)
+   604→  maxDrivers  Int      @default(10)
+   605→  createdAt   DateTime @default(now())
+   606→  updatedAt   DateTime @updatedAt
+   607→
+   608→  vehicles    FleetVehicle[]
+   609→  drivers     FleetDriver[]
+   610→  assignments FleetAssignment[]
+   611→}
+   612→
+   613→model FleetVehicle {
+   614→  id               String    @id @default(cuid())
+   615→  fleetId          String
+   616→  make             String
+   617→  model            String
+   618→  year             Int
+   619→  type             String    @default("car")
+   620→  fuelType         String    @default("diesel")
+   621→  licensePlate     String
+   622→  vin              String?   @unique
+   623→  mileage          Int       @default(0)
+   624→  status           String    @default("active") // active | maintenance | out_of_service | retired
+   625→  assignedDriverId String?
+   626→  purchaseDate     DateTime?
+   627→  purchasePrice    Float?
+   628→  insuranceExpiry  DateTime?
+   629→  lastInspection   DateTime?
+   630→  nextService      DateTime?
+   631→  createdAt        DateTime  @default(now())
+   632→  updatedAt        DateTime  @updatedAt
+   633→
+   634→  fleet              FleetOrganization   @relation(fields: [fleetId], references: [id], onDelete: Cascade)
+   635→  maintenanceRecords MaintenanceRecord[]
+   636→  fuelRecords        FuelRecord[]
+   637→  assignments        FleetAssignment[]
+   638→}
+   639→
+   640→model FleetDriver {
+   641→  id            String    @id @default(cuid())
+   642→  userId        String    @unique
+   643→  fleetId       String
+   644→  licenseNumber String?
+   645→  licenseExpiry DateTime?
+   646→  licenseType   String?
+   647→  status        String    @default("active") // active | suspended | inactive
+   648→  drivingScore  Float     @default(50)
+   649→  totalTrips    Int       @default(0)
+   650→  totalDistance Float     @default(0)
+   651→  createdAt     DateTime  @default(now())
+   652→  updatedAt     DateTime  @updatedAt
+   653→
+   654→  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+   655→  fleet       FleetOrganization @relation(fields: [fleetId], references: [id], onDelete: Cascade)
+   656→  assignments FleetAssignment[]
+   657→}
+   658→
+   659→model MaintenanceRecord {
+   660→  id             String    @id @default(cuid())
+   661→  userId         String?
+   662→  fleetVehicleId String
+   663→  type           String    @default("routine") // routine | repair | inspection | tire | oil | brake | battery | transmission | engine | body
+   664→  description    String
+   665→  cost           Float?
+   666→  performedBy    String?
+   667→  performedAt    DateTime?
+   668→  nextDueDate    DateTime?
+   669→  nextDueMileage Int?
+   670→  status         String    @default("completed") // scheduled | in_progress | completed | overdue
+   671→  parts          String? // JSON array of parts used
+   672→  notes          String?
+   673→  createdAt      DateTime  @default(now())
+   674→  updatedAt      DateTime  @updatedAt
+   675→
+   676→  user    User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+   677→  vehicle FleetVehicle @relation(fields: [fleetVehicleId], references: [id], onDelete: Cascade)
+   678→}
+   679→
+   680→model FuelRecord {
+   681→  id             String   @id @default(cuid())
+   682→  userId         String?
+   683→  fleetVehicleId String
+   684→  fuelType       String   @default("diesel")
+   685→  quantity       Float // liters
+   686→  costPerLiter   Float?
+   687→  totalCost      Float?
+   688→  odometer       Int?
+   689→  fuelingDate    DateTime @default(now())
+   690→  stationName    String?
+   691→  location       String?
+   692→  createdAt      DateTime @default(now())
+   693→  updatedAt      DateTime @updatedAt
+   694→
+   695→  user    User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+   696→  vehicle FleetVehicle @relation(fields: [fleetVehicleId], references: [id], onDelete: Cascade)
+   697→}
+   698→
+   699→// ═══════════════════════════════════════════════════════════
+   700→// V4.1 — Phase 9: Government Platform
+   701→// ═══════════════════════════════════════════════════════════
+   702→
+   703→model TrafficViolation {
+   704→  id            String    @id @default(cuid())
+   705→  userId        String
+   706→  violationType String // speeding | parking | red_light | stop_sign | no_seatbelt | phone_use | drunk_driving | no_insurance | no_license | wrong_way | lane_violation | document_violation
+   707→  description   String
+   708→  severity      String    @default("minor") // minor | moderate | serious | criminal
+   709→  points        Int       @default(0)
+   710→  fineAmount    Float?
+   711→  location      String?
+   712→  latitude      Float?
+   713→  longitude     Float?
+   714→  vehicleType   String    @default("car")
+   715→  licensePlate  String?
+   716→  officerId     String?
+   717→  status        String    @default("pending") // pending | contested | confirmed | paid | dismissed
+   718→  incidentDate  DateTime?
+   719→  createdAt     DateTime  @default(now())
+   720→  updatedAt     DateTime  @updatedAt
+   721→
+   722→  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+   723→}
+   724→
+   725→// ═══════════════════════════════════════════════════════════
+   726→// V4.1 — Phase 11: Enterprise Platform
+   727→// ═══════════════════════════════════════════════════════════
+   728→
+   729→model AuditLogEntry {
+   730→  id         String   @id @default(cuid())
+   731→  userId     String
+   732→  action     String // login | logout | create | read | update | delete | export | import | configure | approve | reject
+   733→  resource   String // user | vehicle | fleet | policy | claim | listing | course | exam | organization
+   734→  resourceId String?
+   735→  details    String? // JSON: what changed
+   736→  ipAddress  String?
+   737→  userAgent  String?
+   738→  status     String   @default("success") // success | failure | denied
+   739→  createdAt  DateTime @default(now())
+   740→
+   741→  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+   742→}
+   743→
+   744→// ═══════════════════════════════════════════════════════════
+   745→// V4.2 — Telematics & Vehicle Twin
+   746→// ═══════════════════════════════════════════════════════════
+   747→
+   748→model TelematicsTrip {
+   749→  id              String    @id @default(cuid())
+   750→  userId          String
+   751→  vehicleId       String?
+   752→  startAddress    String?
+   753→  endAddress      String?
+   754→  startLatitude   Float?
+   755→  startLongitude  Float?
+   756→  endLatitude     Float?
+   757→  endLongitude    Float?
+   758→  distance        Float     @default(0)
+   759→  duration        Int       @default(0)
+   760→  avgSpeed        Float?
+   761→  maxSpeed        Float?
+   762→  fuelConsumption Float?
+   763→  fuelCost        Float?
+   764→  harshBrakes     Int       @default(0)
+   765→  harshAccel      Int       @default(0)
+   766→  speedViolations Int       @default(0)
+   767→  nightDriving    Float     @default(0)
+   768→  cityDriving     Float     @default(0)
+   769→  highwayDriving  Float     @default(0)
+   770→  drivingScore    Float?
+   771→  ecoScore        Float?
+   772→  weather         String?
+   773→  roadType        String?
+   774→  startTime       DateTime  @default(now())
+   775→  endTime         DateTime?
+   776→  createdAt       DateTime  @default(now())
+   777→  updatedAt       DateTime  @updatedAt
+   778→
+   779→  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+   780→  vehicle VehicleProfile? @relation(fields: [vehicleId], references: [id])
+   781→}
+   782→
+   783→model VehicleTwin {
+   784→  id                 String    @id @default(cuid())
+   785→  vehicleProfileId   String    @unique
+   786→  vin                String?
+   787→  registration       String?
+   788→  ownerUserId        String
+   789→  currentMileage     Int       @default(0)
+   790→  totalTrips         Int       @default(0)
+   791→  totalDistance      Float     @default(0)
+   792→  avgFuelConsumption Float     @default(0)
+   793→  aiHealthScore      Float     @default(50)
+   794→  nextServiceDate    DateTime?
+   795→  nextServiceMileage Int       @default(0)
+   796→  lastAccidentDate   DateTime?
+   797→  insuranceStatus    String    @default("unknown")
+   798→  recallCount        Int       @default(0)
+   799→  ownershipHistory   String?
+   800→  aiPredictions      String?
+   801→  createdAt          DateTime  @default(now())
+   802→  updatedAt          DateTime  @updatedAt
+   803→
+   804→  vehicleProfile VehicleProfile @relation(fields: [vehicleProfileId], references: [id])
+   805→  owner          User           @relation("VehicleTwinOwner", fields: [ownerUserId], references: [id])
+   806→}
+   807→
+   808→// ═══════════════════════════════════════════════════════════
+   809→// V4.2 — Insurance Intelligence Extensions
+   810→// ═══════════════════════════════════════════════════════════
+   811→
+   812→model InsurancePartner {
+   813→  id             String    @id @default(cuid())
+   814→  name           String
+   815→  code           String    @unique
+   816→  country        String    @default("FR")
+   817→  contactEmail   String?
+   818→  contactPhone   String?
+   819→  contractStart  DateTime?
+   820→  contractEnd    DateTime?
+   821→  commissionRate Float     @default(0)
+   822→  status         String    @default("active")
+   823→  createdAt      DateTime  @default(now())
+   824→  updatedAt      DateTime  @updatedAt
+   825→}
+   826→
+   827→model PremiumCalculation {
+   828→  id                  String   @id @default(cuid())
+   829→  policyId            String
+   830→  basePremium         Float
+   831→  riskAdjustment      Float
+   832→  behaviourAdjustment Float
+   833→  finalPremium        Float
+   834→  factors             String
+   835→  calculatedAt        DateTime @default(now())
+   836→
+   837→  policy InsurancePolicy @relation(fields: [policyId], references: [id])
+   838→}
+   839→
+   840→model AccidentIncident {
+   841→  id           String   @id @default(cuid())
+   842→  userId       String
+   843→  vehicleId    String?
+   844→  policyId     String?
+   845→  type         String
+   846→  severity     String   @default("medium")
+   847→  latitude     Float?
+   848→  longitude    Float?
+   849→  speed        Float?
+   850→  deceleration Float?
+   851→  timestamp    DateTime @default(now())
+   852→  resolved     Boolean  @default(false)
+   853→  claimId      String?
+   854→  createdAt    DateTime @default(now())
+   855→  updatedAt    DateTime @updatedAt
+   856→
+   857→  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+   858→}
+   859→
+   860→model DamageAssessment {
+   861→  id                      String   @id @default(cuid())
+   862→  claimId                 String
+   863→  bumperScore             Float?
+   864→  doorsScore              Float?
+   865→  hoodScore               Float?
+   866→  windshieldScore         Float?
+   867→  lightsScore             Float?
+   868→  wheelsScore             Float?
+   869→  chassisScore            Float?
+   870→  overallSeverity         String   @default("minor")
+   871→  estimatedRepairCost     Float?
+   872→  estimatedRepairDuration String?
+   873→  replacementParts        String?
+   874→  photos                  String?
+   875→  assessedAt              DateTime @default(now())
+   876→  createdAt               DateTime @default(now())
+   877→}
+   878→
+   879→model FraudAlert {
+   880→  id          String   @id @default(cuid())
+   881→  claimId     String?
+   882→  userId      String
+   883→  type        String
+   884→  probability Float    @default(0)
+   885→  description String
+   886→  evidence    String?
+   887→  status      String   @default("pending")
+   888→  createdAt   DateTime @default(now())
+   889→  updatedAt   DateTime @updatedAt
+   890→
+   891→  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+   892→}
+   893→
+   894→// ═══════════════════════════════════════════════════════════
+   895→// V4.2 — Fleet Extensions
+   896→// ═══════════════════════════════════════════════════════════
+   897→
+   898→model FleetAssignment {
+   899→  id        String    @id @default(cuid())
+   900→  fleetId   String
+   901→  vehicleId String
+   902→  driverId  String
+   903→  startDate DateTime  @default(now())
+   904→  endDate   DateTime?
+   905→  status    String    @default("active")
+   906→  notes     String?
+   907→  createdAt DateTime  @default(now())
+   908→  updatedAt DateTime  @updatedAt
+   909→
+   910→  fleet   FleetOrganization @relation(fields: [fleetId], references: [id], onDelete: Cascade)
+   911→  vehicle FleetVehicle      @relation(fields: [vehicleId], references: [id])
+   912→  driver  FleetDriver       @relation(fields: [driverId], references: [id])
+   913→}
+   914→
+   915→// ═══════════════════════════════════════════════════════════
+   916→// V4.2 — Enterprise Extensions
+   917→// ═══════════════════════════════════════════════════════════
+   918→
+   919→model FeatureFlag {
+   920→  id          String   @id @default(cuid())
+   921→  key         String   @unique
+   922→  name        String
+   923→  description String?
+   924→  enabled     Boolean  @default(false)
+   925→  targetRoles String?
+   926→  createdAt   DateTime @default(now())
+   927→  updatedAt   DateTime @updatedAt
+   928→}
+   929→
+   930→model ApiKey {
+   931→  id          String    @id @default(cuid())
+   932→  userId      String
+   933→  name        String
+   934→  key         String    @unique
+   935→  permissions String?
+   936→  lastUsedAt  DateTime?
+   937→  expiresAt   DateTime?
+   938→  createdAt   DateTime  @default(now())
+   939→  updatedAt   DateTime  @updatedAt
+   940→
+   941→  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+   942→}
+   943→
+   944→// ═══════════════════════════════════════════════════════════
+   945→// V4.2 — AI Collaboration Events
+   946→// ═══════════════════════════════════════════════════════════
+   947→
+   948→model CollaborationEvent {
+   949→  id              String   @id @default(cuid())
+   950→  userId          String
+   951→  triggerModule   String
+   952→  eventType       String
+   953→  severity        String   @default("info")
+   954→  description     String
+   955→  affectedModules String
+   956→  actions         String?
+   957→  resolved        Boolean  @default(false)
+   958→  createdAt       DateTime @default(now())
+   959→  updatedAt       DateTime @updatedAt
+   960→
+   961→  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+   962→
+   963→  @index([userId])
+   964→}
+   965→
+   966→// ═══════════════════════════════════════════════════════════
+   967→// NextAuth — Account model for OAuth providers
+   968→// ═══════════════════════════════════════════════════════════
+   969→
+   970→model Account {
+   971→  id                String  @id @default(cuid())
+   972→  userId            String
+   973→  type              String
+   974→  provider          String
+   975→  providerAccountId String
+   976→  refresh_token     String? @db.Text
+   977→  access_token      String? @db.Text
+   978→  expires_at        Int?
+   979→  token_type        String?
+   980→  scope             String?
+   981→  id_token          String? @db.Text
+   982→  session_state     String?
+   983→
+   984→  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+   985→
+   986→  @@unique([provider, providerAccountId])
+   987→  @index([userId])
+   988→}
+   989→
