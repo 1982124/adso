@@ -246,8 +246,6 @@ function generateHardQuestions(): QuizQuestion[] {
 // Merge all questions
 const allQuestions = [...quizQuestions, ...generateMediumQuestions(), ...generateHardQuestions()];
 
-// Re-export the merged array as quizQuestions (shadowing the local const)
-export { allQuestions as quizQuestions };
 
 export function getRandomQuestions(count: number, category?: string): QuizQuestion[] {
   let pool = category
