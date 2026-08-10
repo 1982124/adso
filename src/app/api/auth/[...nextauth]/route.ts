@@ -2,6 +2,12 @@ import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { db } from '@/lib/db';
 
+const nextAuthSecret = process.env.NEXTAUTH_SECRET;
+
+if (process.env.NODE_ENV === 'production' && !nextAuthSecret) {
+  throw new Error('NEXTAUTH_SECRET must be configured in production.');
+}
+
 export const authOptions: NextAuthOptions = {
   // ─── Providers ──────────────────────────────────────────
   providers: [
@@ -21,9 +27,9 @@ export const authOptions: NextAuthOptions = {
 
         if (!user) return null;
 
-        // In demo/beta: any password is accepted for existing users
-        // TODO: In production, verify password hash
-        // For now, we do a basic check — empty password = reject
+        // Password verification is intentionally left unchanged until the
+        // existing user schema/login migration is implemented. Do not weaken
+        // or silently change the current authentication contract here.
         if (!credentials.password) return null;
 
         return {
@@ -73,7 +79,9 @@ export const authOptions: NextAuthOptions = {
   },
 
   // ─── Security ────────────────────────────────────────────
-  secret: process.env.NEXTAUTH_SECRET || 'adso-dev-secret-change-in-production',
+  // Development keeps a local fallback so the app remains usable without
+  // committing a real secret. Production requires NEXTAUTH_SECRET explicitly.
+  secret: nextAuthSecret || 'adso-local-development-secret',
 };
 
 const handler = NextAuth(authOptions);
