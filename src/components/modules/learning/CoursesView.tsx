@@ -1,16 +1,32 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Card } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Progress } from '@/components/ui/progress';
-import { ChevronDown, ChevronUp, Clock, BookOpen, GraduationCap, Video, MousePointerClick, HelpCircle, FileText } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  BookOpen,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Clock,
+  FileText,
+  GraduationCap,
+  HelpCircle,
+  Maximize2,
+  Minus,
+  MousePointerClick,
+  Plus,
+  Video,
+  X,
+} from 'lucide-react';
 
-// ── Types ──────────────────────────────────────────────────────────────
 interface CourseModule {
   id: string;
   courseId: string;
@@ -46,40 +62,18 @@ interface Course {
   studentProgress?: StudentProgress;
 }
 
-// ── Constants ──────────────────────────────────────────────────────────
 const CATEGORY_TRANSLATIONS: Record<string, string> = {
-  theory: 'Théorie',
-  practice: 'Pratique',
-  safety: 'Sécurité',
-  regulations: 'Réglementation',
-  'eco-driving': 'Éco-conduite',
-  highway: 'Autoroute',
-  night: 'Nuit',
-  weather: 'Météo',
-  first_aid: 'Secourisme',
+  theory: 'Théorie', practice: 'Pratique', safety: 'Sécurité', regulations: 'Réglementation',
+  'eco-driving': 'Éco-conduite', highway: 'Autoroute', night: 'Nuit', weather: 'Météo', first_aid: 'Secourisme',
 };
-
 const LEVEL_TRANSLATIONS: Record<string, string> = {
-  beginner: 'Débutant',
-  intermediate: 'Intermédiaire',
-  advanced: 'Avancé',
+  beginner: 'Débutant', intermediate: 'Intermédiaire', advanced: 'Avancé',
 };
-
 const CATEGORY_ICONS: Record<string, string> = {
-  theory: '📖',
-  practice: '🚗',
-  safety: '🛡️',
-  regulations: '⚖️',
-  'eco-driving': '🍃',
-  highway: '🛣️',
-  night: '🌙',
-  weather: '🌤️',
-  first_aid: '🚑',
+  theory: '📖', practice: '🚗', safety: '🛡️', regulations: '⚖️', 'eco-driving': '🍃', highway: '🛣️', night: '🌙', weather: '🌤️', first_aid: '🚑',
 };
-
 const CATEGORIES = Object.keys(CATEGORY_TRANSLATIONS);
 const LEVELS = ['beginner', 'intermediate', 'advanced'];
-
 const MODULE_TYPE_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   lesson: { label: 'Leçon', icon: BookOpen, color: 'text-blue-400 bg-blue-950/40 border-blue-800/30' },
   video: { label: 'Vidéo', icon: Video, color: 'text-purple-400 bg-purple-950/40 border-purple-800/30' },
@@ -88,26 +82,110 @@ const MODULE_TYPE_CONFIG: Record<string, { label: string; icon: React.ElementTyp
   summary: { label: 'Résumé', icon: FileText, color: 'text-slate-400 bg-slate-800/40 border-slate-700/30' },
 };
 
-// ── Helpers ────────────────────────────────────────────────────────────
 function safeParse(value: string | null): string[] {
   if (!value) return [];
-  try {
-    const parsed = JSON.parse(value);
-    if (Array.isArray(parsed)) return parsed;
-    return [];
-  } catch {
-    return [];
-  }
+  try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed : []; } catch { return []; }
 }
-
 function formatDuration(minutes: number): string {
   if (minutes < 60) return `${minutes} min`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
+  const h = Math.floor(minutes / 60), m = minutes % 60;
   return m > 0 ? `${h}h${m}` : `${h}h`;
 }
 
-// ── Component ──────────────────────────────────────────────────────────
+type ReaderTheme = 'dark' | 'sepia' | 'light';
+const FONT_STEPS = [16, 18, 20, 23, 26, 30, 34];
+
+function CourseReader({
+  course,
+  module,
+  modules,
+  onClose,
+  onChangeModule,
+}: {
+  course: Course;
+  module: CourseModule;
+  modules: CourseModule[];
+  onClose: () => void;
+  onChangeModule: (module: CourseModule) => void;
+}) {
+  const [fontIndex, setFontIndex] = useState(2);
+  const [theme, setTheme] = useState<ReaderTheme>('dark');
+  const [wide, setWide] = useState(false);
+  const index = modules.findIndex((item) => item.id === module.id);
+  const canPrev = index > 0;
+  const canNext = index >= 0 && index < modules.length - 1;
+  const progress = modules.length > 1 && index >= 0 ? ((index + 1) / modules.length) * 100 : 100;
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+      if (event.key === 'ArrowLeft' && canPrev) onChangeModule(modules[index - 1]);
+      if (event.key === 'ArrowRight' && canNext) onChangeModule(modules[index + 1]);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [canNext, canPrev, index, modules, onChangeModule, onClose]);
+
+  const themeClass = theme === 'light'
+    ? 'bg-white text-slate-800'
+    : theme === 'sepia'
+      ? 'bg-[#f5ecd9] text-[#40372d]'
+      : 'bg-slate-950 text-slate-100';
+  const articleClass = theme === 'light'
+    ? 'prose-slate'
+    : theme === 'sepia'
+      ? 'prose-stone'
+      : 'prose-invert';
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-0 sm:p-4"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      role="dialog" aria-modal="true" aria-label={`Lecture : ${module.title}`}
+    >
+      <motion.div
+        initial={{ y: 24, opacity: 0, scale: 0.99 }} animate={{ y: 0, opacity: 1, scale: 1 }}
+        className={`w-full h-full sm:h-[94vh] ${wide ? 'max-w-7xl' : 'max-w-5xl'} rounded-none sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col ${themeClass}`}
+      >
+        <header className="shrink-0 border-b border-current/10 px-4 sm:px-6 py-3 flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] uppercase tracking-widest opacity-50 truncate">{course.title}</p>
+            <h2 className="font-semibold truncate">{module.title}</h2>
+          </div>
+          <button onClick={() => setFontIndex((v) => Math.max(0, v - 1))} disabled={fontIndex === 0} aria-label="Réduire la taille du texte" className="p-2 rounded-lg hover:bg-current/10 disabled:opacity-30"><Minus className="w-4 h-4" /></button>
+          <span className="hidden sm:block text-xs tabular-nums opacity-60 w-8 text-center">{FONT_STEPS[fontIndex]}</span>
+          <button onClick={() => setFontIndex((v) => Math.min(FONT_STEPS.length - 1, v + 1))} disabled={fontIndex === FONT_STEPS.length - 1} aria-label="Augmenter la taille du texte" className="p-2 rounded-lg hover:bg-current/10 disabled:opacity-30"><Plus className="w-4 h-4" /></button>
+          <button onClick={() => setTheme((v) => v === 'dark' ? 'sepia' : v === 'sepia' ? 'light' : 'dark')} aria-label="Changer le thème de lecture" className="px-2.5 py-2 rounded-lg hover:bg-current/10 text-xs font-medium">Aa</button>
+          <button onClick={() => setWide((v) => !v)} aria-label="Changer la largeur de lecture" className="p-2 rounded-lg hover:bg-current/10"><Maximize2 className="w-4 h-4" /></button>
+          <button onClick={onClose} aria-label="Fermer le lecteur" className="p-2 rounded-lg hover:bg-current/10"><X className="w-5 h-5" /></button>
+        </header>
+
+        <div className="shrink-0 px-4 sm:px-6 py-2 border-b border-current/10">
+          <div className="flex items-center justify-between text-xs opacity-60 mb-1">
+            <span>Module {Math.max(index + 1, 1)} sur {modules.length}</span>
+            <span>{Math.round(progress)}%</span>
+          </div>
+          <Progress value={progress} className="h-1 bg-current/10 [&>div]:bg-emerald-500" />
+        </div>
+
+        <ScrollArea className="flex-1">
+          <main className="px-5 sm:px-10 lg:px-16 py-8 sm:py-12">
+            <article className={`mx-auto max-w-3xl ${articleClass} prose-headings:font-bold prose-headings:tracking-tight prose-p:leading-relaxed prose-li:leading-relaxed prose-a:text-emerald-500`} style={{ fontSize: FONT_STEPS[fontIndex], lineHeight: 1.75 }}>
+              <ReactMarkdown>{module.content || 'Le contenu de cette leçon est en préparation.'}</ReactMarkdown>
+            </article>
+          </main>
+        </ScrollArea>
+
+        <footer className="shrink-0 border-t border-current/10 px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+          <button disabled={!canPrev} onClick={() => onChangeModule(modules[index - 1])} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-current/10 disabled:opacity-30 disabled:cursor-not-allowed text-sm"><ChevronLeft className="w-4 h-4" /> Précédent</button>
+          <span className="hidden sm:block text-xs opacity-50">← → pour naviguer · Échap pour fermer</span>
+          <button disabled={!canNext} onClick={() => onChangeModule(modules[index + 1])} className="inline-flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-current/10 disabled:opacity-30 disabled:cursor-not-allowed text-sm">Suivant <ChevronRight className="w-4 h-4" /></button>
+        </footer>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export default function CoursesView() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,6 +193,7 @@ export default function CoursesView() {
   const [activeLevel, setActiveLevel] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [expandedModuleId, setExpandedModuleId] = useState<string | null>(null);
+  const [reading, setReading] = useState<{ course: Course; module: CourseModule } | null>(null);
 
   const fetchCourses = useCallback(async () => {
     setLoading(true);
@@ -124,348 +203,67 @@ export default function CoursesView() {
         const data = await res.json();
         setCourses(Array.isArray(data) ? data : []);
       }
-    } catch {
-      // silent
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }, []);
+  useEffect(() => { fetchCourses(); }, [fetchCourses]);
 
-  useEffect(() => {
-    fetchCourses();
-  }, [fetchCourses]);
-
-  const filtered = courses.filter((c) => {
-    if (activeCategory && c.category !== activeCategory) return false;
-    if (activeLevel && c.level !== activeLevel) return false;
-    return true;
-  });
-
-  const toggleExpand = (id: string) => {
-    setExpandedId((prev) => (prev === id ? null : id));
-    if (expandedId === id) setExpandedModuleId(null);
-  };
+  const filtered = useMemo(() => courses.filter((c) => (!activeCategory || c.category === activeCategory) && (!activeLevel || c.level === activeLevel)), [courses, activeCategory, activeLevel]);
+  const openReader = (course: Course, module: CourseModule) => setReading({ course, module });
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="space-y-5"
-    >
-      {/* Category Filters */}
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-5">
       <div className="space-y-3">
         <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setActiveCategory(null)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              activeCategory === null
-                ? 'bg-emerald-600 text-white'
-                : 'bg-slate-900/80 border border-slate-800/60 text-slate-400 hover:text-white hover:border-emerald-600/40'
-            }`}
-          >
-            Toutes
-          </button>
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
-                activeCategory === cat
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-slate-900/80 border border-slate-800/60 text-slate-400 hover:text-white hover:border-emerald-600/40'
-              }`}
-            >
-              {CATEGORY_ICONS[cat]} {CATEGORY_TRANSLATIONS[cat]}
-            </button>
-          ))}
+          <FilterButton active={activeCategory === null} onClick={() => setActiveCategory(null)}>Toutes</FilterButton>
+          {CATEGORIES.map((cat) => <FilterButton key={cat} active={activeCategory === cat} onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}>{CATEGORY_ICONS[cat]} {CATEGORY_TRANSLATIONS[cat]}</FilterButton>)}
         </div>
-
-        {/* Level Filters */}
         <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setActiveLevel(null)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              activeLevel === null
-                ? 'bg-emerald-600 text-white'
-                : 'bg-slate-900/80 border border-slate-800/60 text-slate-400 hover:text-white hover:border-emerald-600/40'
-            }`}
-          >
-            Tous niveaux
-          </button>
-          {LEVELS.map((lvl) => (
-            <button
-              key={lvl}
-              onClick={() => setActiveLevel(activeLevel === lvl ? null : lvl)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
-                activeLevel === lvl
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-slate-900/80 border border-slate-800/60 text-slate-400 hover:text-white hover:border-emerald-600/40'
-              }`}
-            >
-              {LEVEL_TRANSLATIONS[lvl]}
-            </button>
-          ))}
+          <FilterButton active={activeLevel === null} onClick={() => setActiveLevel(null)}>Tous niveaux</FilterButton>
+          {LEVELS.map((lvl) => <FilterButton key={lvl} active={activeLevel === lvl} onClick={() => setActiveLevel(activeLevel === lvl ? null : lvl)}>{LEVEL_TRANSLATIONS[lvl]}</FilterButton>)}
         </div>
       </div>
 
-      {/* Count */}
-      {!loading && (
-        <p className="text-xs text-slate-500">
-          {filtered.length} cours trouvé{filtered.length !== 1 ? 's' : ''}
-        </p>
-      )}
-
-      {/* Loading */}
-      {loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-slate-900/80 border border-slate-800/60 rounded-xl p-5 space-y-3">
-              <div className="flex items-center gap-3">
-                <Skeleton className="h-10 w-10 rounded-lg bg-slate-800" />
-                <div className="space-y-1">
-                  <Skeleton className="h-5 w-32 bg-slate-800" />
-                  <Skeleton className="h-3 w-20 bg-slate-800" />
-                </div>
-              </div>
-              <Skeleton className="h-3 w-full bg-slate-800" />
-              <Skeleton className="h-3 w-3/4 bg-slate-800" />
-              <Skeleton className="h-2 w-full bg-slate-800" />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Empty State */}
-      {!loading && filtered.length === 0 && (
-        <div className="text-center py-16 space-y-2">
-          <GraduationCap className="w-10 h-10 text-slate-700 mx-auto" />
-          <p className="text-slate-400 text-sm">
-            Aucun cours ne correspond à ces filtres.
-          </p>
-        </div>
-      )}
-
-      {/* Course Grid */}
-      {!loading && filtered.length > 0 && (
-        <ScrollArea className="max-h-[700px] overflow-y-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pr-3">
-            <AnimatePresence mode="popLayout">
-              {filtered.map((course) => (
-                <CourseCard
-                  key={course.id}
-                  course={course}
-                  expanded={expandedId === course.id}
-                  expandedModuleId={expandedModuleId}
-                  onToggle={() => toggleExpand(course.id)}
-                  onToggleModule={(modId) =>
-                    setExpandedModuleId((prev) => (prev === modId ? null : modId))
-                  }
-                />
-              ))}
-            </AnimatePresence>
-          </div>
-        </ScrollArea>
-      )}
-    </motion.div>
-  );
-}
-
-// ── Course Card ────────────────────────────────────────────────────────
-function CourseCard({
-  course,
-  expanded,
-  expandedModuleId,
-  onToggle,
-  onToggleModule,
-}: {
-  course: Course;
-  expanded: boolean;
-  expandedModuleId: string | null;
-  onToggle: () => void;
-  onToggleModule: (modId: string) => void;
-}) {
-  const catLabel = CATEGORY_TRANSLATIONS[course.category] || course.category;
-  const lvlLabel = LEVEL_TRANSLATIONS[course.level] || course.level;
-  const emoji = CATEGORY_ICONS[course.category] || '📘';
-  const progress = course.studentProgress?.progress ?? 0;
-
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.97 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.97 }}
-      transition={{ duration: 0.25 }}
-    >
-      <Card className="bg-slate-900/80 border border-slate-800/60 rounded-xl overflow-hidden hover:border-emerald-600/40 transition-colors">
-        <button
-          onClick={onToggle}
-          className="w-full text-left p-4 sm:p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-          aria-expanded={expanded}
-        >
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-start gap-3 min-w-0">
-              <span className="text-2xl shrink-0 leading-none mt-0.5">{emoji}</span>
-              <div className="min-w-0">
-                <h3 className="text-white font-semibold text-sm sm:text-base truncate">
-                  {course.title}
-                </h3>
-                <p className="text-slate-400 text-xs mt-1 line-clamp-2 leading-relaxed">
-                  {course.description}
-                </p>
-              </div>
-            </div>
-            {expanded ? (
-              <ChevronUp className="w-4 h-4 text-slate-500 shrink-0 mt-1" />
-            ) : (
-              <ChevronDown className="w-4 h-4 text-slate-500 shrink-0 mt-1" />
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 mt-3">
-            <Badge variant="outline" className="border-emerald-600/30 text-emerald-400 text-[10px] px-2 py-0">
-              {catLabel}
-            </Badge>
-            <Badge variant="outline" className="border-slate-700 text-slate-400 text-[10px] px-2 py-0">
-              {lvlLabel}
-            </Badge>
-            <span className="flex items-center gap-1 text-xs text-slate-500">
-              <Clock className="w-3 h-3" />
-              {formatDuration(course.duration)}
-            </span>
-            {course.isPremium && (
-              <Badge variant="outline" className="border-amber-600/30 text-amber-400 text-[10px] px-2 py-0">
-                Premium
-              </Badge>
-            )}
-          </div>
-
-          {progress > 0 && (
-            <div className="mt-3 space-y-1.5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">Progression</span>
-                <span className="text-emerald-400 font-medium">{Math.round(progress)}%</span>
-              </div>
-              <Progress value={progress} className="h-1.5 bg-slate-800 [&>div]:bg-emerald-500" />
-            </div>
-          )}
-        </button>
-
-        <AnimatePresence>
-          {expanded && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="overflow-hidden"
-            >
-              <Separator className="bg-slate-800/60" />
-              <div className="p-4 sm:p-5 space-y-3">
-                <p className="text-slate-300 text-xs leading-relaxed">
-                  {course.description}
-                </p>
-                <p className="text-slate-500 text-[10px] font-medium uppercase tracking-wider">
-                  {course.modules.length} module{course.modules.length !== 1 ? 's' : ''}
-                </p>
-                <div className="space-y-2">
-                  {course.modules.map((mod) => (
-                    <ModuleItem
-                      key={mod.id}
-                      module={mod}
-                      expanded={expandedModuleId === mod.id}
-                      onToggle={() => onToggleModule(mod.id)}
-                    />
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </Card>
-    </motion.div>
-  );
-}
-
-// ── Module Item ────────────────────────────────────────────────────────
-function ModuleItem({
-  module: mod,
-  expanded,
-  onToggle,
-}: {
-  module: CourseModule;
-  expanded: boolean;
-  onToggle: () => void;
-}) {
-  const cfg = MODULE_TYPE_CONFIG[mod.type] || MODULE_TYPE_CONFIG.lesson;
-  const TypeIcon = cfg.icon;
-  const objectives = safeParse(mod.objectives);
-  const tips = safeParse(mod.tips);
-  const mistakes = safeParse(mod.commonMistakes);
-  const hasDetails = objectives.length > 0 || tips.length > 0 || mistakes.length > 0;
-
-  return (
-    <div className="bg-slate-800/40 rounded-lg border border-slate-800/40 overflow-hidden">
-      <button
-        onClick={onToggle}
-        className="w-full text-left px-3 py-2.5 flex items-center gap-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-lg"
-        aria-expanded={expanded}
-      >
-        <TypeIcon className="w-4 h-4 text-slate-500 shrink-0" />
-        <span className="text-sm text-slate-200 flex-1 truncate">{mod.title}</span>
-        <Badge variant="outline" className={`${cfg.color} text-[10px] px-1.5 py-0 border`}>{
-          cfg.label
-        }</Badge>
-        <span className="text-[10px] text-slate-500 shrink-0">{formatDuration(mod.duration)}</span>
-        {hasDetails &&
-          (expanded ? (
-            <ChevronUp className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-          ) : (
-            <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-          ))}
-      </button>
+      {!loading && <p className="text-xs text-slate-500">{filtered.length} cours trouvé{filtered.length !== 1 ? 's' : ''}</p>}
+      {loading && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="bg-slate-900/80 border border-slate-800/60 rounded-xl p-5 space-y-3"><div className="flex items-center gap-3"><Skeleton className="h-10 w-10 rounded-lg bg-slate-800" /><div className="space-y-1"><Skeleton className="h-5 w-32 bg-slate-800" /><Skeleton className="h-3 w-20 bg-slate-800" /></div></div><Skeleton className="h-3 w-full bg-slate-800" /><Skeleton className="h-3 w-3/4 bg-slate-800" /><Skeleton className="h-2 w-full bg-slate-800" /></div>)}</div>}
+      {!loading && filtered.length === 0 && <div className="text-center py-16 space-y-2"><GraduationCap className="w-10 h-10 text-slate-700 mx-auto" /><p className="text-slate-400 text-sm">Aucun cours ne correspond à ces filtres.</p></div>}
+      {!loading && filtered.length > 0 && <ScrollArea className="max-h-[700px] overflow-y-auto"><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pr-3">{filtered.map((course) => <CourseCard key={course.id} course={course} expanded={expandedId === course.id} expandedModuleId={expandedModuleId} onToggle={() => { setExpandedId((prev) => prev === course.id ? null : course.id); setExpandedModuleId(null); }} onToggleModule={(modId) => setExpandedModuleId((prev) => prev === modId ? null : modId)} onRead={openReader} />)}</div></ScrollArea>}
 
       <AnimatePresence>
-        {expanded && hasDetails && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="overflow-hidden"
-          >
-            <div className="px-3 pb-3 space-y-2.5">
-              {objectives.length > 0 && (
-                <DetailList title="Objectifs" items={objectives} color="text-emerald-400" />
-              )}
-              {tips.length > 0 && (
-                <DetailList title="Conseils" items={tips} color="text-amber-400" />
-              )}
-              {mistakes.length > 0 && (
-                <DetailList title="Erreurs courantes" items={mistakes} color="text-red-400" />
-              )}
-            </div>
-          </motion.div>
-        )}
+        {reading && <CourseReader course={reading.course} module={reading.module} modules={reading.course.modules} onClose={() => setReading(null)} onChangeModule={(module) => setReading({ course: reading.course, module })} />}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }
 
-// ── Detail List ────────────────────────────────────────────────────────
+function FilterButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return <button onClick={onClick} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${active ? 'bg-emerald-600 text-white' : 'bg-slate-900/80 border border-slate-800/60 text-slate-400 hover:text-white hover:border-emerald-600/40'}`}>{children}</button>;
+}
+
+function CourseCard({ course, expanded, expandedModuleId, onToggle, onToggleModule, onRead }: { course: Course; expanded: boolean; expandedModuleId: string | null; onToggle: () => void; onToggleModule: (modId: string) => void; onRead: (course: Course, module: CourseModule) => void }) {
+  const progress = course.studentProgress?.progress ?? 0;
+  return <motion.div layout initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.97 }} transition={{ duration: 0.25 }}>
+    <Card className="bg-slate-900/80 border border-slate-800/60 rounded-xl overflow-hidden hover:border-emerald-600/40 transition-colors">
+      <button onClick={onToggle} className="w-full text-left p-4 sm:p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500" aria-expanded={expanded}>
+        <div className="flex items-start justify-between gap-2"><div className="flex items-start gap-3 min-w-0"><span className="text-2xl shrink-0 leading-none mt-0.5">{CATEGORY_ICONS[course.category] || '📘'}</span><div className="min-w-0"><h3 className="text-white font-semibold text-sm sm:text-base truncate">{course.title}</h3><p className="text-slate-400 text-xs mt-1 line-clamp-2 leading-relaxed">{course.description}</p></div></div>{expanded ? <ChevronUp className="w-4 h-4 text-slate-500 shrink-0 mt-1" /> : <ChevronDown className="w-4 h-4 text-slate-500 shrink-0 mt-1" />}</div>
+        <div className="flex flex-wrap items-center gap-2 mt-3"><Badge variant="outline" className="border-emerald-600/30 text-emerald-400 text-[10px] px-2 py-0">{CATEGORY_TRANSLATIONS[course.category] || course.category}</Badge><Badge variant="outline" className="border-slate-700 text-slate-400 text-[10px] px-2 py-0">{LEVEL_TRANSLATIONS[course.level] || course.level}</Badge><span className="flex items-center gap-1 text-xs text-slate-500"><Clock className="w-3 h-3" />{formatDuration(course.duration)}</span>{course.isPremium && <Badge variant="outline" className="border-amber-600/30 text-amber-400 text-[10px] px-2 py-0">Premium</Badge>}</div>
+        {progress > 0 && <div className="mt-3 space-y-1.5"><div className="flex items-center justify-between text-xs"><span className="text-slate-400">Progression</span><span className="text-emerald-400 font-medium">{Math.round(progress)}%</span></div><Progress value={progress} className="h-1.5 bg-slate-800 [&>div]:bg-emerald-500" /></div>}
+      </button>
+      <AnimatePresence>{expanded && <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3 }} className="overflow-hidden"><Separator className="bg-slate-800/60" /><div className="p-4 sm:p-5 space-y-3"><p className="text-slate-300 text-xs leading-relaxed">{course.description}</p><p className="text-slate-500 text-[10px] font-medium uppercase tracking-wider">{course.modules.length} module{course.modules.length !== 1 ? 's' : ''}</p><div className="space-y-2">{course.modules.map((mod) => <ModuleItem key={mod.id} module={mod} expanded={expandedModuleId === mod.id} onToggle={() => onToggleModule(mod.id)} onRead={() => onRead(course, mod)} />)}</div></div></motion.div>}</AnimatePresence>
+    </Card>
+  </motion.div>;
+}
+
+function ModuleItem({ module: mod, expanded, onToggle, onRead }: { module: CourseModule; expanded: boolean; onToggle: () => void; onRead: () => void }) {
+  const cfg = MODULE_TYPE_CONFIG[mod.type] || MODULE_TYPE_CONFIG.lesson;
+  const TypeIcon = cfg.icon;
+  const objectives = safeParse(mod.objectives), tips = safeParse(mod.tips), mistakes = safeParse(mod.commonMistakes);
+  const hasDetails = objectives.length > 0 || tips.length > 0 || mistakes.length > 0;
+  return <div className="bg-slate-800/40 rounded-lg border border-slate-800/40 overflow-hidden">
+    <div className="flex items-center gap-2.5 px-3 py-2.5"><button onClick={onToggle} className="flex-1 min-w-0 text-left flex items-center gap-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-lg" aria-expanded={expanded}><TypeIcon className="w-4 h-4 text-slate-500 shrink-0" /><span className="text-sm text-slate-200 truncate">{mod.title}</span><Badge variant="outline" className={`${cfg.color} text-[10px] px-1.5 py-0 border`}>{cfg.label}</Badge><span className="text-[10px] text-slate-500 shrink-0">{formatDuration(mod.duration)}</span>{hasDetails && (expanded ? <ChevronUp className="w-3.5 h-3.5 text-slate-500 shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />)}</button><button onClick={onRead} className="shrink-0 inline-flex items-center gap-1.5 rounded-md bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-400 px-2.5 py-1.5 text-[11px] font-semibold transition-colors" aria-label={`Lire ${mod.title}`}><BookOpen className="w-3.5 h-3.5" />Lire</button></div>
+    <AnimatePresence>{expanded && hasDetails && <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden"><div className="px-3 pb-3 space-y-2.5">{objectives.length > 0 && <DetailList title="Objectifs" items={objectives} color="text-emerald-400" />}{tips.length > 0 && <DetailList title="Conseils" items={tips} color="text-amber-400" />}{mistakes.length > 0 && <DetailList title="Erreurs courantes" items={mistakes} color="text-red-400" />}</div></motion.div>}</AnimatePresence>
+  </div>;
+}
+
 function DetailList({ title, items, color }: { title: string; items: string[]; color: string }) {
-  return (
-    <div className="space-y-1">
-      <p className="text-slate-500 text-[10px] font-medium uppercase tracking-wider">{title}</p>
-      <ul className="space-y-0.5 pl-1">
-        {items.map((item, idx) => (
-          <li key={idx} className={`${color} text-[11px] flex items-start gap-1.5`}>
-            <span className="mt-1.5 w-1 h-1 rounded-full bg-slate-600 shrink-0" />
-            {item}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+  return <div className="space-y-1"><p className="text-slate-500 text-[10px] font-medium uppercase tracking-wider">{title}</p><ul className="space-y-0.5 pl-1">{items.map((item, idx) => <li key={idx} className={`${color} text-[11px] flex items-start gap-1.5`}><span className="mt-1.5 w-1 h-1 rounded-full bg-slate-600 shrink-0" />{item}</li>)}</ul></div>;
 }
