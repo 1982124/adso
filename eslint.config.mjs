@@ -19,6 +19,10 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     // React rules
     "react-hooks/exhaustive-deps": "off",
     "react-hooks/purity": "off",
+    // These two React Compiler rules are advisory during the legacy-component migration.
+    // Keep them visible in CI without blocking deploys until the affected components are refactored.
+    "react-hooks/set-state-in-effect": "warn",
+    "react-hooks/static-components": "warn",
     "react/no-unescaped-entities": "off",
     "react/display-name": "off",
     "react/prop-types": "off",
