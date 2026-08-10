@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // Vercel provides its own production runtime. Keeping the Vercel deployment
+  // on the standard Next.js output avoids standalone tracing artifacts that
+  // are not produced consistently by Next.js 16/Turbopack.
   reactStrictMode: false,
   typescript: {
     ignoreBuildErrors: true,
