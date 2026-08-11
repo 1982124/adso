@@ -6,9 +6,6 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ViewErrorBoundary from '@/components/ViewErrorBoundary';
 
-// ═══════════════════════════════════════════════════════════
-// HOME VIEW — Existing sections (statically imported for instant load)
-// ═══════════════════════════════════════════════════════════
 import HeroSection from '@/components/sections/HeroSection';
 import StatsSection from '@/components/sections/StatsSection';
 import EcosystemSection from '@/components/sections/EcosystemSection';
@@ -21,63 +18,20 @@ import RoadmapSection from '@/components/sections/RoadmapSection';
 import SecuritySection from '@/components/sections/SecuritySection';
 import AnalyticsSection from '@/components/sections/AnalyticsSection';
 
-// ═══════════════════════════════════════════════════════════
-// V3 PLATFORM MODULES — Lazy loaded
-// ═══════════════════════════════════════════════════════════
-const LearningPlatform = dynamic(
-  () => import('@/components/modules/learning/LearningPlatform'),
-  { ssr: false, loading: () => <ModuleLoader label="Formation" /> }
-);
-const MechanicModule = dynamic(
-  () => import('@/components/modules/MechanicModule'),
-  { ssr: false, loading: () => <ModuleLoader label="Mécanicien IA" /> }
-);
-const ScannerModule = dynamic(
-  () => import('@/components/modules/ScannerModule'),
-  { ssr: false, loading: () => <ModuleLoader label="Scanner Véhicule" /> }
-);
-const TelematicsModule = dynamic(
-  () => import('@/components/modules/TelematicsModule'),
-  { ssr: false, loading: () => <ModuleLoader label="Télématique" /> }
-);
-const SecurityModule = dynamic(
-  () => import('@/components/modules/SecurityModule'),
-  { ssr: false, loading: () => <ModuleLoader label="Sécurité" /> }
-);
-const MarketplaceModule = dynamic(
-  () => import('@/components/modules/MarketplaceModule'),
-  { ssr: false, loading: () => <ModuleLoader label="Marketplace" /> }
-);
+const LearningPlatform = dynamic(() => import('@/components/modules/learning/LearningPlatform'), { ssr: false, loading: () => <ModuleLoader label="Formation" /> });
+const MechanicModule = dynamic(() => import('@/components/modules/MechanicModule'), { ssr: false, loading: () => <ModuleLoader label="Mécanicien IA" /> });
+const ScannerModule = dynamic(() => import('@/components/modules/ScannerModule'), { ssr: false, loading: () => <ModuleLoader label="Scanner Véhicule" /> });
+const TelematicsModule = dynamic(() => import('@/components/modules/TelematicsModule'), { ssr: false, loading: () => <ModuleLoader label="Télématique" /> });
+const SecurityModule = dynamic(() => import('@/components/modules/SecurityModule'), { ssr: false, loading: () => <ModuleLoader label="Sécurité" /> });
+const MarketplaceModule = dynamic(() => import('@/components/modules/MarketplaceModule'), { ssr: false, loading: () => <ModuleLoader label="Marketplace" /> });
 
-// ═══════════════════════════════════════════════════════════
-// V4.1 NEW MODULES — Lazy loaded
-// ═══════════════════════════════════════════════════════════
-const AIDrivingModule = dynamic(
-  () => import('@/components/modules/v41/AIDrivingModule'),
-  { ssr: false, loading: () => <ModuleLoader label="Conduite IA" /> }
-);
-const InsuranceModule = dynamic(
-  () => import('@/components/modules/v41/InsuranceModule'),
-  { ssr: false, loading: () => <ModuleLoader label="Assurance IA" /> }
-);
-const FleetModule = dynamic(
-  () => import('@/components/modules/v41/FleetModule'),
-  { ssr: false, loading: () => <ModuleLoader label="Gestion de Flotte" /> }
-);
-const GovernmentModule = dynamic(
-  () => import('@/components/modules/v41/GovernmentModule'),
-  { ssr: false, loading: () => <ModuleLoader label="Gouvernement" /> }
-);
-const EnterpriseModule = dynamic(
-  () => import('@/components/modules/v41/EnterpriseModule'),
-  { ssr: false, loading: () => <ModuleLoader label="Entreprise" /> }
-);
+const AIDrivingModule = dynamic(() => import('@/components/modules/v41/AIDrivingModule'), { ssr: false, loading: () => <ModuleLoader label="Conduite IA" /> });
+const InsuranceModule = dynamic(() => import('@/components/modules/v41/InsuranceModule'), { ssr: false, loading: () => <ModuleLoader label="Assurance IA" /> });
+const FleetModule = dynamic(() => import('@/components/modules/v41/FleetModule'), { ssr: false, loading: () => <ModuleLoader label="Gestion de Flotte" /> });
+const GovernmentModule = dynamic(() => import('@/components/modules/v41/GovernmentModule'), { ssr: false, loading: () => <ModuleLoader label="Gouvernement" /> });
+const EnterpriseModule = dynamic(() => import('@/components/modules/v41/EnterpriseModule'), { ssr: false, loading: () => <ModuleLoader label="Entreprise" /> });
 
-// Blueprint — lazy loaded
-const BluePrintLayout = dynamic(
-  () => import('@/components/BluePrintLayout'),
-  { ssr: false }
-);
+const BluePrintLayout = dynamic(() => import('@/components/BluePrintLayout'), { ssr: false });
 const BluePrintCover = dynamic(() => import('@/components/BluePrintCover'), { ssr: false });
 const VisionEntreprise = dynamic(() => import('@/components/parts/VisionEntreprise'), { ssr: false });
 const EcosystemeComplet = dynamic(() => import('@/components/parts/EcosystemeComplet'), { ssr: false });
@@ -111,7 +65,8 @@ export default function Home() {
     <>
       <Navbar />
       <main role="main" aria-label="ADSO — Auto Drive School Online">
-        <ViewErrorBoundary>
+        {/* Key the boundary by view: a failure in one module must never poison navigation to every other module. */}
+        <ViewErrorBoundary key={currentView}>
           {currentView === 'home' && <HomeView />}
           {currentView === 'learning' && <LearningPlatform />}
           {currentView === 'driving' && <AIDrivingModule />}
@@ -120,7 +75,7 @@ export default function Home() {
           {currentView === 'telematics' && <TelematicsModule />}
           {currentView === 'security' && <SecurityModule />}
           {currentView === 'marketplace' && <MarketplaceModule />}
-          {currentView === "insurance" && <InsuranceModule />}
+          {currentView === 'insurance' && <InsuranceModule />}
           {currentView === 'fleet' && <FleetModule />}
           {currentView === 'government' && <GovernmentModule />}
           {currentView === 'enterprise' && <EnterpriseModule />}
