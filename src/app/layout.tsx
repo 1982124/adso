@@ -17,27 +17,29 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ADSO — Auto Drive School Online",
   description:
-    "La première plateforme intelligente de conduite automobile. Formation accessible, personnalisée et de qualité pour chaque conducteur dans le monde.",
+    "La plateforme internationale d'apprentissage de la mobilité, de la conduite et de la sécurité routière.",
   keywords: [
     "ADSO",
     "Auto Drive School Online",
+    "mobilité",
     "conduite automobile",
     "permis de conduire",
+    "sécurité routière",
     "formation en ligne",
     "IA",
-    "intelligence artificielle",
     "code de la route",
     "quiz",
     "auto-école",
   ],
   authors: [{ name: "ADSO Engineering" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/icon.svg",
   },
+  manifest: "/manifest.webmanifest",
   openGraph: {
     title: "ADSO — Auto Drive School Online",
     description:
-      "Démocratiser l'éducation à la conduite grâce à l'intelligence artificielle. Formation accessible, personnalisée et de qualité pour chaque conducteur.",
+      "Apprendre la mobilité et la conduite avec une expérience internationale, personnalisée et immersive.",
     type: "website",
   },
 };
@@ -52,9 +54,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        <Providers>
-          {children}
-        </Providers>
+        <Providers>{children}</Providers>
         <Toaster />
       </body>
     </html>
