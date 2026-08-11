@@ -40,22 +40,27 @@ export async function POST(request: Request) {
 
     await ensureCredentialStore();
     const passwordHash = await hashPassword(password);
-    const user = await db.user.create({
-      data: {
-        email,
-        name,
-        role: 'student',
-        country: 'FR',
-        language: 'fr',
-        subscription: 'free',
-      },
-      select: { id: true, email: true, name: true, role: true },
-    });
 
-    await db.$executeRaw`
-      INSERT INTO UserCredential (id, userId, passwordHash)
-      VALUES (${crypto.randomUUID()}, ${user.id}, ${passwordHash})
-    `;
+    const user = await db.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          email,
+          name,
+          role: 'student',
+          country: 'FR',
+          language: 'fr',
+          subscription: 'free',
+        },
+        select: { id: true, email: true, name: true, role: true },
+      });
+
+      await tx.$executeRaw`
+        INSERT INTO UserCredential (id, userId, passwordHash)
+        VALUES (${crypto.randomUUID()}, ${createdUser.id}, ${passwordHash})
+      `;
+
+      return createdUser;
+    });
 
     return NextResponse.json({ user }, { status: 201 });
   } catch {
