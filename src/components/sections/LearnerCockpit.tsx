@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { BookOpen, Clock3, PlayCircle, ShieldCheck, Target, Trophy } from 'lucide-react';
+import { BookOpen, Clock3, PlayCircle, RefreshCw, ShieldCheck, Target, Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -36,16 +36,20 @@ export default function LearnerCockpit() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
     let active = true;
+    setLoading(true);
+    setError(false);
+
     fetch('/api/courses?userId=demo@adso.com', { cache: 'no-store' })
       .then((response) => {
         if (!response.ok) throw new Error('catalogue');
         return response.json() as Promise<Course[]>;
       })
       .then((data) => {
-        if (active) setCourses(data);
+        if (active) setCourses(Array.isArray(data) ? data : []);
       })
       .catch(() => {
         if (active) setError(true);
@@ -57,7 +61,7 @@ export default function LearnerCockpit() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [retry]);
 
   const stats = useMemo(() => {
     const modules = courses.reduce((sum, course) => sum + course.modules.length, 0);
@@ -136,10 +140,27 @@ export default function LearnerCockpit() {
               </div>
 
               {error ? (
-                <div className="rounded-2xl border border-red-100 bg-red-50 p-6 text-sm text-red-700">Le catalogue n'a pas pu être chargé.</div>
+                <div className="flex flex-col gap-4 rounded-2xl border border-red-100 bg-red-50 p-6 text-sm text-red-700 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-semibold">Le catalogue n'a pas pu être chargé.</p>
+                    <p className="mt-1 text-red-600">ADSO reste ouvert : vous pouvez relancer le chargement sans perdre votre parcours.</p>
+                  </div>
+                  <Button variant="outline" className="shrink-0 gap-2 border-red-200 bg-white text-red-700 hover:bg-red-100" onClick={() => setRetry((value) => value + 1)}>
+                    <RefreshCw className="h-4 w-4" /> Réessayer
+                  </Button>
+                </div>
               ) : loading ? (
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-live="polite" aria-busy="true">
                   {[1, 2, 3].map((item) => <div key={item} className="h-48 animate-pulse rounded-2xl bg-slate-100" />)}
+                </div>
+              ) : courses.length === 0 ? (
+                <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
+                  <BookOpen className="mx-auto h-8 w-8 text-emerald-600" />
+                  <h4 className="mt-3 font-semibold text-slate-900">Votre parcours se prépare</h4>
+                  <p className="mt-1 text-sm text-slate-500">Les contenus pédagogiques seront affichés ici dès qu'ils sont disponibles.</p>
+                  <Button variant="outline" className="mt-4 gap-2" onClick={() => setRetry((value) => value + 1)}>
+                    <RefreshCw className="h-4 w-4" /> Actualiser
+                  </Button>
                 </div>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -173,7 +194,7 @@ export default function LearnerCockpit() {
                             ))}
                           </div>
                           <Button variant="outline" className="mt-5 w-full gap-2" onClick={() => window.location.assign(`/?course=${encodeURIComponent(course.id)}`)}>
-                            <PlayCircle className="h-4 w-4" /> Ouvrir le parcours
+                            <PlayCircle className="h-4 w-4" /> {progress > 0 ? 'Reprendre le parcours' : 'Ouvrir le parcours'}
                           </Button>
                         </CardContent>
                       </Card>
