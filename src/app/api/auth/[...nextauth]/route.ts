@@ -1,9 +1,22 @@
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { db } from '@/lib/db';
+import { verifyPassword } from '@/lib/password';
+
+async function ensureCredentialStore() {
+  await db.$executeRaw`
+    CREATE TABLE IF NOT EXISTS UserCredential (
+      id TEXT PRIMARY KEY NOT NULL,
+      userId TEXT NOT NULL UNIQUE,
+      passwordHash TEXT NOT NULL,
+      createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE
+    )
+  `;
+}
 
 export const authOptions: NextAuthOptions = {
-  // ─── Providers ──────────────────────────────────────────
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -12,19 +25,18 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Mot de passe', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email) return null;
+        const email = String(credentials?.email || '').trim().toLowerCase();
+        const password = String(credentials?.password || '');
+        if (!email || !password) return null;
 
-        // Look up user by email
-        const user = await db.user.findUnique({
-          where: { email: credentials.email as string },
-        });
-
+        const user = await db.user.findUnique({ where: { email } });
         if (!user) return null;
 
-        // In demo/beta: any password is accepted for existing users
-        // TODO: In production, verify password hash
-        // For now, we do a basic check — empty password = reject
-        if (!credentials.password) return null;
+        await ensureCredentialStore();
+        const rows = await db.$queryRaw<Array<{ passwordHash: string }>>`
+          SELECT passwordHash FROM UserCredential WHERE userId = ${user.id} LIMIT 1
+        `;
+        if (!rows[0] || !(await verifyPassword(password, rows[0].passwordHash))) return null;
 
         return {
           id: user.id,
@@ -37,7 +49,6 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
 
-  // ─── Session & JWT Callbacks ─────────────────────────────
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -55,25 +66,21 @@ export const authOptions: NextAuthOptions = {
     },
   },
 
-  // ─── Pages ──────────────────────────────────────────────
   pages: {
-    signIn: '/',       // SPA — login handled in-page
-    error: '/',        // SPA — errors shown in-page
+    signIn: '/',
+    error: '/',
   },
 
-  // ─── Session Config ─────────────────────────────────────
   session: {
     strategy: 'jwt',
-    maxAge: 24 * 60 * 60, // 24 hours
+    maxAge: 24 * 60 * 60,
   },
 
-  // ─── JWT Config ─────────────────────────────────────────
   jwt: {
     maxAge: 24 * 60 * 60,
   },
 
-  // ─── Security ────────────────────────────────────────────
-  secret: process.env.NEXTAUTH_SECRET || 'adso-dev-secret-change-in-production',
+  secret: process.env.NEXTAUTH_SECRET,
 };
 
 const handler = NextAuth(authOptions);
