@@ -2,7 +2,7 @@
 
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import StudentDashboard from '@/components/sections/StudentDashboard';
+import LearnerCockpit from '@/components/sections/LearnerCockpit';
 
 export default function StudentCockpitPage() {
   return (
@@ -16,7 +16,7 @@ export default function StudentCockpitPage() {
             <p className="mt-4 max-w-3xl text-base leading-7 text-slate-300 sm:text-lg">Un espace d'apprentissage orienté preuve : cours, modules, progression et entraînement réunis dans une seule vue.</p>
           </div>
         </section>
-        <StudentDashboard />
+        <LearnerCockpit />
       </main>
       <Footer />
     </>
