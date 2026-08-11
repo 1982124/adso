@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="ADSO">
+  <rect width="128" height="128" rx="28" fill="#020617"/>
+  <rect x="12" y="12" width="104" height="104" rx="24" fill="#059669"/>
+  <path d="M31 76 49 43h12l18 33H67l-3.8-7H47.8L44 76H31Zm21-24-5.7 10.5h11.4L52 52Zm30-9h14c11.2 0 18 6.2 18 16.5S107.2 76 96 76H82V43Zm13.2 24.7c5.2 0 8.8-2.7 8.8-8.2s-3.6-8.2-8.8-8.2h-3.8v16.4h3.8Z" fill="white"/>
+</svg>
