@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import LearnerCockpit from '@/components/sections/LearnerCockpit';
@@ -7,6 +8,8 @@ import { ArrowLeft, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function StudentCockpitPage() {
+  const router = useRouter();
+
   return (
     <>
       <Navbar />
@@ -22,7 +25,7 @@ export default function StudentCockpitPage() {
                 <h1 className="max-w-4xl text-3xl font-bold tracking-tight sm:text-5xl">Votre salle de cours, votre progression, votre prochaine action.</h1>
                 <p className="mt-4 max-w-3xl text-base leading-7 text-slate-300 sm:text-lg">Un espace d'apprentissage orienté preuve : cours, modules, progression et entraînement réunis dans une seule vue.</p>
               </div>
-              <Button variant="outline" className="w-fit border-white/30 bg-white/10 text-white hover:bg-white hover:text-slate-900" onClick={() => window.location.assign('/')}>
+              <Button variant="outline" className="w-fit border-white/30 bg-white/10 text-white hover:bg-white hover:text-slate-900" onClick={() => router.push('/')}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Retour à l'accueil
               </Button>
             </div>
