@@ -30,30 +30,16 @@ export async function GET() {
       claimsByMonthMap.set(key, (claimsByMonthMap.get(key) ?? 0) + 1)
     }
     const claimsByMonth = Array.from(claimsByMonthMap.entries()).map(([mois, nombre]) => ({ mois, nombre })).sort((a, b) => a.mois.localeCompare(b.mois))
-
     const policies = await db.insurancePolicy.findMany({ where: { userId }, select: { type: true } })
     const policiesByTypeMap = new Map<string, number>()
     for (const p of policies) policiesByTypeMap.set(p.type, (policiesByTypeMap.get(p.type) ?? 0) + 1)
     const policiesByType = Array.from(policiesByTypeMap.entries()).map(([type, nombre]) => ({ type, nombre }))
-
     const claimsAll = await db.insuranceClaim.findMany({ where: { userId }, select: { status: true } })
     const claimsByStatusMap = new Map<string, number>()
     for (const c of claimsAll) claimsByStatusMap.set(c.status, (claimsByStatusMap.get(c.status) ?? 0) + 1)
     const claimsByStatus = Array.from(claimsByStatusMap.entries()).map(([statut, nombre]) => ({ statut, nombre }))
 
-    return NextResponse.json({
-      kpis: {
-        policesActives: activePolicies,
-        totalReclamations: totalClaims,
-        coutTotalReclamations: Number(totalClaimCost.toFixed(2)),
-        alertesFraudeEnAttente: fraudAlerts,
-        primeMoyenne: Number(averagePremium.toFixed(2)),
-        risqueMoyen: Number(averageRisk.toFixed(2)),
-      },
-      reclamationsParMois: claimsByMonth,
-      policesParType: policiesByType,
-      reclamationsParStatut: claimsByStatus,
-    })
+    return NextResponse.json({ kpis: { policesActives: activePolicies, totalReclamations: totalClaims, coutTotalReclamations: Number(totalClaimCost.toFixed(2)), alertesFraudeEnAttente: fraudAlerts, primeMoyenne: Number(averagePremium.toFixed(2)), risqueMoyen: Number(averageRisk.toFixed(2)) }, reclamationsParMois: claimsByMonth, policesParType: policiesByType, reclamationsParStatut: claimsByStatus })
   } catch (error) {
     console.error('[Dashboard GET]', error)
     return NextResponse.json({ error: 'Erreur interne' }, { status: 500 })
