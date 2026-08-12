@@ -1,15 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Vercel provides its own production runtime. Keeping the Vercel deployment
-  // on the standard Next.js output avoids standalone tracing artifacts that
-  // are not produced consistently by Next.js 16/Turbopack.
+  // Vercel provides its own production runtime. Keep the standard Next.js
+  // output so deployment remains compatible with Next.js 16.
   reactStrictMode: false,
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Security headers are handled by middleware.ts
-  // Only API caching headers remain here as middleware handles the rest
+  // Security headers and API rate limiting are handled by src/proxy.ts.
   async headers() {
     return [
       {
