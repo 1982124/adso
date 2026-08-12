@@ -1,7 +1,12 @@
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 
-const scrypt = promisify(scryptCallback);
+const scrypt = promisify(scryptCallback) as unknown as (
+  password: string | Buffer,
+  salt: string | Buffer,
+  keylen: number,
+  options?: { N?: number; r?: number; p?: number; maxmem?: number },
+) => Promise<Buffer>;
 const KEY_LENGTH = 64;
 const SALT_LENGTH = 16;
 const SCRYPT_OPTIONS = { N: 16384, r: 8, p: 1 } as const;
@@ -9,7 +14,7 @@ const SCRYPT_OPTIONS = { N: 16384, r: 8, p: 1 } as const;
 /** Hash a password with a salted, memory-hard KDF. */
 export async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(SALT_LENGTH);
-  const derivedKey = (await scrypt(password, salt, KEY_LENGTH, SCRYPT_OPTIONS)) as Buffer;
+  const derivedKey = await scrypt(password, salt, KEY_LENGTH, SCRYPT_OPTIONS);
 
   return [
     'scrypt',
@@ -30,11 +35,11 @@ export async function verifyPassword(password: string, encodedHash: string): Pro
   const expectedKey = Buffer.from(keyBase64, 'base64');
   if (salt.length !== SALT_LENGTH || expectedKey.length !== KEY_LENGTH) return false;
 
-  const derivedKey = (await scrypt(password, salt, expectedKey.length, {
+  const derivedKey = await scrypt(password, salt, expectedKey.length, {
     N: Number(n),
     r: Number(r),
     p: Number(p),
-  })) as Buffer;
+  });
 
   return timingSafeEqual(derivedKey, expectedKey);
 }
@@ -42,7 +47,7 @@ export async function verifyPassword(password: string, encodedHash: string): Pro
 export function validatePassword(password: string): string | null {
   if (password.length < 10) return 'Le mot de passe doit contenir au moins 10 caractères.';
   if (!/[a-z]/.test(password)) return 'Le mot de passe doit contenir une minuscule.';
-  if (!/[A-Z]/.test(password)) return 'Le mot de passe doit contenir une majuscule.';
+  if (!/[A-Z]/.test(password)) return 'Le mot de passe doit contenir une majuscule.'
   if (!/[0-9]/.test(password)) return 'Le mot de passe doit contenir un chiffre.';
   return null;
 }
