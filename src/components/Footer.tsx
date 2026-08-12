@@ -44,7 +44,17 @@ const footerVariants = {
 export default function Footer() {
   const { locale, setLocale } = useLocaleStore()
 
+  const trackShare = (platform: string) => {
+    void fetch('/api/analytics/shares', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      keepalive: true,
+      body: JSON.stringify({ platform, path: window.location.pathname }),
+    }).catch(() => undefined)
+  }
+
   const shareOnFacebook = () => {
+    trackShare('facebook')
     const url = encodeURIComponent(window.location.origin)
     window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank', 'noopener,noreferrer')
   }
@@ -52,8 +62,9 @@ export default function Footer() {
   const copyPromotionMessage = async () => {
     try {
       await navigator.clipboard.writeText(`${promotionMessage} ${window.location.origin}`)
+      trackShare('copy')
     } catch {
-      // Clipboard access can be unavailable in restricted browsers; sharing remains available.
+      // Clipboard access can be unavailable in restricted browsers.
     }
   }
 
