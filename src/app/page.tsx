@@ -17,6 +17,7 @@ import PricingSection from '@/components/sections/PricingSection';
 import RoadmapSection from '@/components/sections/RoadmapSection';
 import SecuritySection from '@/components/sections/SecuritySection';
 import AnalyticsSection from '@/components/sections/AnalyticsSection';
+import AboutSection from '@/components/sections/AboutSection';
 
 const LearningPlatform = dynamic(() => import('@/components/modules/learning/LearningPlatform'), { ssr: false, loading: () => <ModuleLoader label="Formation" /> });
 const MechanicModule = dynamic(() => import('@/components/modules/MechanicModule'), { ssr: false, loading: () => <ModuleLoader label="Mécanicien IA" /> });
@@ -64,8 +65,7 @@ export default function Home() {
   return (
     <>
       <Navbar />
-      <main role="main" aria-label="ADSO — Auto Drive School Online">
-        {/* Key the boundary by view: a failure in one module must never poison navigation to every other module. */}
+      <main role="main" aria-label="ADSO — AI-Driven & Smart Operations">
         <ViewErrorBoundary key={currentView}>
           {currentView === 'home' && <HomeView />}
           {currentView === 'learning' && <LearningPlatform />}
@@ -91,6 +91,7 @@ function HomeView() {
   return (
     <>
       <HeroSection />
+      <AboutSection />
       <StatsSection />
       <EcosystemSection />
       <AIFeaturesSection />
@@ -124,7 +125,7 @@ function BlueprintView() {
       <DirectivesIA />
       <footer className="border-t border-slate-800 py-12 px-6 text-center">
         <p className="text-slate-500 text-sm">
-          ADSO — Auto Drive School Online | Blueprint v1.0 | Août 2026 | Confidentiel
+          ADSO — AI-Driven & Smart Operations | Blueprint v1.0 | Août 2026 | Confidentiel
         </p>
         <p className="text-slate-600 text-xs mt-2">
           © 2026 ADSO Engineering. Tous droits réservés.
