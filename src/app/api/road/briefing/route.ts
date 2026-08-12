@@ -6,6 +6,13 @@ function parseMetadata(value: string) {
   try { return JSON.parse(value) as Record<string, unknown>; } catch { return {}; }
 }
 
+type RoadEvent = {
+  id: string;
+  eventType?: string;
+  createdAt: Date;
+  metadata: string;
+};
+
 export async function GET(request: NextRequest) {
   try {
     const { error: authError } = await requireAuth();
@@ -27,8 +34,8 @@ export async function GET(request: NextRequest) {
     });
 
     const radiusKm = Number(url.searchParams.get('radiusKm') ?? 25);
-    const items = events.map((event) => ({ event, metadata: parseMetadata(event.metadata) }))
-      .filter(({ metadata }) => {
+    const items = (events as unknown as RoadEvent[]).map((event) => ({ event, metadata: parseMetadata(event.metadata) }))
+      .filter(({ event, metadata }) => {
         if (metadata.country && metadata.country !== country) return false;
         if (typeof metadata.latitude !== 'number' || typeof metadata.longitude !== 'number') return event.eventType !== 'road_hazard';
         const dLat = (metadata.latitude - lat) * 111;
@@ -38,7 +45,7 @@ export async function GET(request: NextRequest) {
       .slice(0, 50)
       .map(({ event, metadata }) => ({
         id: event.id,
-        type: event.eventType,
+        type: event.eventType ?? 'road_hazard',
         title: metadata.title ?? 'Information routière',
         description: metadata.description ?? metadata.summary ?? '',
         severity: metadata.severity ?? 'info',
