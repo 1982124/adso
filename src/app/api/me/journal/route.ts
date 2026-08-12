@@ -44,7 +44,6 @@ export async function POST(request: Request) {
     const title = clean(body.title, MAX_TITLE);
     const text = clean(body.body, MAX_BODY);
     const mood = clean(body.mood, MAX_MOOD);
-
     if (!text) return NextResponse.json({ error: 'Le contenu du journal est requis' }, { status: 400 });
 
     const entry = await db.analyticsEvent.create({
@@ -55,10 +54,31 @@ export async function POST(request: Request) {
       },
       select: { id: true, createdAt: true },
     });
-
     return NextResponse.json({ ok: true, entry }, { status: 201 });
   } catch (error) {
     console.error('[POST /api/me/journal] Error:', error);
     return NextResponse.json({ error: 'Impossible d’enregistrer la note' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  const { error, session } = await requireAuth();
+  if (error) return error;
+  const userId = getUserId(session);
+  if (!userId) return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 401 });
+
+  try {
+    const body = (await request.json()) as Record<string, unknown>;
+    const id = clean(body.id, 64);
+    if (!id) return NextResponse.json({ error: 'Identifiant de note requis' }, { status: 400 });
+
+    const entry = await db.analyticsEvent.findFirst({ where: { id, userId, eventType: 'journal_entry' }, select: { id: true } });
+    if (!entry) return NextResponse.json({ error: 'Note introuvable' }, { status: 404 });
+
+    await db.analyticsEvent.delete({ where: { id: entry.id } });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error('[DELETE /api/me/journal] Error:', error);
+    return NextResponse.json({ error: 'Impossible de supprimer la note' }, { status: 500 });
   }
 }
