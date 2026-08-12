@@ -11,12 +11,17 @@ function catalogFallback() {
       ...module,
       order: moduleIndex,
       courseId: course.id,
+      objectives: null,
+      tips: null,
+      commonMistakes: null,
     })),
     studentProgress: null,
   }));
 }
 
 export async function GET(request: NextRequest) {
+  const catalog = catalogFallback();
+
   try {
     const { searchParams } = request.nextUrl;
     const userId = searchParams.get('userId');
@@ -30,42 +35,34 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Production must remain useful even before the private seed job has run.
-    // The versioned pedagogical catalogue is the read-only fallback; database
-    // data still wins whenever it exists.
-    const catalog = courses.length > 0 ? courses : catalogFallback();
+    // Database content wins when available. The versioned catalogue remains
+    // the production-safe source of truth when the database is empty.
+    const coursesCatalog = courses.length > 0 ? courses : catalog;
 
-    if (userId) {
-      const user = await db.user.findUnique({ where: { email: userId } });
-
-      // A demo/first-visit learner should still see the real course catalogue.
-      // We deliberately attach no progress until an authenticated learner exists.
-      if (!user) {
-        return NextResponse.json(catalog);
-      }
-
-      const progressRecords = await db.studentProgress.findMany({
-        where: { userId: user.id },
-      });
-
-      const progressMap = new Map(
-        progressRecords.map((p) => [p.courseId, p])
-      );
-
-      return NextResponse.json(
-        catalog.map((course) => ({
-          ...course,
-          studentProgress: progressMap.get(course.id) ?? null,
-        }))
-      );
+    if (!userId) {
+      return NextResponse.json(coursesCatalog);
     }
 
-    return NextResponse.json(catalog);
-  } catch (error) {
-    console.error('[GET /api/courses] Error:', error);
+    const user = await db.user.findUnique({ where: { email: userId } });
+    if (!user) {
+      return NextResponse.json(coursesCatalog);
+    }
+
+    const progressRecords = await db.studentProgress.findMany({
+      where: { userId: user.id },
+    });
+    const progressMap = new Map(progressRecords.map((progress) => [progress.courseId, progress]));
+
     return NextResponse.json(
-      { error: 'Erreur lors du chargement des cours' },
-      { status: 500 }
+      coursesCatalog.map((course) => ({
+        ...course,
+        studentProgress: progressMap.get(course.id) ?? null,
+      }))
     );
+  } catch (error) {
+    // Never let a missing/unavailable Prisma database blank the learner's
+    // course catalogue. The pedagogical catalogue is bundled with the app.
+    console.error('[GET /api/courses] Database unavailable; serving catalogue fallback:', error);
+    return NextResponse.json(catalog);
   }
 }
