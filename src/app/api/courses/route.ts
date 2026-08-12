@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { db } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { courseContent } from '../../../../seed-data/course-content';
@@ -20,7 +21,9 @@ function catalogFallback() {
   }));
 }
 
-function hydrateCoursesFromCatalogue(courses: Awaited<ReturnType<typeof db.course.findMany>>) {
+type CourseWithModules = Prisma.CourseGetPayload<{ include: { modules: true } }>;
+
+function hydrateCoursesFromCatalogue(courses: CourseWithModules[]) {
   const fallbackById = new Map(catalogFallback().map((course) => [course.id, course]));
 
   return courses.map((course) => {
@@ -57,14 +60,10 @@ export async function GET(_request: NextRequest) {
       },
     });
 
-    // Keep the database as the primary source, but never let an empty module
-    // or an unseeded course hide the versioned pedagogical content.
     const coursesCatalog = courses.length > 0
       ? hydrateCoursesFromCatalogue(courses)
       : catalog;
 
-    // Progress is private learner data. Never accept a userId from the URL:
-    // doing so would allow one learner to request another learner's progress.
     const session = await getSession();
     const sessionUserId = session?.user?.id;
     if (!sessionUserId) return NextResponse.json(coursesCatalog);
@@ -81,8 +80,6 @@ export async function GET(_request: NextRequest) {
       }))
     );
   } catch (error) {
-    // Never let a missing/unavailable Prisma database blank the learner's
-    // course catalogue. The pedagogical catalogue is bundled with the app.
     console.error('[GET /api/courses] Database unavailable; serving catalogue fallback:', error);
     return NextResponse.json(catalog);
   }
