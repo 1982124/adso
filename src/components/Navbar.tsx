@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Menu, X, Car, ArrowLeft, FileCode, Home, GraduationCap,
@@ -29,6 +29,7 @@ const moduleIcons: Record<string, React.ComponentType<{ className?: string }>> =
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('hero');
@@ -161,7 +162,7 @@ export default function Navbar() {
               ) : isHome ? (
                 <Button size="sm" className="hidden md:inline-flex bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleNavClick('#dashboard')}>Essai gratuit</Button>
               ) : isStudentRoute ? (
-                <Button size="sm" variant="outline" className="hidden md:inline-flex border-slate-300 text-slate-700 hover:bg-slate-100" onClick={() => window.location.assign('/')}>Accueil</Button>
+                <Button size="sm" variant="outline" className="hidden md:inline-flex border-slate-300 text-slate-700 hover:bg-slate-100" onClick={() => router.push('/')}>Accueil</Button>
               ) : null}
               <button onClick={() => setIsMobileOpen(!isMobileOpen)} className={`lg:hidden p-2 rounded-md transition-colors ${isBlueprint ? 'text-slate-300 hover:bg-slate-800' : textSecondary}`} aria-label={isMobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'}>
                 {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -182,7 +183,14 @@ export default function Navbar() {
                   const isActive = currentView === mod;
                   return (
                     <button key={mod} onClick={() => handleModuleClick(mod)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${isActive ? 'text-emerald-700 bg-emerald-50' : 'text-slate-700 hover:bg-slate-100'}`}>
-                      {Icon && <Icon className="w-5 h-5" /><span>{moduleLabels[mod]?.label}</span>}{v41Modules.includes(mod) && <span className="ml-auto px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-600">V4</span>}
+                      {Icon && (
+                        <>
+                          <Icon className="w-5 h-5" />
+                          <span>{moduleLabels[mod]?.label}</span>
+                        </>
+                      )}
+                      {!Icon && <span>{moduleLabels[mod]?.label}</span>}
+                      {v41Modules.includes(mod) && <span className="ml-auto px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-600">V4</span>}
                     </button>
                   );
                 })}
