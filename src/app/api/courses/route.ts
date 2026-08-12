@@ -19,6 +19,30 @@ function catalogFallback() {
   }));
 }
 
+function hydrateCoursesFromCatalogue(courses: Awaited<ReturnType<typeof db.course.findMany>>) {
+  const fallbackById = new Map(catalogFallback().map((course) => [course.id, course]));
+
+  return courses.map((course) => {
+    const fallback = fallbackById.get(course.id);
+    if (!fallback) return course;
+
+    const modules = course.modules.length > 0
+      ? course.modules.map((module) => {
+          const fallbackModule = fallback.modules.find((item) => item.id === module.id);
+          return fallbackModule && !module.content?.trim()
+            ? { ...fallbackModule, ...module, content: fallbackModule.content }
+            : module;
+        })
+      : fallback.modules;
+
+    return {
+      ...fallback,
+      ...course,
+      modules,
+    };
+  });
+}
+
 export async function GET(request: NextRequest) {
   const catalog = catalogFallback();
 
@@ -35,18 +59,16 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Database content wins when available. The versioned catalogue remains
-    // the production-safe source of truth when the database is empty.
-    const coursesCatalog = courses.length > 0 ? courses : catalog;
+    // Keep the database as the primary source, but never let an empty module
+    // or an unseeded course hide the versioned pedagogical content.
+    const coursesCatalog = courses.length > 0
+      ? hydrateCoursesFromCatalogue(courses)
+      : catalog;
 
-    if (!userId) {
-      return NextResponse.json(coursesCatalog);
-    }
+    if (!userId) return NextResponse.json(coursesCatalog);
 
     const user = await db.user.findUnique({ where: { email: userId } });
-    if (!user) {
-      return NextResponse.json(coursesCatalog);
-    }
+    if (!user) return NextResponse.json(coursesCatalog);
 
     const progressRecords = await db.studentProgress.findMany({
       where: { userId: user.id },
