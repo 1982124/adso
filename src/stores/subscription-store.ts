@@ -5,8 +5,11 @@ export interface Plan {
   id: string;
   name: string;
   price: number;
+  annualPrice?: number;
   currency: string;
   features: string[];
+  audience?: 'b2c';
+  recommended?: boolean;
 }
 
 const DEFAULT_PLANS: Plan[] = [
@@ -14,11 +17,15 @@ const DEFAULT_PLANS: Plan[] = [
     id: 'free',
     name: 'Gratuit',
     price: 0,
+    annualPrice: 0,
     currency: 'EUR',
+    audience: 'b2c',
     features: [
       'Accès aux cours de base',
-      '3 quiz par jour',
+      'Quiz limités',
       'Profil étudiant',
+      'Suivi de progression',
+      'Partage de résultats',
       'Support communautaire',
     ],
   },
@@ -26,12 +33,15 @@ const DEFAULT_PLANS: Plan[] = [
     id: 'starter',
     name: 'Starter',
     price: 9.99,
+    annualPrice: 99.9,
     currency: 'EUR',
+    audience: 'b2c',
     features: [
       'Tous les cours de théorie',
       'Quiz illimités',
-      'Simulations de base',
-      'Suivi de progression',
+      'Examens adaptatifs',
+      'Progression sauvegardée',
+      'Statistiques personnelles',
       'Support par email',
     ],
   },
@@ -39,13 +49,17 @@ const DEFAULT_PLANS: Plan[] = [
     id: 'pro',
     name: 'Pro',
     price: 19.99,
+    annualPrice: 199.9,
     currency: 'EUR',
+    audience: 'b2c',
+    recommended: true,
     features: [
       'Tout le contenu Starter',
-      'Simulations avancées',
       'Examens blancs illimités',
       'Coach IA personnel',
-      'Moniteur en ligne',
+      'Simulations avancées',
+      'Analyse des erreurs et points faibles',
+      'Parcours de préparation personnalisé',
       'Support prioritaire',
     ],
   },
@@ -53,13 +67,16 @@ const DEFAULT_PLANS: Plan[] = [
     id: 'premium',
     name: 'Premium',
     price: 39.99,
+    annualPrice: 399.9,
     currency: 'EUR',
+    audience: 'b2c',
     features: [
       'Tout le contenu Pro',
-      'Certification officielle',
+      'Cours pratiques guidés',
+      'Moniteur dédié',
+      'Certification',
       'Neuro-pédagogie avancée',
-      'Tablette moniteur incluse',
-      'API marketplace',
+      'Parcours IA complet',
       'Support dédié 24/7',
       'Accès multi-appareils',
     ],
@@ -81,9 +98,19 @@ interface SubscriptionState {
   reactivateSubscription: () => void;
 }
 
+function getExpiration(period: BillingPeriod) {
+  const expires = new Date();
+  if (period === 'yearly') {
+    expires.setFullYear(expires.getFullYear() + 1);
+  } else {
+    expires.setMonth(expires.getMonth() + 1);
+  }
+  return expires.toISOString();
+}
+
 export const useSubscriptionStore = create<SubscriptionState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       plan: 'free',
       plans: DEFAULT_PLANS,
       billingPeriod: 'monthly',
@@ -92,13 +119,11 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
       setPlan: (planId) => {
         const isPaidPlan = planId !== 'free';
-        const now = new Date();
-        const expires = new Date(now);
-        expires.setMonth(expires.getMonth() + 1);
+        const billingPeriod = get().billingPeriod;
         set({
           plan: planId,
           isActive: true,
-          expiresAt: isPaidPlan ? expires.toISOString() : null,
+          expiresAt: isPaidPlan ? getExpiration(billingPeriod) : null,
         });
       },
 
@@ -107,12 +132,10 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       cancelSubscription: () => set({ isActive: false }),
 
       reactivateSubscription: () => {
-        const now = new Date();
-        const expires = new Date(now);
-        expires.setMonth(expires.getMonth() + 1);
+        const { plan, billingPeriod } = get();
         set({
           isActive: true,
-          expiresAt: expires.toISOString(),
+          expiresAt: plan === 'free' ? null : getExpiration(billingPeriod),
         });
       },
     }),
