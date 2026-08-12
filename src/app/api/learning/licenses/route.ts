@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { licenseTypes } from '@/data/licenses';
 
 const CATEGORY_ALIASES: Record<string, string[]> = {
   moto: ['motorcycle', 'moto', 'cyclomoteur'],
@@ -8,16 +9,22 @@ const CATEGORY_ALIASES: Record<string, string[]> = {
   spécial: ['special', 'spécial'],
 };
 
+function categoryFromStatic(category: string) {
+  if (category === 'motorcycle') return 'moto';
+  if (category === 'automobile') return 'auto';
+  if (category === 'heavy') return 'poids lourds';
+  return 'spécial';
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category')?.trim().toLowerCase() || null;
 
     const where: Record<string, unknown> = {};
-
     if (category) {
       const aliases = CATEGORY_ALIASES[category];
-      where.category = aliases?.length === 1 ? aliases[0] : { in: aliases ?? [category] };
+      where.category = { in: aliases ?? [category] };
     }
 
     const licenses = await db.licenseCategory.findMany({
@@ -25,7 +32,7 @@ export async function GET(request: NextRequest) {
       orderBy: { code: 'asc' },
     });
 
-    const parsed = licenses.map((l) => ({
+    const dbParsed = licenses.map((l) => ({
       id: l.id,
       code: l.code,
       name: l.name,
@@ -42,15 +49,44 @@ export async function GET(request: NextRequest) {
       icon: l.icon,
     }));
 
+    // The static catalogue is part of the application and must remain usable
+    // when the DB has not been seeded yet. DB records take precedence by code.
+    const staticParsed = licenseTypes
+      .filter((license) => !category || categoryFromStatic(license.category) === category)
+      .map((license) => ({
+        id: license.id,
+        code: license.shortName,
+        name: license.name,
+        description: license.description,
+        category: categoryFromStatic(license.category),
+        minAge: license.minimumAge,
+        minAgeHeld: null,
+        vehicles: [],
+        prerequisites: license.requirements,
+        duration: '',
+        theoryExam: true,
+        practicalExam: true,
+        evaluationCriteria: [],
+        icon: license.icon,
+      }));
+
+    const byCode = new Map(dbParsed.map((license) => [license.code, license]));
+    for (const license of staticParsed) {
+      if (!byCode.has(license.code)) byCode.set(license.code, license);
+    }
+
+    const parsed = Array.from(byCode.values()).sort((a, b) => a.code.localeCompare(b.code, 'fr-FR'));
+
     return NextResponse.json({
       licenses: parsed,
       total: parsed.length,
+      source: dbParsed.length > 0 ? 'database+catalogue' : 'catalogue',
     });
   } catch (error) {
     console.error('[GET /api/learning/licenses] Error:', error);
     return NextResponse.json(
       { error: 'Erreur lors du chargement des catégories de permis' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
