@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    let certification = null;
+    let certification: Awaited<ReturnType<typeof issueExamCertificate>> | null = null;
     if (passed && examType === 'mock_exam') {
       certification = await issueExamCertificate(user.id, score, countryCode ?? 'FR', licenseCode ?? null);
     }
