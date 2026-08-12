@@ -2,11 +2,50 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
 
+function startOfDay(date: Date) {
+  const value = new Date(date);
+  value.setHours(0, 0, 0, 0);
+  return value;
+}
+
+function startOfMonth(date: Date) {
+  const value = startOfDay(date);
+  value.setDate(1);
+  return value;
+}
+
+function startOfYear(date: Date) {
+  const value = startOfDay(date);
+  value.setMonth(0, 1);
+  return value;
+}
+
+function parseShareMetadata(metadata: string): {
+  platform: string;
+  country: string;
+  contentType: string;
+} {
+  try {
+    const value = JSON.parse(metadata) as Record<string, unknown>;
+    return {
+      platform: typeof value.platform === 'string' ? value.platform : 'other',
+      country: typeof value.country === 'string' ? value.country : 'unknown',
+      contentType: typeof value.contentType === 'string' ? value.contentType : 'unknown',
+    };
+  } catch {
+    return { platform: 'other', country: 'unknown', contentType: 'unknown' };
+  }
+}
+
 export async function GET() {
   const { error } = await requireRole('admin');
   if (error) return error;
   try {
-    // Run all aggregation queries in parallel
+    const now = new Date();
+    const today = startOfDay(now);
+    const month = startOfMonth(now);
+    const year = startOfYear(now);
+
     const [
       totalUsers,
       totalCourses,
@@ -17,6 +56,7 @@ export async function GET() {
       totalEnrollments,
       completedCourses,
       recentAttempts,
+      shareEvents,
     ] = await Promise.all([
       db.user.count(),
       db.course.count(),
@@ -35,6 +75,12 @@ export async function GET() {
         take: 5,
         include: { user: { select: { name: true, email: true } } },
       }),
+      db.analyticsEvent.findMany({
+        where: { eventType: 'share' },
+        orderBy: { createdAt: 'desc' },
+        take: 10000,
+        select: { id: true, userId: true, metadata: true, createdAt: true },
+      }),
     ]);
 
     const averageScore = avgScoreResult._avg.score ?? 0;
@@ -43,6 +89,56 @@ export async function GET() {
       totalQuizAttempts > 0
         ? Math.round((passedAttempts / totalQuizAttempts) * 100)
         : 0;
+
+    const shares = shareEvents.map((event) => ({
+      ...event,
+      ...parseShareMetadata(event.metadata),
+    }));
+
+    const sharesToday = shares.filter((event) => event.createdAt >= today).length;
+    const sharesThisMonth = shares.filter((event) => event.createdAt >= month).length;
+    const sharesThisYear = shares.filter((event) => event.createdAt >= year).length;
+
+    const platformCounts = new Map<string, number>();
+    const countryCounts = new Map<string, number>();
+    const countryPlatformCounts = new Map<string, Map<string, number>>();
+    const uniqueSharers = new Set<string>();
+
+    for (const share of shares) {
+      platformCounts.set(share.platform, (platformCounts.get(share.platform) ?? 0) + 1);
+      countryCounts.set(share.country, (countryCounts.get(share.country) ?? 0) + 1);
+      if (share.userId) uniqueSharers.add(share.userId);
+
+      const countryPlatforms = countryPlatformCounts.get(share.country) ?? new Map<string, number>();
+      countryPlatforms.set(share.platform, (countryPlatforms.get(share.platform) ?? 0) + 1);
+      countryPlatformCounts.set(share.country, countryPlatforms);
+    }
+
+    const sharePlatforms = [...platformCounts.entries()]
+      .map(([platform, count]) => ({ platform, count }))
+      .sort((a, b) => b.count - a.count);
+
+    const shareCountries = [...countryCounts.entries()]
+      .map(([country, count]) => ({ country, count }))
+      .sort((a, b) => b.count - a.count);
+
+    const shareByCountryAndPlatform = [...countryPlatformCounts.entries()]
+      .map(([country, platforms]) => ({
+        country,
+        total: [...platforms.values()].reduce((sum, count) => sum + count, 0),
+        platforms: [...platforms.entries()]
+          .map(([platform, count]) => ({ platform, count }))
+          .sort((a, b) => b.count - a.count),
+      }))
+      .sort((a, b) => b.total - a.total);
+
+    const recentShares = shares.slice(0, 10).map((share) => ({
+      id: share.id,
+      platform: share.platform,
+      country: share.country,
+      contentType: share.contentType,
+      createdAt: share.createdAt,
+    }));
 
     // Difficulty distribution
     const difficultyDist = await db.question.groupBy({
@@ -71,6 +167,17 @@ export async function GET() {
       completedCourses,
       averageScore: Math.round(averageScore * 10) / 10,
       passRate,
+      shares: {
+        today: sharesToday,
+        month: sharesThisMonth,
+        year: sharesThisYear,
+        total: shares.length,
+        uniqueSharers: uniqueSharers.size,
+        platforms: sharePlatforms,
+        countries: shareCountries,
+        byCountryAndPlatform: shareByCountryAndPlatform,
+        recent: recentShares,
+      },
       difficultyDistribution: difficultyDist.map((d) => ({
         difficulty: d.difficulty,
         count: d._count,
