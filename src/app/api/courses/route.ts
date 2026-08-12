@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getSession } from '@/lib/auth';
 import { courseContent } from '../../../../seed-data/course-content';
 
 function catalogFallback() {
@@ -43,13 +44,10 @@ function hydrateCoursesFromCatalogue(courses: Awaited<ReturnType<typeof db.cours
   });
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const catalog = catalogFallback();
 
   try {
-    const { searchParams } = request.nextUrl;
-    const userId = searchParams.get('userId');
-
     const courses = await db.course.findMany({
       orderBy: { order: 'asc' },
       include: {
@@ -65,13 +63,14 @@ export async function GET(request: NextRequest) {
       ? hydrateCoursesFromCatalogue(courses)
       : catalog;
 
-    if (!userId) return NextResponse.json(coursesCatalog);
-
-    const user = await db.user.findUnique({ where: { email: userId } });
-    if (!user) return NextResponse.json(coursesCatalog);
+    // Progress is private learner data. Never accept a userId from the URL:
+    // doing so would allow one learner to request another learner's progress.
+    const session = await getSession();
+    const sessionUserId = session?.user?.id;
+    if (!sessionUserId) return NextResponse.json(coursesCatalog);
 
     const progressRecords = await db.studentProgress.findMany({
-      where: { userId: user.id },
+      where: { userId: sessionUserId },
     });
     const progressMap = new Map(progressRecords.map((progress) => [progress.courseId, progress]));
 
