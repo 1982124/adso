@@ -11,6 +11,8 @@ function normalize(value: string): string {
     .trim();
 }
 
+type CountryResponse = Record<string, unknown>;
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -21,14 +23,12 @@ export async function GET(request: NextRequest) {
     const where: Record<string, unknown> = {};
     if (continent) where.continent = continent;
 
-    // Database search first. Prisma contains is not consistently accent-insensitive
-    // across deployments, so we also do a normalized in-memory match below.
     const dbCountries = await db.country.findMany({
       where,
       orderBy: [{ continent: 'asc' }, { name: 'asc' }],
     });
 
-    const dbParsed = dbCountries.map((c) => ({
+    const dbParsed: CountryResponse[] = dbCountries.map((c) => ({
       id: c.id,
       code: c.code,
       name: c.name,
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       sanctions: safeParse(c.sanctions),
     }));
 
-    let parsed = normalizedSearch
+    let parsed: CountryResponse[] = normalizedSearch
       ? dbParsed.filter((country) => {
           const haystack = [country.name, country.code, country.capital]
             .filter(Boolean)
@@ -62,9 +62,6 @@ export async function GET(request: NextRequest) {
         })
       : dbParsed;
 
-    // If the database has not been seeded yet (or the requested country is not
-    // there), search the canonical application country catalogue as a fallback.
-    // This keeps the country selector useful during recovery/development too.
     if (normalizedSearch && parsed.length === 0) {
       parsed = staticCountries
         .filter((country) => {
@@ -72,7 +69,7 @@ export async function GET(request: NextRequest) {
             .map(normalize);
           return haystack.some((value) => value.includes(normalizedSearch));
         })
-        .map((country) => ({
+        .map((country): CountryResponse => ({
           id: country.code,
           code: country.code,
           name: country.name,
