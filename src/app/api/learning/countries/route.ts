@@ -11,18 +11,43 @@ function normalize(value: string): string {
     .trim();
 }
 
+function mapStaticCountry(country: (typeof staticCountries)[number]) {
+  return {
+    id: country.code,
+    code: country.code,
+    name: country.name,
+    flag: country.flag,
+    continent: country.region,
+    capital: '',
+    languages: country.languages,
+    currency: country.currency,
+    drivingSide: country.drivingSide,
+    authority: '',
+    emergencyPhone: '',
+    minAge: 18,
+    speedUrban: 50,
+    speedRural: 90,
+    speedHighway: 120,
+    bloodAlcohol: '',
+    requiredDocuments: [],
+    requiredEquipment: [],
+    specialFeatures: [],
+    licenseCategories: country.licenseTypes,
+    commonInfractions: [],
+    sanctions: [],
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const continent = searchParams.get('continent');
+    const continent = searchParams.get('continent')?.trim() || '';
     const search = searchParams.get('search')?.trim() ?? '';
     const normalizedSearch = normalize(search);
 
     const where: Record<string, unknown> = {};
     if (continent) where.continent = continent;
 
-    // Database search first. Prisma contains is not consistently accent-insensitive
-    // across deployments, so we also do a normalized in-memory match below.
     const dbCountries = await db.country.findMany({
       where,
       orderBy: [{ continent: 'asc' }, { name: 'asc' }],
@@ -53,62 +78,49 @@ export async function GET(request: NextRequest) {
       sanctions: safeParse(c.sanctions),
     }));
 
-    let parsed = normalizedSearch
-      ? dbParsed.filter((country) => {
-          const haystack = [country.name, country.code, country.capital]
+    const filteredDb = normalizedSearch
+      ? dbParsed.filter((country) =>
+          [country.name, country.code, country.capital]
             .filter(Boolean)
-            .map((value) => normalize(String(value)));
-          return haystack.some((value) => value.includes(normalizedSearch));
-        })
+            .map((value) => normalize(String(value)))
+            .some((value) => value.includes(normalizedSearch)),
+        )
       : dbParsed;
 
-    // If the database has not been seeded yet (or the requested country is not
-    // there), search the canonical application country catalogue as a fallback.
-    // This keeps the country selector useful during recovery/development too.
-    if (normalizedSearch && parsed.length === 0) {
-      parsed = staticCountries
-        .filter((country) => {
-          const haystack = [country.name, country.code, country.region, ...country.languages]
-            .map(normalize);
-          return haystack.some((value) => value.includes(normalizedSearch));
-        })
-        .map((country) => ({
-          id: country.code,
-          code: country.code,
-          name: country.name,
-          flag: country.flag,
-          continent: country.region,
-          capital: '',
-          languages: country.languages,
-          currency: country.currency,
-          drivingSide: country.drivingSide,
-          authority: '',
-          emergencyPhone: '',
-          minAge: 18,
-          speedUrban: 50,
-          speedRural: 90,
-          speedHighway: 120,
-          bloodAlcohol: '',
-          requiredDocuments: [],
-          requiredEquipment: [],
-          specialFeatures: [],
-          licenseCategories: country.licenseTypes,
-          commonInfractions: [],
-          sanctions: [],
-        }));
+    // The application ships with a canonical country catalogue. It is the safe
+    // fallback when production/development DB seed data is missing or partial.
+    const filteredStatic = staticCountries
+      .filter((country) => !continent || country.region === continent)
+      .filter((country) => {
+        if (!normalizedSearch) return true;
+        return [country.name, country.code, country.region, ...country.languages]
+          .map(normalize)
+          .some((value) => value.includes(normalizedSearch));
+      })
+      .map(mapStaticCountry);
+
+    // Prefer authoritative DB rows, then fill any missing countries from the
+    // static catalogue. This prevents an empty selector while preserving DB data.
+    const byCode = new Map(filteredDb.map((country) => [country.code, country]));
+    for (const country of filteredStatic) {
+      if (!byCode.has(country.code)) byCode.set(country.code, country);
     }
+
+    const parsed = Array.from(byCode.values()).sort((a, b) =>
+      `${a.continent}:${a.name}`.localeCompare(`${b.continent}:${b.name}`, 'fr-FR'),
+    );
 
     return NextResponse.json({
       countries: parsed,
       total: parsed.length,
       searched: search || null,
-      source: dbParsed.length > 0 ? 'database' : 'catalogue',
+      source: dbParsed.length > 0 ? 'database+catalogue' : 'catalogue',
     });
   } catch (error) {
     console.error('[GET /api/learning/countries] Error:', error);
     return NextResponse.json(
       { error: 'Erreur lors du chargement des pays' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
