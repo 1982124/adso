@@ -34,9 +34,7 @@ export async function POST(request: NextRequest) {
     await ensureTable()
     const body = await request.json().catch(() => ({}))
     const platform = String(body.platform || '').trim().toLowerCase()
-    if (!PLATFORMS.has(platform)) {
-      return NextResponse.json({ error: 'Plateforme de partage invalide' }, { status: 400 })
-    }
+    if (!PLATFORMS.has(platform)) return NextResponse.json({ error: 'Plateforme de partage invalide' }, { status: 400 })
 
     const path = String(body.path || '/').trim().slice(0, 500)
     const country = isoCountry(request, body.country)
@@ -44,7 +42,6 @@ export async function POST(request: NextRequest) {
       'INSERT INTO "ShareEvent" ("id", "platform", "country", "path", "createdAt") VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)',
       id(), platform, country, path,
     )
-
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('[POST /api/analytics/shares]', error)
@@ -61,33 +58,28 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const country = searchParams.get('country')?.trim().toUpperCase()
     const platform = searchParams.get('platform')?.trim().toLowerCase()
-    const where: string[] = []
-    const params: string[] = []
-    if (country && COUNTRY_RE.test(country)) { where.push('"country" = ?'); params.push(country) }
-    if (platform && PLATFORMS.has(platform)) { where.push('"platform" = ?'); params.push(platform) }
-    const clause = where.length ? `WHERE ${where.join(' AND ')}` : ''
+    const filters: string[] = []
+    const filterParams: string[] = []
+    if (country && COUNTRY_RE.test(country)) { filters.push('"country" = ?'); filterParams.push(country) }
+    if (platform && PLATFORMS.has(platform)) { filters.push('"platform" = ?'); filterParams.push(platform) }
+    const clause = filters.length ? ` AND ${filters.join(' AND ')}` : ''
 
-    const rows = await db.$queryRawUnsafe<Array<{ platform: string; country: string | null; total: number }>>(
-      `SELECT "platform", "country", COUNT(*) AS "total" FROM "ShareEvent" ${clause} GROUP BY "platform", "country" ORDER BY "total" DESC`,
-      ...params,
-    )
-
-    const totals = await db.$queryRawUnsafe<Array<{ total: number }>>(`SELECT COUNT(*) AS "total" FROM "ShareEvent" ${clause}`, ...params)
-    const now = new Date()
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-    const startOfYear = new Date(now.getFullYear(), 0, 1).toISOString()
-    const periods = await Promise.all([
-      db.$queryRawUnsafe<Array<{ total: number }>>(`SELECT COUNT(*) AS "total" FROM "ShareEvent" WHERE "createdAt" >= ?${country && COUNTRY_RE.test(country) ? ' AND "country" = ?' : ''}${platform && PLATFORMS.has(platform) ? ' AND "platform" = ?' : ''}`, startOfDay, ...(country && COUNTRY_RE.test(country) ? [country] : []), ...(platform && PLATFORMS.has(platform) ? [platform] : [])),
-      db.$queryRawUnsafe<Array<{ total: number }>>(`SELECT COUNT(*) AS "total" FROM "ShareEvent" WHERE "createdAt" >= ?${country && COUNTRY_RE.test(country) ? ' AND "country" = ?' : ''}${platform && PLATFORMS.has(platform) ? ' AND "platform" = ?' : ''}`, startOfMonth, ...(country && COUNTRY_RE.test(country) ? [country] : []), ...(platform && PLATFORMS.has(platform) ? [platform] : [])),
-      db.$queryRawUnsafe<Array<{ total: number }>>(`SELECT COUNT(*) AS "total" FROM "ShareEvent" WHERE "createdAt" >= ?${country && COUNTRY_RE.test(country) ? ' AND "country" = ?' : ''}${platform && PLATFORMS.has(platform) ? ' AND "platform" = ?' : ''}`, startOfYear, ...(country && COUNTRY_RE.test(country) ? [country] : []), ...(platform && PLATFORMS.has(platform) ? [platform] : [])),
+    const [rows, totals, daily, monthly, annual] = await Promise.all([
+      db.$queryRawUnsafe<Array<{ platform: string; country: string | null; total: number }>>(
+        `SELECT "platform", "country", COUNT(*) AS "total" FROM "ShareEvent" WHERE 1=1${clause} GROUP BY "platform", "country" ORDER BY "total" DESC`,
+        ...filterParams,
+      ),
+      db.$queryRawUnsafe<Array<{ total: number }>>(`SELECT COUNT(*) AS "total" FROM "ShareEvent" WHERE 1=1${clause}`, ...filterParams),
+      db.$queryRawUnsafe<Array<{ total: number }>>(`SELECT COUNT(*) AS "total" FROM "ShareEvent" WHERE "createdAt" >= datetime('now','start of day')${clause}`, ...filterParams),
+      db.$queryRawUnsafe<Array<{ total: number }>>(`SELECT COUNT(*) AS "total" FROM "ShareEvent" WHERE "createdAt" >= datetime('now','start of month')${clause}`, ...filterParams),
+      db.$queryRawUnsafe<Array<{ total: number }>>(`SELECT COUNT(*) AS "total" FROM "ShareEvent" WHERE "createdAt" >= datetime('now','start of year')${clause}`, ...filterParams),
     ])
 
     return NextResponse.json({
       periods: {
-        daily: Number(periods[0][0]?.total || 0),
-        monthly: Number(periods[1][0]?.total || 0),
-        annual: Number(periods[2][0]?.total || 0),
+        daily: Number(daily[0]?.total || 0),
+        monthly: Number(monthly[0]?.total || 0),
+        annual: Number(annual[0]?.total || 0),
         total: Number(totals[0]?.total || 0),
       },
       byPlatform: rows.reduce<Record<string, number>>((acc, row) => { acc[row.platform] = (acc[row.platform] || 0) + Number(row.total); return acc }, {}),
