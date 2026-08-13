@@ -6,3 +6,899 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  id String @id @default(cuid())
+  email String @unique
+  name String
+  avatar String?
+  role String @default("student")
+  country String @default("FR")
+  language String @default("fr")
+  subscription String @default("free")
+  emailVerified DateTime?
+  image String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  accounts Account[]
+  studentProgress StudentProgress[]
+  quizAttempts QuizAttempt[]
+  enrollments Enrollment[]
+  chatMessages ChatMessage[]
+  skillRecords SkillRecord[]
+  certifications Certification[]
+  vehicleProfiles VehicleProfile[]
+  drivingSessions DrivingSession[]
+  diagnosticRecords DiagnosticRecord[]
+  securityEvents SecurityEvent[]
+  trustScores TrustScore[]
+  insurancePolicies InsurancePolicy[]
+  insuranceClaims InsuranceClaim[]
+  marketplaceListings MarketplaceListing[]
+  listingReviews ListingReview[]
+  bookingRecords BookingRecord[]
+  fleetDrivers FleetDriver[]
+  maintenanceRecords MaintenanceRecord[]
+  fuelRecords FuelRecord[]
+  trafficViolations TrafficViolation[]
+  auditLogEntries AuditLogEntry[]
+  telematicsTrips TelematicsTrip[]
+  vehicleTwinsOwner VehicleTwin[] @relation("VehicleTwinOwner")
+  accidentIncidents AccidentIncident[]
+  fraudAlerts FraudAlert[]
+  collaborationEvents CollaborationEvent[]
+  apiKeys ApiKey[]
+}
+
+model Country {
+  id String @id @default(cuid())
+  code String @unique
+  name String
+  flag String
+  continent String
+  capital String
+  languages String
+  currency String
+  drivingSide String @default("right")
+  authority String
+  emergencyPhone String
+  minAge Int @default(18)
+  speedUrban Int
+  speedRural Int
+  speedHighway Int
+  bloodAlcohol Float
+  requiredDocuments String
+  requiredEquipment String
+  specialFeatures String
+  licenseCategories String
+  commonInfractions String
+  sanctions String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LicenseCategory {
+  id String @id @default(cuid())
+  code String @unique
+  name String
+  description String
+  category String
+  minAge Int
+  minAgeHeld Int?
+  vehicles String
+  prerequisites String
+  duration Int
+  theoryExam Boolean @default(true)
+  practicalExam Boolean @default(true)
+  evaluationCriteria String
+  icon String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Course {
+  id String @id @default(cuid())
+  title String
+  description String
+  category String
+  level String @default("beginner")
+  duration Int
+  order Int @default(0)
+  icon String?
+  isPremium Boolean @default(false)
+  countryCode String @default("FR")
+  licenseCode String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  modules Module[]
+  enrollments Enrollment[]
+}
+
+model Module {
+  id String @id @default(cuid())
+  courseId String
+  title String
+  content String
+  type String @default("lesson")
+  order Int @default(0)
+  duration Int
+  objectives String?
+  tips String?
+  commonMistakes String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model StudentProgress {
+  id String @id @default(cuid())
+  userId String
+  courseId String
+  progress Float @default(0)
+  status String @default("not_started")
+  completedModules String?
+  lastAccess DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollment Enrollment @relation(fields: [courseId, userId], references: [courseId, userId])
+  @@unique([courseId, userId])
+  @@index([userId])
+  @@index([courseId])
+}
+
+model Enrollment {
+  courseId String
+  userId String
+  enrolledAt DateTime @default(now())
+  status String @default("active")
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  progress StudentProgress?
+  @@id([courseId, userId])
+}
+
+model RoadSign {
+  id String @id @default(cuid())
+  countryCode String @default("FR")
+  category String
+  subcategory String?
+  name String
+  description String
+  meaning String
+  useCase String?
+  shape String
+  colors String
+  imageUrl String?
+  questions String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Question {
+  id String @id @default(cuid())
+  countryCode String @default("FR")
+  licenseCode String?
+  courseId String?
+  question String
+  options String
+  correctIndex Int
+  explanation String
+  difficulty String @default("easy")
+  category String
+  theme String?
+  tags String?
+  reference String?
+  hasImage Boolean @default(false)
+  createdAt DateTime @default(now())
+}
+
+model QuizAttempt {
+  id String @id @default(cuid())
+  userId String
+  totalQuestions Int
+  correctAnswers Int
+  score Float
+  duration Int
+  passed Boolean @default(false)
+  type String @default("practice")
+  country String @default("FR")
+  licenseCode String?
+  wrongAnswers String?
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
+model PracticalExercise {
+  id String @id @default(cuid())
+  title String
+  description String
+  category String
+  difficulty String @default("beginner")
+  objectives String
+  steps String
+  criteria String
+  tips String?
+  scoring String?
+  countryCode String @default("FR")
+  licenseCode String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SkillRecord {
+  id String @id @default(cuid())
+  userId String
+  skill String
+  category String
+  level Int @default(0)
+  attempts Int @default(0)
+  lastAttempt DateTime?
+  strengths String?
+  weaknesses String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, skill])
+  @@index([userId])
+}
+
+model Certification {
+  id String @id @default(cuid())
+  userId String
+  type String
+  title String
+  description String
+  countryCode String @default("FR")
+  licenseCode String?
+  score Float?
+  qrCode String?
+  certificateId String @unique
+  issuedAt DateTime @default(now())
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
+model ChatMessage {
+  id String @id @default(cuid())
+  userId String
+  role String
+  content String
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
+model School {
+  id String @id @default(cuid())
+  name String
+  country String
+  city String
+  plan String @default("starter")
+  maxStudents Int @default(50)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AnalyticsEvent {
+  id String @id @default(cuid())
+  eventType String
+  userId String?
+  metadata String
+  createdAt DateTime @default(now())
+}
+
+model VehicleProfile {
+  id String @id @default(cuid())
+  userId String
+  make String
+  model String
+  year Int
+  type String @default("car")
+  fuelType String @default("diesel")
+  transmission String @default("manual")
+  engineSize String?
+  vin String? @unique
+  licensePlate String?
+  color String?
+  mileage Int @default(0)
+  lastService DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  drivingSessions DrivingSession[]
+  diagnosticRecords DiagnosticRecord[]
+  telematicsTrips TelematicsTrip[]
+  vehicleTwin VehicleTwin?
+  @@index([userId])
+}
+
+model DrivingSession {
+  id String @id @default(cuid())
+  userId String
+  vehicleId String?
+  type String @default("lesson")
+  status String @default("active")
+  startTime DateTime @default(now())
+  endTime DateTime?
+  duration Int @default(0)
+  distance Float @default(0)
+  score Float?
+  maxSpeed Float?
+  avgSpeed Float?
+  harshBrakes Int @default(0)
+  harshAccel Int @default(0)
+  harshTurns Int @default(0)
+  speedViolations Int @default(0)
+  fatigueEvents Int @default(0)
+  distractionEvents Int @default(0)
+  weather String?
+  roadType String?
+  feedback String?
+  aiEvaluation String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle VehicleProfile? @relation(fields: [vehicleId], references: [id])
+  drivingEvents DrivingEvent[]
+  @@index([userId])
+  @@index([vehicleId])
+}
+
+model DrivingEvent {
+  id String @id @default(cuid())
+  sessionId String
+  type String
+  severity String @default("normal")
+  speed Float?
+  rpm Float?
+  latitude Float?
+  longitude Float?
+  timestamp DateTime @default(now())
+  metadata String?
+  createdAt DateTime @default(now())
+  session DrivingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  @@index([sessionId])
+}
+
+model DiagnosticRecord {
+  id String @id @default(cuid())
+  userId String
+  vehicleId String?
+  vehicleType String @default("car")
+  inputMethod String @default("text")
+  symptoms String
+  diagnosis String
+  faultCodes String?
+  severity String @default("medium")
+  estimatedCost Float?
+  estimatedTime String?
+  requiredParts String?
+  repairSteps String?
+  safetyRisks String?
+  status String @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle VehicleProfile? @relation(fields: [vehicleId], references: [id])
+  @@index([userId])
+  @@index([vehicleId])
+}
+
+model SecurityEvent {
+  id String @id @default(cuid())
+  userId String
+  vehicleId String?
+  type String
+  severity String @default("info")
+  latitude Float?
+  longitude Float?
+  address String?
+  speed Float?
+  timestamp DateTime @default(now())
+  resolved Boolean @default(false)
+  resolvedAt DateTime?
+  response String?
+  notified String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
+model TrustScore {
+  id String @id @default(cuid())
+  userId String
+  overallScore Float @default(50)
+  drivingQuality Float @default(50)
+  mechanicalHealth Float @default(50)
+  maintenanceQuality Float @default(50)
+  learningProgress Float @default(50)
+  examPerformance Float @default(50)
+  telematicsScore Float @default(50)
+  accidentHistory Float @default(50)
+  fraudRisk Float @default(0)
+  compliance Float @default(50)
+  lastCalculated DateTime @default(now())
+  factors String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
+model InsurancePolicy {
+  id String @id @default(cuid())
+  userId String
+  provider String?
+  policyNumber String?
+  type String @default("third_party")
+  vehicleType String @default("car")
+  coverage String?
+  premium Float?
+  deductible Float?
+  startDate DateTime?
+  endDate DateTime?
+  status String @default("active")
+  paydEnabled Boolean @default(false)
+  phydEnabled Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  premiumCalculations PremiumCalculation[]
+  @@index([userId])
+}
+
+model InsuranceClaim {
+  id String @id @default(cuid())
+  userId String
+  policyId String?
+  type String @default("collision")
+  status String @default("submitted")
+  description String
+  damageAssessment String?
+  estimatedCost Float?
+  approvedAmount Float?
+  faultDetermination String?
+  photos String?
+  videos String?
+  policeReport String?
+  witnessInfo String?
+  location String?
+  latitude Float?
+  longitude Float?
+  incidentDate DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
+model MarketplaceListing {
+  id String @id @default(cuid())
+  userId String
+  title String
+  description String
+  category String
+  subcategory String?
+  price Float?
+  priceUnit String?
+  currency String @default("EUR")
+  location String
+  city String?
+  country String @default("FR")
+  latitude Float?
+  longitude Float?
+  rating Float @default(0)
+  reviewCount Int @default(0)
+  contactPhone String?
+  contactEmail String?
+  contactWebsite String?
+  openingHours String?
+  services String?
+  certifications String?
+  images String?
+  status String @default("active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviews ListingReview[]
+  bookings BookingRecord[]
+  @@index([userId])
+}
+
+model ListingReview {
+  id String @id @default(cuid())
+  userId String
+  listingId String
+  rating Int
+  title String?
+  comment String?
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@index([listingId])
+}
+
+model BookingRecord {
+  id String @id @default(cuid())
+  userId String
+  listingId String
+  serviceDate DateTime
+  serviceTime String?
+  duration Int?
+  status String @default("pending")
+  totalAmount Float?
+  notes String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing MarketplaceListing @relation(fields: [listingId], references: [id])
+  @@index([userId])
+  @@index([listingId])
+}
+
+model FleetOrganization {
+  id String @id @default(cuid())
+  name String
+  description String?
+  country String @default("FR")
+  plan String @default("starter")
+  maxVehicles Int @default(10)
+  maxDrivers Int @default(10)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  vehicles FleetVehicle[]
+  drivers FleetDriver[]
+  assignments FleetAssignment[]
+}
+
+model FleetVehicle {
+  id String @id @default(cuid())
+  fleetId String
+  make String
+  model String
+  year Int
+  type String @default("car")
+  fuelType String @default("diesel")
+  licensePlate String
+  vin String? @unique
+  mileage Int @default(0)
+  status String @default("active")
+  assignedDriverId String?
+  purchaseDate DateTime?
+  purchasePrice Float?
+  insuranceExpiry DateTime?
+  lastInspection DateTime?
+  nextService DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  fleet FleetOrganization @relation(fields: [fleetId], references: [id], onDelete: Cascade)
+  maintenanceRecords MaintenanceRecord[]
+  fuelRecords FuelRecord[]
+  assignments FleetAssignment[]
+  @@index([fleetId])
+}
+
+model FleetDriver {
+  id String @id @default(cuid())
+  userId String @unique
+  fleetId String
+  licenseNumber String?
+  licenseExpiry DateTime?
+  licenseType String?
+  status String @default("active")
+  drivingScore Float @default(50)
+  totalTrips Int @default(0)
+  totalDistance Float @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fleet FleetOrganization @relation(fields: [fleetId], references: [id], onDelete: Cascade)
+  assignments FleetAssignment[]
+  @@index([fleetId])
+}
+
+model MaintenanceRecord {
+  id String @id @default(cuid())
+  userId String?
+  fleetVehicleId String
+  type String @default("routine")
+  description String
+  cost Float?
+  performedBy String?
+  performedAt DateTime?
+  nextDueDate DateTime?
+  nextDueMileage Int?
+  status String @default("completed")
+  parts String?
+  notes String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle FleetVehicle @relation(fields: [fleetVehicleId], references: [id], onDelete: Cascade)
+  @@index([fleetVehicleId])
+}
+
+model FuelRecord {
+  id String @id @default(cuid())
+  userId String?
+  fleetVehicleId String
+  fuelType String @default("diesel")
+  quantity Float
+  costPerLiter Float?
+  totalCost Float?
+  odometer Int?
+  fuelingDate DateTime @default(now())
+  stationName String?
+  location String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle FleetVehicle @relation(fields: [fleetVehicleId], references: [id], onDelete: Cascade)
+  @@index([fleetVehicleId])
+}
+
+model TrafficViolation {
+  id String @id @default(cuid())
+  userId String
+  violationType String
+  description String
+  severity String @default("minor")
+  points Int @default(0)
+  fineAmount Float?
+  location String?
+  latitude Float?
+  longitude Float?
+  vehicleType String @default("car")
+  licensePlate String?
+  officerId String?
+  status String @default("pending")
+  incidentDate DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
+model AuditLogEntry {
+  id String @id @default(cuid())
+  userId String
+  action String
+  resource String
+  resourceId String?
+  details String?
+  ipAddress String?
+  userAgent String?
+  status String @default("success")
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
+model TelematicsTrip {
+  id String @id @default(cuid())
+  userId String
+  vehicleId String?
+  startAddress String?
+  endAddress String?
+  startLatitude Float?
+  startLongitude Float?
+  endLatitude Float?
+  endLongitude Float?
+  distance Float @default(0)
+  duration Int @default(0)
+  avgSpeed Float?
+  maxSpeed Float?
+  fuelConsumption Float?
+  fuelCost Float?
+  harshBrakes Int @default(0)
+  harshAccel Int @default(0)
+  speedViolations Int @default(0)
+  nightDriving Float @default(0)
+  cityDriving Float @default(0)
+  highwayDriving Float @default(0)
+  drivingScore Float?
+  ecoScore Float?
+  weather String?
+  roadType String?
+  startTime DateTime @default(now())
+  endTime DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle VehicleProfile? @relation(fields: [vehicleId], references: [id])
+  @@index([userId])
+  @@index([vehicleId])
+}
+
+model VehicleTwin {
+  id String @id @default(cuid())
+  vehicleProfileId String @unique
+  vin String?
+  registration String?
+  ownerUserId String
+  currentMileage Int @default(0)
+  totalTrips Int @default(0)
+  totalDistance Float @default(0)
+  avgFuelConsumption Float @default(0)
+  aiHealthScore Float @default(50)
+  nextServiceDate DateTime?
+  nextServiceMileage Int @default(0)
+  lastAccidentDate DateTime?
+  insuranceStatus String @default("unknown")
+  recallCount Int @default(0)
+  ownershipHistory String?
+  aiPredictions String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  vehicleProfile VehicleProfile @relation(fields: [vehicleProfileId], references: [id])
+  owner User @relation("VehicleTwinOwner", fields: [ownerUserId], references: [id])
+  @@index([ownerUserId])
+}
+
+model InsurancePartner {
+  id String @id @default(cuid())
+  name String
+  code String @unique
+  country String @default("FR")
+  contactEmail String?
+  contactPhone String?
+  contractStart DateTime?
+  contractEnd DateTime?
+  commissionRate Float @default(0)
+  status String @default("active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PremiumCalculation {
+  id String @id @default(cuid())
+  policyId String
+  basePremium Float
+  riskAdjustment Float
+  behaviourAdjustment Float
+  finalPremium Float
+  factors String
+  calculatedAt DateTime @default(now())
+  policy InsurancePolicy @relation(fields: [policyId], references: [id])
+  @@index([policyId])
+}
+
+model AccidentIncident {
+  id String @id @default(cuid())
+  userId String
+  vehicleId String?
+  policyId String?
+  type String
+  severity String @default("medium")
+  latitude Float?
+  longitude Float?
+  speed Float?
+  deceleration Float?
+  timestamp DateTime @default(now())
+  resolved Boolean @default(false)
+  claimId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
+model DamageAssessment {
+  id String @id @default(cuid())
+  claimId String
+  bumperScore Float?
+  doorsScore Float?
+  hoodScore Float?
+  windshieldScore Float?
+  lightsScore Float?
+  wheelsScore Float?
+  chassisScore Float?
+  overallSeverity String @default("minor")
+  estimatedRepairCost Float?
+  estimatedRepairDuration String?
+  replacementParts String?
+  photos String?
+  assessedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  @@index([claimId])
+}
+
+model FraudAlert {
+  id String @id @default(cuid())
+  claimId String?
+  userId String
+  type String
+  probability Float @default(0)
+  description String
+  evidence String?
+  status String @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
+model FleetAssignment {
+  id String @id @default(cuid())
+  fleetId String
+  vehicleId String
+  driverId String
+  startDate DateTime @default(now())
+  endDate DateTime?
+  status String @default("active")
+  notes String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  fleet FleetOrganization @relation(fields: [fleetId], references: [id], onDelete: Cascade)
+  vehicle FleetVehicle @relation(fields: [vehicleId], references: [id])
+  driver FleetDriver @relation(fields: [driverId], references: [id])
+  @@index([fleetId])
+  @@index([vehicleId])
+  @@index([driverId])
+}
+
+model FeatureFlag {
+  id String @id @default(cuid())
+  key String @unique
+  name String
+  description String?
+  enabled Boolean @default(false)
+  targetRoles String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ApiKey {
+  id String @id @default(cuid())
+  userId String
+  name String
+  key String @unique
+  permissions String?
+  lastUsedAt DateTime?
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
+model CollaborationEvent {
+  id String @id @default(cuid())
+  userId String
+  triggerModule String
+  eventType String
+  severity String @default("info")
+  description String
+  affectedModules String
+  actions String?
+  resolved Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
+model Account {
+  id String @id @default(cuid())
+  userId String
+  type String
+  provider String
+  providerAccountId String
+  refresh_token String?
+  access_token String?
+  expires_at Int?
+  token_type String?
+  scope String?
+  id_token String?
+  session_state String?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
