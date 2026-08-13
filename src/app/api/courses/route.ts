@@ -4,11 +4,19 @@ import { db } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { courseContent } from '../../../../seed-data/course-content';
 
-function catalogFallback() {
+const DEFAULT_CATALOG_COUNTRY = 'FR';
+
+function normalizeCountryCode(value: string | null) {
+  const normalized = value?.trim().toUpperCase();
+  return normalized && /^[A-Z]{2}$/.test(normalized) ? normalized : DEFAULT_CATALOG_COUNTRY;
+}
+
+function catalogFallback(countryCode = DEFAULT_CATALOG_COUNTRY) {
   return courseContent.map((course, index) => ({
     ...course,
     order: index,
-    countryCode: 'FR',
+    countryCode,
+    licenseCode: null,
     modules: course.modules.map((module, moduleIndex) => ({
       ...module,
       order: moduleIndex,
@@ -24,7 +32,7 @@ function catalogFallback() {
 type CourseWithModules = Prisma.CourseGetPayload<{ include: { modules: true } }>;
 
 function hydrateCoursesFromCatalogue(courses: CourseWithModules[]) {
-  const fallbackById = new Map(catalogFallback().map((course) => [course.id, course]));
+  const fallbackById = new Map(catalogFallback(DEFAULT_CATALOG_COUNTRY).map((course) => [course.id, course]));
 
   return courses.map((course) => {
     const fallback = fallbackById.get(course.id);
@@ -47,11 +55,12 @@ function hydrateCoursesFromCatalogue(courses: CourseWithModules[]) {
   });
 }
 
-export async function GET(_request: NextRequest) {
-  const catalog = catalogFallback();
+export async function GET(request: NextRequest) {
+  const requestedCountry = normalizeCountryCode(request.nextUrl.searchParams.get('countryCode'));
 
   try {
-    const courses = await db.course.findMany({
+    const coursesForRequestedCountry = await db.course.findMany({
+      where: { countryCode: requestedCountry },
       orderBy: { order: 'asc' },
       include: {
         modules: {
@@ -60,9 +69,23 @@ export async function GET(_request: NextRequest) {
       },
     });
 
+    // If a country has no localized catalogue yet, use the maintained FR catalogue
+    // as an explicit reference fallback rather than returning an empty learning page.
+    const courses = coursesForRequestedCountry.length > 0
+      ? coursesForRequestedCountry
+      : await db.course.findMany({
+          where: { countryCode: DEFAULT_CATALOG_COUNTRY },
+          orderBy: { order: 'asc' },
+          include: {
+            modules: {
+              orderBy: { order: 'asc' },
+            },
+          },
+        });
+
     const coursesCatalog = courses.length > 0
       ? hydrateCoursesFromCatalogue(courses)
-      : catalog;
+      : catalogFallback(DEFAULT_CATALOG_COUNTRY);
 
     const session = await getSession();
     const sessionUserId = session?.user?.id;
@@ -81,6 +104,6 @@ export async function GET(_request: NextRequest) {
     );
   } catch (error) {
     console.error('[GET /api/courses] Database unavailable; serving catalogue fallback:', error);
-    return NextResponse.json(catalog);
+    return NextResponse.json(catalogFallback(DEFAULT_CATALOG_COUNTRY));
   }
 }
