@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { seedRoadSigns } from '../../../../seed-data/seed-signs';
+import { seedRoadSigns } from '../../../../../seed-data/seed-signs';
 
 function parseSign(sign: typeof seedRoadSigns[number], index: number) {
   return {
