@@ -1,34 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { requireAuth } from '@/lib/auth';
+import { requireAuth, getUserId } from '@/lib/auth';
 
-// GET: Get vehicle
-// PATCH: Update vehicle
-// DELETE: Remove vehicle
+function unauthorizedOwner() {
+  return NextResponse.json({ error: 'Véhicule non trouvé' }, { status: 404 });
+}
+
+// GET: Get vehicle owned by the authenticated user
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error } = await requireAuth();
+    const { error, session } = await requireAuth();
     if (error) return error;
 
+    const userId = getUserId(session);
+    if (!userId) return NextResponse.json({ error: 'Authentification requise' }, { status: 401 });
+
     const { id } = await params;
-    const vehicle = await db.vehicleProfile.findUnique({
-      where: { id },
-    });
+    const vehicle = await db.vehicleProfile.findFirst({ where: { id, userId } });
 
-    if (!vehicle) {
-      return NextResponse.json({ error: 'Véhicule non trouvé' }, { status: 404 });
-    }
-
+    if (!vehicle) return unauthorizedOwner();
     return NextResponse.json(vehicle);
   } catch (error) {
-    console.error('[GET /api/driving/vehicles/:id] Error:', error);
-    return NextResponse.json(
-      { error: 'Erreur lors de la récupération du véhicule' },
-      { status: 500 }
-    );
+    console.error('[GET /api/driving/vehicles/:id] Error');
+    return NextResponse.json({ error: 'Erreur lors de la récupération du véhicule' }, { status: 500 });
   }
 }
 
@@ -37,41 +34,25 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error } = await requireAuth();
+    const { error, session } = await requireAuth();
     if (error) return error;
+
+    const userId = getUserId(session);
+    if (!userId) return NextResponse.json({ error: 'Authentification requise' }, { status: 401 });
 
     const { id } = await params;
     const body = await request.json();
     const {
-      make,
-      model,
-      year,
-      type,
-      fuelType,
-      transmission,
-      engineSize,
-      vin,
-      licensePlate,
-      color,
-      mileage,
+      make, model, year, type, fuelType, transmission, engineSize,
+      vin, licensePlate, color, mileage,
     } = body as {
-      make?: string;
-      model?: string;
-      year?: number;
-      type?: string;
-      fuelType?: string;
-      transmission?: string;
-      engineSize?: string;
-      vin?: string;
-      licensePlate?: string;
-      color?: string;
-      mileage?: number;
+      make?: string; model?: string; year?: number; type?: string;
+      fuelType?: string; transmission?: string; engineSize?: string;
+      vin?: string; licensePlate?: string; color?: string; mileage?: number;
     };
 
-    const existing = await db.vehicleProfile.findUnique({ where: { id } });
-    if (!existing) {
-      return NextResponse.json({ error: 'Véhicule non trouvé' }, { status: 404 });
-    }
+    const existing = await db.vehicleProfile.findFirst({ where: { id, userId } });
+    if (!existing) return unauthorizedOwner();
 
     const updateData: Record<string, unknown> = {};
     if (make !== undefined) updateData.make = make;
@@ -86,18 +67,11 @@ export async function PATCH(
     if (color !== undefined) updateData.color = color;
     if (mileage !== undefined) updateData.mileage = mileage;
 
-    const updated = await db.vehicleProfile.update({
-      where: { id },
-      data: updateData,
-    });
-
+    const updated = await db.vehicleProfile.update({ where: { id }, data: updateData });
     return NextResponse.json(updated);
   } catch (error) {
-    console.error('[PATCH /api/driving/vehicles/:id] Error:', error);
-    return NextResponse.json(
-      { error: 'Erreur lors de la mise à jour du véhicule' },
-      { status: 500 }
-    );
+    console.error('[PATCH /api/driving/vehicles/:id] Error');
+    return NextResponse.json({ error: 'Erreur lors de la mise à jour du véhicule' }, { status: 500 });
   }
 }
 
@@ -106,24 +80,20 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error } = await requireAuth();
+    const { error, session } = await requireAuth();
     if (error) return error;
 
-    const { id } = await params;
+    const userId = getUserId(session);
+    if (!userId) return NextResponse.json({ error: 'Authentification requise' }, { status: 401 });
 
-    const existing = await db.vehicleProfile.findUnique({ where: { id } });
-    if (!existing) {
-      return NextResponse.json({ error: 'Véhicule non trouvé' }, { status: 404 });
-    }
+    const { id } = await params;
+    const existing = await db.vehicleProfile.findFirst({ where: { id, userId } });
+    if (!existing) return unauthorizedOwner();
 
     await db.vehicleProfile.delete({ where: { id } });
-
     return NextResponse.json({ message: 'Véhicule supprimé avec succès' });
   } catch (error) {
-    console.error('[DELETE /api/driving/vehicles/:id] Error:', error);
-    return NextResponse.json(
-      { error: 'Erreur lors de la suppression du véhicule' },
-      { status: 500 }
-    );
+    console.error('[DELETE /api/driving/vehicles/:id] Error');
+    return NextResponse.json({ error: 'Erreur lors de la suppression du véhicule' }, { status: 500 });
   }
 }
