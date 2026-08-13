@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { countries } from '@/data/countries';
 import { licenseTypes } from '@/data/licenses';
-import { seedRoadSigns } from '../../../../seed-data/seed-signs';
-import { seedQuestions } from '../../../../seed-data/seed-questions';
-import { seedPracticalExercises } from '../../../../seed-data/seed-practical';
-import { courseContent } from '../../../../seed-data/course-content';
+import { seedRoadSigns } from '../../../../../seed-data/seed-signs';
+import { seedQuestions } from '../../../../../seed-data/seed-questions';
+import { seedPracticalExercises } from '../../../../../seed-data/seed-practical';
+import { courseContent } from '../../../../../seed-data/course-content';
 
 export async function GET() {
   const fallback = {
