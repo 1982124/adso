@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { courseContent } from '../../../../../seed-data/course-content';
+import { courseContent } from '../../../../seed-data/course-content';
 
 function catalogFallback(countryCode: string | null, licenseCode: string | null) {
   // The bundled catalogue is authoritative application content, but it is
