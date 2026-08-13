@@ -3,17 +3,26 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { db } from '@/lib/db';
 import { verifyPassword } from '@/lib/password';
 
-async function ensureCredentialStore() {
-  await db.$executeRaw`
-    CREATE TABLE IF NOT EXISTS UserCredential (
-      id TEXT PRIMARY KEY NOT NULL,
-      userId TEXT NOT NULL UNIQUE,
-      passwordHash TEXT NOT NULL,
-      createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE
+// Transitional compatibility layer until UserCredential is represented by a
+// Prisma migration. The statement is intentionally portable between SQLite
+// and PostgreSQL and is initialized once per warm runtime instead of on every
+// login attempt. Production should run the equivalent schema through Prisma
+// migrations before relying on this store at scale.
+let credentialStorePromise: Promise<void> | null = null;
+
+function ensureCredentialStore() {
+  credentialStorePromise ??= db.$executeRaw`
+    CREATE TABLE IF NOT EXISTS "UserCredential" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "userId" TEXT NOT NULL UNIQUE,
+      "passwordHash" TEXT NOT NULL,
+      "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE
     )
-  `;
+  `.then(() => undefined);
+
+  return credentialStorePromise;
 }
 
 export const authOptions: NextAuthOptions = {
@@ -34,7 +43,7 @@ export const authOptions: NextAuthOptions = {
 
         await ensureCredentialStore();
         const rows = await db.$queryRaw<Array<{ passwordHash: string }>>`
-          SELECT passwordHash FROM UserCredential WHERE userId = ${user.id} LIMIT 1
+          SELECT "passwordHash" FROM "UserCredential" WHERE "userId" = ${user.id} LIMIT 1
         `;
         if (!rows[0] || !(await verifyPassword(password, rows[0].passwordHash))) return null;
 
