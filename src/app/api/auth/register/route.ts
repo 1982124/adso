@@ -4,17 +4,21 @@ import { hashPassword, validatePassword } from '@/lib/password';
 
 export const dynamic = 'force-dynamic';
 
-async function ensureCredentialStore() {
-  await db.$executeRaw`
-    CREATE TABLE IF NOT EXISTS UserCredential (
-      id TEXT PRIMARY KEY NOT NULL,
-      userId TEXT NOT NULL UNIQUE,
-      passwordHash TEXT NOT NULL,
-      createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE
+let credentialStorePromise: Promise<void> | null = null;
+
+function ensureCredentialStore() {
+  credentialStorePromise ??= db.$executeRaw`
+    CREATE TABLE IF NOT EXISTS "UserCredential" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "userId" TEXT NOT NULL UNIQUE,
+      "passwordHash" TEXT NOT NULL,
+      "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE
     )
-  `;
+  `.then(() => undefined);
+
+  return credentialStorePromise;
 }
 
 export async function POST(request: Request) {
@@ -55,7 +59,7 @@ export async function POST(request: Request) {
       });
 
       await tx.$executeRaw`
-        INSERT INTO UserCredential (id, userId, passwordHash)
+        INSERT INTO "UserCredential" ("id", "userId", "passwordHash")
         VALUES (${crypto.randomUUID()}, ${createdUser.id}, ${passwordHash})
       `;
 
