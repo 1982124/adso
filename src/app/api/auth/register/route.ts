@@ -4,23 +4,6 @@ import { hashPassword, validatePassword } from '@/lib/password';
 
 export const dynamic = 'force-dynamic';
 
-let credentialStorePromise: Promise<void> | null = null;
-
-function ensureCredentialStore() {
-  credentialStorePromise ??= db.$executeRaw`
-    CREATE TABLE IF NOT EXISTS "UserCredential" (
-      "id" TEXT NOT NULL PRIMARY KEY,
-      "userId" TEXT NOT NULL UNIQUE,
-      "passwordHash" TEXT NOT NULL,
-      "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE
-    )
-  `.then(() => undefined);
-
-  return credentialStorePromise;
-}
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -42,7 +25,6 @@ export async function POST(request: Request) {
     const existing = await db.user.findUnique({ where: { email } });
     if (existing) return NextResponse.json({ error: 'Un compte existe déjà avec cet email.' }, { status: 409 });
 
-    await ensureCredentialStore();
     const passwordHash = await hashPassword(password);
 
     const user = await db.$transaction(async (tx) => {
