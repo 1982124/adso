@@ -68,7 +68,7 @@ export default function Navbar() {
   const textSecondary = isBlueprint ? 'text-slate-300' : isScrolled ? 'text-slate-600' : 'text-white/80';
   const hoverBg = isBlueprint ? 'hover:bg-slate-800 hover:text-white' : isScrolled ? 'hover:text-slate-900 hover:bg-slate-100' : 'text-white/80 hover:text-white hover:bg-white/10';
   const coreDesktopMods: AppModule[] = ['home', 'learning', 'driving', 'mechanic', 'scanner', 'telematics', 'security', 'marketplace'];
-  const moreMods: AppModule[] = ['insurance', 'fleet', 'government', 'enterprise'];
+  const moreMods: AppModule[] = ['insurance', 'fleet', 'enterprise'];
 
   return (
     <>
