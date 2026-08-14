@@ -20,7 +20,7 @@ function catalogFallback(countryCode = DEFAULT_CATALOG_COUNTRY) {
     modules: course.modules.map((module, moduleIndex) => ({
       ...module,
       order: moduleIndex,
-      courseId: course.id,
+      courseId: module.courseId ?? course.id,
       objectives: null,
       tips: null,
       commonMistakes: null,
@@ -69,27 +69,21 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // If a country has no localized catalogue yet, use the maintained FR catalogue
-    // as an explicit reference fallback rather than returning an empty learning page.
-    const courses = coursesForRequestedCountry.length > 0
-      ? coursesForRequestedCountry
-      : await db.course.findMany({
-          where: { countryCode: DEFAULT_CATALOG_COUNTRY },
-          orderBy: { order: 'asc' },
-          include: {
-            modules: {
-              orderBy: { order: 'asc' },
-            },
-          },
-        });
-
+    // IMPORTANT: country context and display language are independent.
+    // Never silently substitute another country's road rules/content.
+    // A missing localized catalogue must be explicit rather than misleading.
+    const courses = coursesForRequestedCountry;
     const coursesCatalog = courses.length > 0
       ? hydrateCoursesFromCatalogue(courses)
-      : catalogFallback(DEFAULT_CATALOG_COUNTRY);
+      : requestedCountry === DEFAULT_CATALOG_COUNTRY
+        ? catalogFallback(DEFAULT_CATALOG_COUNTRY)
+        : [];
 
     const session = await getSession();
     const sessionUserId = session?.user?.id;
     if (!sessionUserId) return NextResponse.json(coursesCatalog);
+
+    if (coursesCatalog.length === 0) return NextResponse.json([]);
 
     const progressRecords = await db.studentProgress.findMany({
       where: { userId: sessionUserId },
@@ -103,7 +97,7 @@ export async function GET(request: NextRequest) {
       }))
     );
   } catch (error) {
-    console.error('[GET /api/courses] Database unavailable; serving catalogue fallback:', error);
-    return NextResponse.json(catalogFallback(DEFAULT_CATALOG_COUNTRY));
+    console.error('[GET /api/courses] Database unavailable; serving only the requested-country reference catalogue:', error);
+    return NextResponse.json(requestedCountry === DEFAULT_CATALOG_COUNTRY ? catalogFallback(DEFAULT_CATALOG_COUNTRY) : [], { status: 200 });
   }
 }
