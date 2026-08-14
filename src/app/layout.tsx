@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { Toaster } from "@/components/ui/toaster";
+import { AccessibilityZoom } from "@/components/AccessibilityZoom";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,21 +16,20 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ADSO — Auto Drive School Online",
+  title: "ADSO — La responsabilité au service de la vie",
   description:
-    "La plateforme internationale d'apprentissage de la mobilité, de la conduite et de la sécurité routière.",
+    "ADSO est la plateforme internationale d'éducation à la mobilité, à la citoyenneté et à la sécurité routière, personnalisée par l'intelligence artificielle.",
   keywords: [
     "ADSO",
-    "Auto Drive School Online",
     "mobilité",
-    "conduite automobile",
-    "permis de conduire",
+    "citoyenneté",
     "sécurité routière",
-    "formation en ligne",
-    "IA",
     "code de la route",
-    "quiz",
+    "éducation routière",
+    "conduite responsable",
+    "IA",
     "auto-école",
+    "permis de conduire",
   ],
   authors: [{ name: "ADSO Engineering" }],
   icons: {
@@ -37,9 +37,9 @@ export const metadata: Metadata = {
   },
   manifest: "/manifest.webmanifest",
   openGraph: {
-    title: "ADSO — Auto Drive School Online",
+    title: "ADSO — La responsabilité au service de la vie",
     description:
-      "Apprendre la mobilité et la conduite avec une expérience internationale, personnalisée et immersive.",
+      "Apprendre, comprendre et agir pour une mobilité plus sûre. Chaque vie est précieuse.",
     type: "website",
   },
 };
@@ -56,6 +56,7 @@ export default function RootLayout({
       >
         <Providers>{children}</Providers>
         <Toaster />
+        <AccessibilityZoom />
       </body>
     </html>
   );
