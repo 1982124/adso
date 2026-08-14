@@ -24,7 +24,13 @@ export async function GET() {
     const result = await db.$transaction(async (tx) => {
       const countries = await tx.country.createMany({ data: seedCountries, skipDuplicates: true });
       const licenses = await tx.licenseCategory.createMany({ data: seedLicenseCategories, skipDuplicates: true });
-      const signs = await tx.roadSign.createMany({ data: seedRoadSigns, skipDuplicates: true });
+      const signs = await tx.roadSign.createMany({
+        data: seedRoadSigns.map((sign) => ({
+          ...sign,
+          description: sign.description ?? sign.meaning,
+        })),
+        skipDuplicates: true,
+      });
       const questions = await tx.question.createMany({ data: seedQuestions, skipDuplicates: true });
       const practical = await tx.practicalExercise.createMany({ data: seedPracticalExercises, skipDuplicates: true });
 
