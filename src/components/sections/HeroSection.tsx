@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowRight, Globe, GraduationCap, Award, Building2 } from 'lucide-react';
+import { ArrowRight, Globe, GraduationCap, ShieldCheck, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
@@ -10,81 +10,92 @@ const fadeInUp = {
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.15, duration: 0.6, ease: 'easeOut' as const },
+    transition: { delay: i * 0.12, duration: 0.6, ease: 'easeOut' as const },
   }),
 };
 
-const stats = [
-  { icon: Globe, label: 'Pays', value: '120+' },
-  { icon: GraduationCap, label: 'Élèves', value: '2M+' },
-  { icon: Award, label: 'Taux de réussite', value: '95%' },
-  { icon: Building2, label: 'Auto-écoles', value: '500+' },
+const pillars = [
+  { icon: Globe, label: 'Pays & réalités locales' },
+  { icon: GraduationCap, label: 'Parcours selon l’âge' },
+  { icon: ShieldCheck, label: 'Sécurité & citoyenneté' },
+  { icon: Sparkles, label: 'IA personnalisée' },
 ];
 
 export default function HeroSection() {
   return (
     <section
       id="hero"
-      className="relative min-h-screen md:h-[80vh] flex flex-col justify-center overflow-hidden bg-gradient-to-b from-emerald-900 via-emerald-950 to-black"
+      className="relative flex min-h-[min(900px,100svh)] flex-col justify-center overflow-hidden bg-gradient-to-b from-emerald-900 via-emerald-950 to-black"
     >
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <motion.div className="absolute top-[20%] -left-4 w-32 h-1 bg-emerald-500/10 rounded-full" animate={{ x: [0, 100, 0] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' as const }} />
-        <motion.div className="absolute top-[45%] right-0 w-48 h-1 bg-emerald-400/10 rounded-full" animate={{ x: [0, -120, 0] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' as const }} />
-        <motion.div className="absolute bottom-[30%] left-[10%] w-24 h-1 bg-emerald-500/8 rounded-full" animate={{ x: [0, 80, 0] }} transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' as const, delay: 2 }} />
-        <motion.div className="absolute top-[15%] right-[15%] w-3 h-3 rounded-full bg-emerald-400/20" animate={{ y: [0, -20, 0], scale: [1, 1.2, 1] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' as const }} />
-        <motion.div className="absolute top-[60%] left-[8%] w-2 h-2 rounded-full bg-emerald-300/15" animate={{ y: [0, -15, 0], scale: [1, 1.3, 1] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' as const, delay: 1 }} />
-        <motion.div className="absolute bottom-[25%] right-[25%] w-4 h-4 rounded-full border border-emerald-500/15" animate={{ y: [0, -25, 0], scale: [1, 0.8, 1] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' as const, delay: 3 }} />
-        <motion.div className="absolute bottom-[20%] right-[10%] w-16 h-16 rounded-full border border-emerald-500/10" animate={{ rotate: [0, 360] }} transition={{ duration: 20, repeat: Infinity, ease: 'linear' as const }} />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <motion.div className="absolute left-0 top-[25%] h-px w-40 bg-emerald-400/15" animate={{ x: [0, 120, 0] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' as const }} />
+        <motion.div className="absolute right-0 top-[48%] h-px w-56 bg-emerald-300/15" animate={{ x: [0, -140, 0] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' as const }} />
+        <div className="absolute left-1/2 top-1/2 size-[min(70vw,700px)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-400/5" />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 pt-24 pb-12 md:pt-16 md:pb-8">
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-5 pb-12 pt-28 sm:px-8 md:pt-24 lg:pb-16">
         <div className="flex flex-col items-center text-center">
-          <motion.div custom={0} variants={fadeInUp} initial="hidden" animate="visible" className="mb-2">
-            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tighter text-white">ADSO</h1>
-            <p className="mt-1 text-sm sm:text-base tracking-[0.3em] uppercase text-emerald-300/80 font-medium">Auto Drive School Online</p>
+          <motion.div custom={0} variants={fadeInUp} initial="hidden" animate="visible">
+            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.28em] text-emerald-300/90 sm:text-base">
+              Auto Drive School Online
+            </p>
+            <h1 className="text-6xl font-black tracking-[-0.04em] text-white sm:text-7xl md:text-8xl lg:text-9xl">
+              ADSO
+            </h1>
           </motion.div>
 
-          <motion.p custom={1} variants={fadeInUp} initial="hidden" animate="visible" className="mt-6 text-xl sm:text-2xl md:text-3xl font-semibold text-emerald-100 max-w-3xl">
-            La première plateforme intelligente de conduite automobile
+          <motion.h2
+            custom={1}
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            className="mt-6 max-w-4xl text-3xl font-bold leading-tight text-emerald-50 sm:text-4xl md:text-5xl"
+          >
+            La responsabilité au service de la vie.
+          </motion.h2>
+
+          <motion.p
+            custom={2}
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            className="mt-5 max-w-3xl text-base leading-8 text-emerald-100/80 sm:text-lg md:text-xl"
+          >
+            Chaque vie est précieuse. ADSO accompagne chacun, dès le plus jeune âge,
+            dans l&apos;éducation à la mobilité, la citoyenneté et la sécurité routière,
+            avec un parcours immersif adapté à son âge, son pays et sa réalité locale.
           </motion.p>
 
-          <motion.p custom={2} variants={fadeInUp} initial="hidden" animate="visible" className="mt-4 text-base sm:text-lg text-emerald-200/70 max-w-2xl leading-relaxed">
-            Nous démocratisons l&rsquo;éducation à la conduite grâce à l&rsquo;intelligence artificielle.
-            Une formation accessible, personnalisée et de qualité pour chaque conducteur,
-            peu importe où il se trouve dans le monde.
-          </motion.p>
-
-          <motion.div custom={3} variants={fadeInUp} initial="hidden" animate="visible" className="mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4">
-            <Button asChild size="lg" className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-6 text-base rounded-lg shadow-lg shadow-emerald-900/40 transition-all hover:shadow-emerald-700/50 hover:scale-105">
+          <motion.div custom={3} variants={fadeInUp} initial="hidden" animate="visible" className="mt-9 flex flex-col gap-3 sm:flex-row sm:gap-4">
+            <Button asChild size="lg" className="min-h-14 rounded-xl bg-emerald-600 px-8 text-base font-bold text-white shadow-lg shadow-emerald-950/50 transition-all hover:bg-emerald-500 hover:shadow-emerald-700/40">
               <Link href="/student" aria-label="Commencer gratuitement sur ADSO">
-                Commencer gratuitement
-                <ArrowRight className="ml-2 size-5" />
+                Commencer mon parcours
+                <ArrowRight className="ml-2 size-5" aria-hidden="true" />
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="border-white/30 text-white/90 bg-white/5 hover:bg-white/10 hover:text-white px-8 py-6 text-base rounded-lg backdrop-blur-sm transition-all hover:scale-105">
-              <Link href="#ecosystem" aria-label="Découvrir la plateforme ADSO">
-                Découvrir la plateforme
+            <Button asChild variant="outline" size="lg" className="min-h-14 rounded-xl border-white/25 bg-white/5 px-8 text-base font-semibold text-white backdrop-blur-sm hover:bg-white/10 hover:text-white">
+              <Link href="#ecosystem" aria-label="Découvrir l’écosystème ADSO">
+                Découvrir ADSO
               </Link>
             </Button>
           </motion.div>
         </div>
-      </div>
 
-      <motion.div custom={4} variants={fadeInUp} initial="hidden" animate="visible" className="relative z-10 mt-auto w-full border-t border-white/10 bg-black/30 backdrop-blur-sm">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-            {stats.map((stat) => (
-              <div key={stat.label} className="flex items-center justify-center gap-2 sm:gap-3">
-                <stat.icon className="size-5 text-emerald-400 shrink-0" />
-                <div className="text-center sm:text-left">
-                  <p className="text-lg sm:text-xl font-bold text-white">{stat.value}</p>
-                  <p className="text-xs sm:text-sm text-emerald-300/70">{stat.label}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </motion.div>
+        <motion.div
+          custom={4}
+          variants={fadeInUp}
+          initial="hidden"
+          animate="visible"
+          className="mx-auto mt-14 grid max-w-5xl grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
+        >
+          {pillars.map(({ icon: Icon, label }) => (
+            <div key={label} className="flex min-h-20 items-center justify-center gap-3 rounded-2xl border border-white/10 bg-black/25 px-5 py-4 text-center backdrop-blur-sm">
+              <Icon className="size-5 shrink-0 text-emerald-300" aria-hidden="true" />
+              <span className="text-sm font-semibold leading-6 text-white sm:text-base">{label}</span>
+            </div>
+          ))}
+        </motion.div>
+      </div>
     </section>
   );
 }
