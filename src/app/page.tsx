@@ -29,7 +29,6 @@ const MarketplaceModule = dynamic(() => import('@/components/modules/Marketplace
 const AIDrivingModule = dynamic(() => import('@/components/modules/v41/AIDrivingModule'), { ssr: false, loading: () => <ModuleLoader label="Conduite IA" /> });
 const InsuranceModule = dynamic(() => import('@/components/modules/v41/InsuranceModule'), { ssr: false, loading: () => <ModuleLoader label="Assurance IA" /> });
 const FleetModule = dynamic(() => import('@/components/modules/v41/FleetModule'), { ssr: false, loading: () => <ModuleLoader label="Gestion de Flotte" /> });
-const GovernmentModule = dynamic(() => import('@/components/modules/v41/GovernmentModule'), { ssr: false, loading: () => <ModuleLoader label="Gouvernement" /> });
 const EnterpriseModule = dynamic(() => import('@/components/modules/v41/EnterpriseModule'), { ssr: false, loading: () => <ModuleLoader label="Entreprise" /> });
 
 const BluePrintLayout = dynamic(() => import('@/components/BluePrintLayout'), { ssr: false });
@@ -77,7 +76,6 @@ export default function Home() {
           {currentView === 'marketplace' && <MarketplaceModule />}
           {currentView === 'insurance' && <InsuranceModule />}
           {currentView === 'fleet' && <FleetModule />}
-          {currentView === 'government' && <GovernmentModule />}
           {currentView === 'enterprise' && <EnterpriseModule />}
           {currentView === 'blueprint' && <BlueprintView />}
         </ViewErrorBoundary>
