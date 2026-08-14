@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import ZAI from 'z-ai-web-dev-sdk';
-
-let _zai: Awaited<ReturnType<typeof ZAI.create>> | null = null;
-async function getZAI() {
-  if (!_zai) _zai = await ZAI.create();
-  return _zai;
-}
+import { aiChat } from '@/lib/ai-gateway';
 
 const SYSTEM_PROMPT = `Tu es l'Instructeur IA d'ADSO V4.1, un instructeur de conduite intelligent et bienveillant. Tu aides les élèves conducteurs en temps réel pendant leurs sessions de conduite.
 
@@ -29,7 +23,7 @@ export async function POST(request: NextRequest) {
     if (error) return error;
 
     const body = await request.json();
-    const { message, sessionId, score, events } = body as {
+    const { message, score, events } = body as {
       message?: string;
       sessionId?: string;
       score?: number;
@@ -40,44 +34,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Message requis' }, { status: 400 });
     }
 
-    // Build context from session data
     let contextMsg = '';
-    if (score !== undefined) {
-      contextMsg += `Score de conduite actuel: ${score}/100. `;
-    }
+    if (score !== undefined) contextMsg += `Score de conduite actuel: ${score}/100. `;
     if (events && events.length > 0) {
       contextMsg += `Événements récents: ${events.slice(-5).map((e) => `${e.type} (${e.severity})`).join(', ')}. `;
     }
 
-    const userMessage = contextMsg
-      ? `${contextMsg}\nMessage de l'élève: ${message}`
-      : message;
-
-    // Call LLM
-    const zai = await getZAI();
-    const response = await zai.chat.completions.create({
-      model: 'deepseek-v3',
-      messages: [
+    const userMessage = contextMsg ? `${contextMsg}\nMessage de l'élève: ${message}` : message;
+    const reply = await aiChat(
+      request,
+      [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: userMessage },
       ],
-      temperature: 0.7,
-      max_tokens: 300,
-    });
-
-    const reply = typeof response === 'string'
-      ? response
-      : (response as Record<string, unknown>)?.content
-        ? String((response as Record<string, unknown>).content)
-        : (response as { choices?: Array<{ message?: { content?: string } }> })?.choices?.[0]?.message?.content
-          ?? 'Désolé, je n\'ai pas pu générer une réponse.';
+      { maxTokens: 300, temperature: 0.7 },
+    );
 
     return NextResponse.json({ reply });
   } catch (error) {
-    console.error('[POST /api/driving/chat] Error:', error);
-    return NextResponse.json(
-      { error: 'Erreur lors de la communication avec l\'instructeur IA' },
-      { status: 500 }
-    );
+    console.error('[POST /api/driving/chat] Error:', error instanceof Error ? error.message : 'unknown');
+    return NextResponse.json({ error: "Erreur lors de la communication avec l'instructeur IA" }, { status: 503 });
   }
 }
