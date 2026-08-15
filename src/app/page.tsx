@@ -11,7 +11,6 @@ import HeroSection from '@/components/sections/HeroSection';
 import StatsSection from '@/components/sections/StatsSection';
 import EcosystemSection from '@/components/sections/EcosystemSection';
 import AIFeaturesSection from '@/components/sections/AIFeaturesSection';
-import StudentDashboard from '@/components/sections/StudentDashboard';
 import QuizSection from '@/components/sections/QuizSection';
 import AIChatSection from '@/components/sections/AIChatSection';
 import PricingSection from '@/components/sections/PricingSection';
@@ -20,10 +19,6 @@ import SecuritySection from '@/components/sections/SecuritySection';
 import AnalyticsSection from '@/components/sections/AnalyticsSection';
 import AboutSection from '@/components/sections/AboutSection';
 
-// Formation is the core learning surface of ADSO. Keep it in the main client
-// bundle instead of making the whole module dependent on a lazy chunk: a stale
-// or missing deployment chunk must never make the core training experience
-// disappear. Secondary modules remain lazy to keep the initial bundle bounded.
 import LearningPlatform from '@/components/modules/learning/LearningPlatform';
 
 const MechanicModule = dynamic(() => import('@/components/modules/MechanicModule'), { ssr: false, loading: () => <ModuleLoader label="Mécanicien IA" /> });
@@ -56,10 +51,6 @@ function ModuleLoader({ label }: { label: string }) { return <div className="min
 export default function Home() {
   const { currentView } = useViewStore();
 
-  // A root navigation must always start at the real ADSO landing page.
-  // Browsers may restore the previous scroll position after a reload, and a
-  // previous in-app anchor such as #dashboard can otherwise make the app look
-  // as if it opens directly on the dashboard. Reset both conditions on mount.
   useEffect(() => {
     if (currentView !== 'home') return;
     const frame = window.requestAnimationFrame(() => {
@@ -73,5 +64,9 @@ export default function Home() {
 
   return <><ChunkLoadRecovery /><Navbar /><main role="main" aria-label="ADSO — AI-Driven & Smart Operations"><ViewErrorBoundary key={currentView}>{currentView === 'home' && <HomeView />}{currentView === 'learning' && <LearningPlatform />}{currentView === 'driving' && <AIDrivingModule />}{currentView === 'mechanic' && <MechanicModule />}{currentView === 'scanner' && <ScannerModule />}{currentView === 'telematics' && <TelematicsModule />}{currentView === 'security' && <SecurityModule />}{currentView === 'marketplace' && <MarketplaceModule />}{currentView === 'insurance' && <InsuranceModule />}{currentView === 'fleet' && <FleetModule />}{currentView === 'enterprise' && <EnterpriseModule />}{currentView === 'blueprint' && <BlueprintView />}</ViewErrorBoundary></main><Footer /></>;
 }
-function HomeView() { return <><HeroSection /><AboutSection /><StatsSection /><EcosystemSection /><AIFeaturesSection /><StudentDashboard /><QuizSection /><AIChatSection /><AnalyticsSection /><PricingSection /><RoadmapSection /><SecuritySection /></>; }
+
+function HomeView() {
+  return <><HeroSection /><AboutSection /><StatsSection /><EcosystemSection /><AIFeaturesSection /><QuizSection /><AIChatSection /><AnalyticsSection /><PricingSection /><RoadmapSection /><SecuritySection /></>;
+}
+
 function BlueprintView() { return <BluePrintLayout><BluePrintCover /><VisionEntreprise /><EcosystemeComplet /><ArchitectureTechnique /><AISCArchitecture /><IAProduit /><Monetisation /><SecuriteEntreprise /><InternationalisationPart /><UXUIDesign /><DataAnalyticsPart /><DevOps /><RoadmapPart /><DirectivesIA /><footer className="border-t border-slate-800 py-12 px-6 text-center"><p className="text-slate-500 text-sm">ADSO — AI-Driven & Smart Operations | Blueprint v1.0 | Août 2026 | Confidentiel</p><p className="text-slate-600 text-xs mt-2">© 2026 ADSO Engineering. Tous droits réservés.</p></footer></BluePrintLayout>; }
