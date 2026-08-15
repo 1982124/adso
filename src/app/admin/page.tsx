@@ -3,6 +3,7 @@ import { getSession, getUserRole } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { hasMinRole } from "@/lib/rbac";
 import AdminAIAssistant from "@/components/admin/AdminAIAssistant";
+import RoadSafetyCountryTable from "@/components/admin/RoadSafetyCountryTable";
 
 const cards = [
   { key: "users", label: "Utilisateurs", description: "Comptes ADSO" },
@@ -47,6 +48,8 @@ export default async function AdminCockpitPage() {
             </article>
           ))}
         </section>
+
+        <RoadSafetyCountryTable />
 
         <section className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr]">
           <article className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
