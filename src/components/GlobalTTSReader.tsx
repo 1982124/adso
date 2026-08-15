@@ -1,0 +1,128 @@
+'use client';
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Pause, Play, Square, Volume2, X } from 'lucide-react';
+
+const STORAGE_KEY = 'adso-tts-preferences';
+
+type Preferences = { enabled: boolean; rate: number; lang: string; voiceName: string };
+
+function cleanText(value: string) {
+  return value
+    .replace(/https?:\/\/\S+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function getReadablePageText() {
+  const root = document.querySelector('main') ?? document.body;
+  const clone = root.cloneNode(true) as HTMLElement;
+  clone.querySelectorAll('script,style,noscript,svg,[aria-hidden="true"],button,input,textarea,select').forEach((el) => el.remove());
+  return cleanText(clone.innerText || clone.textContent || '');
+}
+
+export function GlobalTTSReader() {
+  const [open, setOpen] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [prefs, setPrefs] = useState<Preferences>({ enabled: true, rate: 1, lang: 'fr-FR', voiceName: '' });
+  const supported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(STORAGE_KEY);
+      if (saved) setPrefs((current) => ({ ...current, ...JSON.parse(saved) }));
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (!supported) return;
+    const loadVoices = () => setVoices(window.speechSynthesis.getVoices());
+    loadVoices();
+    window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+    return () => window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+  }, [supported]);
+
+  useEffect(() => {
+    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs)); } catch {}
+  }, [prefs]);
+
+  useEffect(() => () => { window.speechSynthesis?.cancel(); }, []);
+
+  const availableLanguages = useMemo(() => {
+    const langs = new Set(voices.map((v) => v.lang).filter(Boolean));
+    langs.add('fr-FR'); langs.add('en-US');
+    return Array.from(langs).sort();
+  }, [voices]);
+
+  const selectedVoice = voices.find((voice) => voice.name === prefs.voiceName) ?? voices.find((voice) => voice.lang === prefs.lang) ?? voices.find((voice) => voice.lang.startsWith(prefs.lang.split('-')[0]));
+
+  const stop = useCallback(() => {
+    if (!supported) return;
+    window.speechSynthesis.cancel();
+    setSpeaking(false);
+    setPaused(false);
+  }, [supported]);
+
+  const speak = useCallback((text: string) => {
+    if (!supported || !prefs.enabled) return;
+    const value = cleanText(text);
+    if (!value) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(value);
+    utterance.lang = prefs.lang;
+    utterance.rate = prefs.rate;
+    if (selectedVoice) utterance.voice = selectedVoice;
+    utterance.onstart = () => { setSpeaking(true); setPaused(false); };
+    utterance.onpause = () => setPaused(true);
+    utterance.onresume = () => setPaused(false);
+    utterance.onend = () => { setSpeaking(false); setPaused(false); };
+    utterance.onerror = () => { setSpeaking(false); setPaused(false); };
+    window.speechSynthesis.speak(utterance);
+  }, [prefs, selectedVoice, supported]);
+
+  const readPage = () => speak(getReadablePageText());
+  const readSelection = () => speak(window.getSelection()?.toString() || '');
+
+  if (!supported) return null;
+
+  return (
+    <div className="fixed bottom-4 right-4 z-[9999] print:hidden">
+      {open && (
+        <section aria-label="Lecteur vocal ADSO" className="mb-3 w-[min(92vw,360px)] rounded-2xl border border-slate-700 bg-slate-950 p-4 text-slate-100 shadow-2xl">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div><p className="text-sm font-bold">Lecteur vocal ADSO</p><p className="text-xs text-slate-400">Tout texte visible peut être lu. Sélectionnez un texte pour ne lire que celui-ci.</p></div>
+            <button type="button" onClick={() => setOpen(false)} aria-label="Fermer le lecteur vocal" className="rounded-lg p-2 hover:bg-slate-800"><X className="h-4 w-4" /></button>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" onClick={readPage} disabled={speaking} className="min-h-11 rounded-xl bg-emerald-600 px-3 text-sm font-semibold disabled:opacity-40"><Play className="mr-2 inline h-4 w-4" />Lire la page</button>
+            <button type="button" onClick={readSelection} disabled={speaking || !window.getSelection()?.toString()} className="min-h-11 rounded-xl border border-slate-700 px-3 text-sm disabled:opacity-40">Lire la sélection</button>
+            <button type="button" onClick={() => { if (paused) { window.speechSynthesis.resume(); } else { window.speechSynthesis.pause(); } }} disabled={!speaking} className="min-h-11 rounded-xl border border-slate-700 px-3 text-sm disabled:opacity-40"><Pause className="mr-2 inline h-4 w-4" />{paused ? 'Reprendre' : 'Pause'}</button>
+            <button type="button" onClick={stop} disabled={!speaking} className="min-h-11 rounded-xl border border-red-900/60 px-3 text-sm text-red-300 disabled:opacity-40"><Square className="mr-2 inline h-4 w-4" />Arrêter</button>
+          </div>
+          <div className="mt-4 grid gap-3">
+            <label className="text-xs text-slate-400">Langue
+              <select value={prefs.lang} onChange={(e) => setPrefs((p) => ({ ...p, lang: e.target.value, voiceName: '' }))} className="mt-1 min-h-10 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-white">
+                {availableLanguages.map((lang) => <option key={lang} value={lang}>{lang}</option>)}
+              </select>
+            </label>
+            <label className="text-xs text-slate-400">Voix
+              <select value={selectedVoice?.name ?? ''} onChange={(e) => setPrefs((p) => ({ ...p, voiceName: e.target.value }))} className="mt-1 min-h-10 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 text-sm text-white">
+                <option value="">Voix automatique</option>
+                {voices.filter((v) => v.lang === prefs.lang || v.lang.startsWith(prefs.lang.split('-')[0])).map((voice) => <option key={`${voice.name}-${voice.lang}`} value={voice.name}>{voice.name} — {voice.lang}</option>)}
+              </select>
+            </label>
+            <label className="text-xs text-slate-400">Vitesse : {prefs.rate.toFixed(1)}×
+              <input aria-label="Vitesse de lecture" className="mt-2 w-full" type="range" min="0.6" max="1.6" step="0.1" value={prefs.rate} onChange={(e) => setPrefs((p) => ({ ...p, rate: Number(e.target.value) }))} />
+            </label>
+            <label className="flex min-h-10 items-center gap-3 text-sm"><input type="checkbox" checked={prefs.enabled} onChange={(e) => setPrefs((p) => ({ ...p, enabled: e.target.checked }))} /> Lecteur vocal activé</label>
+          </div>
+        </section>
+      )}
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-label={open ? 'Fermer le lecteur vocal ADSO' : 'Ouvrir le lecteur vocal ADSO'} aria-expanded={open} className="flex min-h-12 items-center gap-2 rounded-full bg-emerald-600 px-4 text-sm font-bold text-white shadow-xl hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-300">
+        <Volume2 className="h-5 w-5" /> TTS
+      </button>
+    </div>
+  );
+}
