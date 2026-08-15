@@ -13,6 +13,33 @@ function normalize(value: string): string {
 
 type CountryResponse = Record<string, unknown>;
 
+function fromStaticCountry(country: (typeof staticCountries)[number]): CountryResponse {
+  return {
+    id: country.code,
+    code: country.code,
+    name: country.name,
+    flag: country.flag,
+    continent: country.region,
+    capital: '',
+    languages: country.languages,
+    currency: country.currency,
+    drivingSide: country.drivingSide,
+    authority: '',
+    emergencyPhone: '',
+    minAge: 18,
+    speedUrban: 50,
+    speedRural: 90,
+    speedHighway: 120,
+    bloodAlcohol: '',
+    requiredDocuments: [],
+    requiredEquipment: [],
+    specialFeatures: [],
+    licenseCategories: country.licenseTypes,
+    commonInfractions: [],
+    sanctions: [],
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -53,6 +80,15 @@ export async function GET(request: NextRequest) {
       sanctions: safeParse(c.sanctions),
     }));
 
+    const staticFiltered = staticCountries
+      .filter((country) => !continent || country.region === continent)
+      .filter((country) => {
+        if (!normalizedSearch) return true;
+        const haystack = [country.name, country.code, country.region, ...country.languages].map(normalize);
+        return haystack.some((value) => value.includes(normalizedSearch));
+      })
+      .map(fromStaticCountry);
+
     let parsed: CountryResponse[] = normalizedSearch
       ? dbParsed.filter((country) => {
           const haystack = [country.name, country.code, country.capital]
@@ -62,51 +98,46 @@ export async function GET(request: NextRequest) {
         })
       : dbParsed;
 
-    if (normalizedSearch && parsed.length === 0) {
-      parsed = staticCountries
-        .filter((country) => {
-          const haystack = [country.name, country.code, country.region, ...country.languages]
-            .map(normalize);
-          return haystack.some((value) => value.includes(normalizedSearch));
-        })
-        .map((country): CountryResponse => ({
-          id: country.code,
-          code: country.code,
-          name: country.name,
-          flag: country.flag,
-          continent: country.region,
-          capital: '',
-          languages: country.languages,
-          currency: country.currency,
-          drivingSide: country.drivingSide,
-          authority: '',
-          emergencyPhone: '',
-          minAge: 18,
-          speedUrban: 50,
-          speedRural: 90,
-          speedHighway: 120,
-          bloodAlcohol: '',
-          requiredDocuments: [],
-          requiredEquipment: [],
-          specialFeatures: [],
-          licenseCategories: country.licenseTypes,
-          commonInfractions: [],
-          sanctions: [],
-        }));
+    // The database is the authoritative source when populated, but the bundled
+    // catalogue is a mandatory resilience fallback. This prevents the country
+    // selector from disappearing during a cold start, migration, empty DB, or
+    // transient database failure.
+    if (parsed.length === 0) {
+      parsed = staticFiltered;
     }
 
     return NextResponse.json({
       countries: parsed,
       total: parsed.length,
       searched: search || null,
-      source: dbParsed.length > 0 ? 'database' : 'catalogue',
+      source: dbParsed.length > 0 && parsed === dbParsed ? 'database' : 'catalogue',
+    }, {
+      headers: { 'Cache-Control': 'no-store' },
     });
   } catch (error) {
     console.error('[GET /api/learning/countries] Error:', error);
-    return NextResponse.json(
-      { error: 'Erreur lors du chargement des pays' },
-      { status: 500 }
-    );
+
+    // Never let a transient DB failure blank the country selector.
+    const { searchParams } = new URL(request.url);
+    const continent = searchParams.get('continent');
+    const search = searchParams.get('search')?.trim() ?? '';
+    const normalizedSearch = normalize(search);
+    const fallback = staticCountries
+      .filter((country) => !continent || country.region === continent)
+      .filter((country) => {
+        if (!normalizedSearch) return true;
+        return [country.name, country.code, country.region, ...country.languages]
+          .map(normalize)
+          .some((value) => value.includes(normalizedSearch));
+      })
+      .map(fromStaticCountry);
+
+    return NextResponse.json({
+      countries: fallback,
+      total: fallback.length,
+      searched: search || null,
+      source: 'catalogue-fallback',
+    }, { status: 200, headers: { 'Cache-Control': 'no-store' } });
   }
 }
 
