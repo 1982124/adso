@@ -41,16 +41,23 @@ function sanitizeSign(s: {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const requestedCountry = (searchParams.get('countryCode') || 'BJ').trim().toUpperCase();
+    const requestedCountry = (searchParams.get('countryCode') || 'ZZ').trim().toUpperCase();
     const category = searchParams.get('category');
     const search = searchParams.get('search');
     const where: Record<string, unknown> = {};
     if (category) where.category = category;
     if (search) where.OR = [{ name: { contains: search } }, { description: { contains: search } }];
 
-    let signs = await db.roadSign.findMany({ where: { ...where, countryCode: requestedCountry }, orderBy: [{ category: 'asc' }, { name: 'asc' }] });
+    const countrySigns = requestedCountry !== 'ZZ'
+      ? await db.roadSign.findMany({ where: { ...where, countryCode: requestedCountry }, orderBy: [{ category: 'asc' }, { name: 'asc' }] })
+      : [];
+
+    let signs = countrySigns;
     let contentScope = 'country-validated';
     if (signs.length === 0) {
+      // The database currently contains a common reference library seeded from a
+      // francophone road-sign corpus. It is exposed only as generic pedagogy and
+      // never as the selected country's regulation.
       signs = await db.roadSign.findMany({ where: { ...where, countryCode: 'FR' }, orderBy: [{ category: 'asc' }, { name: 'asc' }] });
       contentScope = 'global-common-theory';
     }
