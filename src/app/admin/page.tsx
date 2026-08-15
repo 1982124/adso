@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getSession, getUserRole } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { hasMinRole } from "@/lib/rbac";
@@ -14,6 +15,12 @@ const cards = [
   { key: "auditLogs", label: "Journal sécurité", description: "Événements d'audit" },
 ] as const;
 
+const hubs = [
+  { href: "/admin", label: "📊 Cockpit Direction", description: "Pilotage, sécurité et indicateurs" },
+  { href: "/offres", label: "💳 Offres ADSO", description: "Offres découverte et LOW-PAY" },
+  { href: "/formation/cas-visuels", label: "👁️ Cas visuels", description: "Bibliothèque d'apprentissage par situations" },
+];
+
 export default async function AdminCockpitPage() {
   const session = await getSession();
   const role = getUserRole(session);
@@ -26,7 +33,7 @@ export default async function AdminCockpitPage() {
   const values = { users, courses, countries, enrollments, certifications, auditLogs };
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white px-4 py-8 sm:px-6 lg:px-10">
+    <main className="min-h-screen bg-slate-950 px-4 py-8 text-white sm:px-6 lg:px-10">
       <div className="mx-auto max-w-7xl space-y-8">
         <header className="flex flex-col gap-4 border-b border-white/10 pb-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -37,7 +44,27 @@ export default async function AdminCockpitPage() {
           <div className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-2 text-sm text-emerald-300">Connecté · {role}</div>
         </header>
 
-        <AdminAIAssistant />
+        <nav aria-label="Accès rapides" className="grid gap-3 sm:grid-cols-3">
+          {hubs.map((hub) => (
+            <Link key={hub.href} href={hub.href} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-emerald-400/30 hover:bg-white/[0.07]">
+              <p className="font-semibold">{hub.label}</p>
+              <p className="mt-1 text-xs leading-5 text-slate-400">{hub.description}</p>
+            </Link>
+          ))}
+        </nav>
+
+        <section className="rounded-3xl border border-emerald-400/20 bg-gradient-to-r from-emerald-400/[0.08] to-cyan-400/[0.05] p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">🤖 Assistante de Direction ADSO</p>
+              <h2 className="mt-2 text-2xl font-semibold">Le cockpit stratégique est ici.</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">Analysez les données réelles d'ADSO, les risques, la formation, les pays et l'activité de la plateforme. Les actions sensibles restent soumises à validation humaine.</p>
+            </div>
+            <a href="#assistant" className="shrink-0 rounded-xl border border-emerald-300/30 bg-emerald-300/10 px-4 py-3 text-sm font-semibold text-emerald-200">Ouvrir l'assistante ↓</a>
+          </div>
+        </section>
+
+        <div id="assistant"><AdminAIAssistant /></div>
 
         <section aria-label="Indicateurs principaux" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {cards.map((card) => (
