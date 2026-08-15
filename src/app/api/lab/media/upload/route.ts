@@ -41,14 +41,15 @@ export async function POST(request: Request) {
     const result = await handleUpload({
       request,
       body,
-      onBeforeGenerateToken: async (pathname) => {
-        const payload = body?.payload ?? {};
+      onBeforeGenerateToken: async (pathname, clientPayload) => {
+        let payload: Record<string, unknown> = {};
+        try { payload = JSON.parse(clientPayload ?? '{}') as Record<string, unknown>; } catch { throw new Error('Payload vidéo invalide'); }
         const mimeType = String(payload.mimeType ?? '');
         const sizeBytes = Number(payload.sizeBytes ?? 0);
         if (!ALLOWED_TYPES.includes(mimeType)) throw new Error('Type vidéo non autorisé');
-        if (!Number.isFinite(sizeBytes) || sizeBytes <= 0 || sizeBytes > MAX_BYTES) {
-          throw new Error('Fichier vidéo trop volumineux');
-        }
+        if (!Number.isFinite(sizeBytes) || sizeBytes <= 0 || sizeBytes > MAX_BYTES) throw new Error('Fichier vidéo trop volumineux');
+        if (!Boolean(payload.copyrightConfirmed)) throw new Error('Les droits de diffusion doivent être confirmés');
+
         const assetId = randomUUID();
         await db.$executeRawUnsafe(
           `INSERT INTO "LabMediaAsset" ("id","ownerId","courseId","moduleId","name","url","pathname","mimeType","sizeBytes","status","copyrightConfirmed","moderationStatus") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'processing',$10,'pending')`,
@@ -61,7 +62,7 @@ export async function POST(request: Request) {
           pathname,
           mimeType,
           sizeBytes,
-          Boolean(payload.copyrightConfirmed),
+          true,
         );
         return {
           allowedContentTypes: ALLOWED_TYPES,
