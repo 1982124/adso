@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Globe, GraduationCap, ShieldCheck, Sparkles, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import ADSOShare from '@/components/ADSOShare';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
@@ -57,6 +58,8 @@ export default function HeroSection() {
             </Button>
           </motion.div>
         </div>
+
+        <ADSOShare />
 
         <motion.div custom={4} variants={fadeInUp} initial="hidden" animate="visible" className="mx-auto mt-14 grid max-w-5xl grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {pillars.map(({ icon: Icon, label }) => (
