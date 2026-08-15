@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { IntlClientProvider } from '@/i18n/client';
 import { SessionProvider } from 'next-auth/react';
 import { GlobalTTSReader } from '@/components/GlobalTTSReader';
+import { InlineTTSButtons } from '@/components/InlineTTSButtons';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -25,6 +26,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <IntlClientProvider>
         <QueryClientProvider client={queryClient}>
           {children}
+          <InlineTTSButtons />
           <GlobalTTSReader />
         </QueryClientProvider>
       </IntlClientProvider>
