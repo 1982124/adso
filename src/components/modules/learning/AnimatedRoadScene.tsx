@@ -3,15 +3,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-const LIGHT_CYCLE = { red: { backgroundColor: '#ef4444', opacity: [1, 1, 0.25, 0.25], transition: { duration: 6, repeat: Infinity, times: [0, 0.28, 0.3, 1] } }, amber: { backgroundColor: '#f59e0b', opacity: [0.25, 0.25, 1, 1, 0.25], transition: { duration: 6, repeat: Infinity, times: [0, 0.5, 0.52, 0.62, 0.64] } }, green: { backgroundColor: '#22c55e', opacity: [0.25, 0.25, 1, 1], transition: { duration: 6, repeat: Infinity, times: [0, 0.45, 0.47, 1] } } };
-
 function Car({ color = 'emerald', className = '', duration = 5, delay = 0 }: { color?: 'emerald' | 'slate' | 'amber' | 'white'; className?: string; duration?: number; delay?: number }) {
   const body = color === 'amber' ? 'bg-amber-400' : color === 'white' ? 'bg-white' : color === 'slate' ? 'bg-slate-600' : 'bg-emerald-500';
   return <motion.div className={`absolute h-5 w-10 rounded-md border border-black/30 shadow-lg ${body} ${className}`} animate={{ x: ['-8vw', '118vw'] }} transition={{ duration, delay, repeat: Infinity, ease: 'linear' }}><span className="absolute -bottom-1 left-1 h-2 w-2 rounded-full bg-slate-950" /><span className="absolute -bottom-1 right-1 h-2 w-2 rounded-full bg-slate-950" /><span className="absolute left-2 top-1 h-1.5 w-3 rounded-sm bg-sky-200/80" /></motion.div>;
 }
 
 function TrafficLight() {
-  return <div className="absolute right-5 top-5 z-20 rounded-xl border border-white/20 bg-slate-950/90 p-2 shadow-xl"><div className="space-y-1.5"><motion.span className="block h-4 w-4 rounded-full" animate={LIGHT_CYCLE.red} /><motion.span className="block h-4 w-4 rounded-full" animate={LIGHT_CYCLE.amber} /><motion.span className="block h-4 w-4 rounded-full" animate={LIGHT_CYCLE.green} /></div><span className="mt-2 block text-[8px] font-semibold uppercase tracking-wider text-white/70">Cycle</span></div>;
+  const transition = { duration: 6, repeat: Infinity, ease: 'linear' as const };
+  return <div className="absolute right-5 top-5 z-20 rounded-xl border border-white/20 bg-slate-950/90 p-2 shadow-xl"><div className="space-y-1.5"><motion.span className="block h-4 w-4 rounded-full bg-red-500" animate={{ opacity: [1, 1, 0.25, 0.25] }} transition={transition} /><motion.span className="block h-4 w-4 rounded-full bg-amber-400" animate={{ opacity: [0.25, 0.25, 1, 1, 0.25] }} transition={transition} /><motion.span className="block h-4 w-4 rounded-full bg-emerald-500" animate={{ opacity: [0.25, 0.25, 1, 1] }} transition={transition} /></div><span className="mt-2 block text-[8px] font-semibold uppercase tracking-wider text-white/70">Cycle</span></div>;
 }
 
 export default function AnimatedRoadScene({ category, title }: { category: string; title: string }) {
