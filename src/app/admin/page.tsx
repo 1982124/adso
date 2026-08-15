@@ -17,6 +17,7 @@ const cards = [
 
 const hubs = [
   { href: "/admin", label: "📊 Cockpit Direction", description: "Pilotage, sécurité et indicateurs" },
+  { href: "/admin/leads", label: "🎯 IA Leads Tracker", description: "Prospects, sources, offres et opportunités" },
   { href: "/offres", label: "💳 Offres ADSO", description: "Offres découverte et LOW-PAY" },
   { href: "/formation/cas-visuels", label: "👁️ Cas visuels", description: "Bibliothèque d'apprentissage par situations" },
 ];
@@ -44,7 +45,7 @@ export default async function AdminCockpitPage() {
           <div className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-2 text-sm text-emerald-300">Connecté · {role}</div>
         </header>
 
-        <nav aria-label="Accès rapides" className="grid gap-3 sm:grid-cols-3">
+        <nav aria-label="Accès rapides" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {hubs.map((hub) => (
             <Link key={hub.href} href={hub.href} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-emerald-400/30 hover:bg-white/[0.07]">
               <p className="font-semibold">{hub.label}</p>
@@ -82,7 +83,7 @@ export default async function AdminCockpitPage() {
           <article className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
             <h2 className="text-lg font-semibold">Architecture de supervision</h2>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {["Utilisateurs & rôles", "Contenus & formations", "Pays & réglementations", "Examens & certifications", "Organisations & partenaires", "Assurance & prévention", "Trajets & sécurité routière", "Audit & sécurité"].map((item) => (
+              {["Utilisateurs & rôles", "Contenus & formations", "Pays & réglementations", "Examens & certifications", "Organisations & partenaires", "Assurance & prévention", "Trajets & sécurité routière", "Audit & sécurité", "Leads & acquisition"].map((item) => (
                 <div key={item} className="rounded-xl border border-white/10 bg-slate-900/70 px-4 py-3 text-sm text-slate-300">{item}</div>
               ))}
             </div>
