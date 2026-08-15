@@ -4,24 +4,6 @@ import { db } from '@/lib/db';
 import { getSession, getUserId } from '@/lib/auth';
 import { evaluateScene, type ImmersiveAnswer, type ImmersiveInteraction } from '@/lib/engines/immersive-scene-engine';
 
-async function ensureAttemptTables() {
-  await db.$executeRawUnsafe(`
-    CREATE TABLE IF NOT EXISTS "ImmersiveAttempt" (
-      "id" TEXT PRIMARY KEY, "sceneId" TEXT NOT NULL REFERENCES "ImmersiveScene"("id") ON DELETE CASCADE,
-      "userId" TEXT NOT NULL, "score" DOUBLE PRECISION NOT NULL DEFAULT 0, "maxScore" DOUBLE PRECISION NOT NULL DEFAULT 0,
-      "accuracy" DOUBLE PRECISION NOT NULL DEFAULT 0, "competencyGain" DOUBLE PRECISION NOT NULL DEFAULT 0,
-      "answersJson" TEXT NOT NULL DEFAULT '[]', "completedAt" TIMESTAMP(3),
-      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-    CREATE TABLE IF NOT EXISTS "ImmersiveCompetency" (
-      "id" TEXT PRIMARY KEY, "userId" TEXT NOT NULL, "competency" TEXT NOT NULL,
-      "level" DOUBLE PRECISION NOT NULL DEFAULT 0, "attempts" INTEGER NOT NULL DEFAULT 0,
-      "lastScore" DOUBLE PRECISION NOT NULL DEFAULT 0, "strengths" TEXT, "weaknesses" TEXT,
-      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, UNIQUE("userId", "competency")
-    );
-  `);
-}
-
 export async function POST(request: Request) {
   const session = await getSession();
   if (!session?.user) return NextResponse.json({ error: 'Authentification requise' }, { status: 401 });
@@ -29,31 +11,74 @@ export async function POST(request: Request) {
   if (!userId) return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 401 });
 
   try {
-    await ensureAttemptTables();
     const body = await request.json();
     const sceneId = String(body.sceneId ?? '');
     if (!sceneId) return NextResponse.json({ error: 'sceneId requis' }, { status: 400 });
 
-    const interactions = (body.interactions ?? []) as ImmersiveInteraction[];
-    const answers = (body.answers ?? []) as ImmersiveAnswer[];
-    const result = evaluateScene(interactions, answers);
-    const competency = String(body.competency ?? 'Conduite sûre');
+    // Never trust scoring data supplied by the browser. Load the canonical
+    // published scene and its choices from Neon, then evaluate server-side.
+    const rows = await db.$queryRawUnsafe<Array<{ id: string; competency: string; interactions: ImmersiveInteraction[] }>>(`
+      SELECT s.id, s.competency,
+        COALESCE(json_agg(json_build_object(
+          'id', i.id, 'type', i.type, 'atSecond', i."atSecond", 'prompt', i.prompt,
+          'explanation', i.explanation, 'ttsText', i."ttsText", 'points', i.points,
+          'choices', (SELECT COALESCE(json_agg(json_build_object(
+            'id', c.id, 'label', c.label, 'isCorrect', c."isCorrect", 'scoreDelta', c."scoreDelta",
+            'consequence', c.consequence, 'explanation', c.explanation, 'competency', c.competency,
+            'nextInteractionId', c."nextInteractionId"
+          ) ORDER BY c."order"), '[]'::json)
+          FROM "ImmersiveChoice" c WHERE c."interactionId" = i.id)
+        ) ORDER BY i."order") FILTER (WHERE i.id IS NOT NULL), '[]'::json) AS interactions
+      FROM "ImmersiveScene" s
+      LEFT JOIN "ImmersiveInteraction" i ON i."sceneId" = s.id
+      WHERE s.id = $1 AND s.status = 'published'
+      GROUP BY s.id`, sceneId);
 
-    await db.$executeRawUnsafe(`INSERT INTO "ImmersiveAttempt"
-      ("id","sceneId","userId","score","maxScore","accuracy","competencyGain","answersJson","completedAt")
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-      randomUUID(), sceneId, userId, result.score, result.maxScore, result.accuracy, result.competencyGain,
-      JSON.stringify(result.answers), result.completed ? new Date() : null);
+    const scene = rows[0];
+    if (!scene) return NextResponse.json({ error: 'Scène publiée introuvable' }, { status: 404 });
 
-    await db.$executeRawUnsafe(`
-      INSERT INTO "ImmersiveCompetency" ("id","userId","competency","level","attempts","lastScore")
-      VALUES ($1,$2,$3,$4,1,$5)
-      ON CONFLICT ("userId","competency") DO UPDATE SET
-        "level" = LEAST(100, ("ImmersiveCompetency"."level" * 0.7) + (EXCLUDED."level" * 0.3)),
-        "attempts" = "ImmersiveCompetency"."attempts" + 1,
-        "lastScore" = EXCLUDED."lastScore",
-        "updatedAt" = CURRENT_TIMESTAMP`,
-      randomUUID(), userId, competency, result.competencyGain, result.score);
+    const submittedAnswers = Array.isArray(body.answers) ? body.answers : [];
+    const canonicalChoices = new Map<string, { scoreDelta: number; correct: boolean }>();
+    for (const interaction of scene.interactions ?? []) {
+      for (const choice of interaction.choices ?? []) {
+        canonicalChoices.set(`${interaction.id}:${choice.id}`, {
+          scoreDelta: Number(choice.scoreDelta ?? 0),
+          correct: Boolean(choice.isCorrect),
+        });
+      }
+    }
+
+    const answers: ImmersiveAnswer[] = submittedAnswers
+      .map((answer: unknown) => {
+        const item = answer as Record<string, unknown>;
+        const interactionId = String(item.interactionId ?? '');
+        const choiceId = String(item.choiceId ?? '');
+        const canonical = canonicalChoices.get(`${interactionId}:${choiceId}`);
+        if (!canonical) return null;
+        return { interactionId, choiceId, scoreDelta: canonical.scoreDelta, correct: canonical.correct };
+      })
+      .filter((answer: ImmersiveAnswer | null): answer is ImmersiveAnswer => answer !== null);
+
+    const result = evaluateScene(scene.interactions ?? [], answers);
+    const competency = String(scene.competency || body.competency || 'Conduite sûre');
+
+    await db.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe(`INSERT INTO "ImmersiveAttempt"
+        ("id","sceneId","userId","score","maxScore","accuracy","competencyGain","answersJson","completedAt")
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+        randomUUID(), sceneId, userId, result.score, result.maxScore, result.accuracy, result.competencyGain,
+        JSON.stringify(result.answers), result.completed ? new Date() : null);
+
+      await tx.$executeRawUnsafe(`
+        INSERT INTO "ImmersiveCompetency" ("id","userId","competency","level","attempts","lastScore")
+        VALUES ($1,$2,$3,$4,1,$5)
+        ON CONFLICT ("userId","competency") DO UPDATE SET
+          "level" = LEAST(100, ("ImmersiveCompetency"."level" * 0.7) + (EXCLUDED."level" * 0.3)),
+          "attempts" = "ImmersiveCompetency"."attempts" + 1,
+          "lastScore" = EXCLUDED."lastScore",
+          "updatedAt" = CURRENT_TIMESTAMP`,
+        randomUUID(), userId, competency, result.competencyGain, result.score);
+    });
 
     return NextResponse.json(result);
   } catch (error) {
