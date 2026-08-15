@@ -33,7 +33,7 @@ export default function AnimatedRoadScene({ category, title }: { category: strin
     {traffic && <TrafficLight />}
     {roundabout ? <motion.div className="absolute left-[42%] top-[55%] h-16 w-16 rounded-full border-8 border-slate-500 bg-emerald-900/60" animate={{ rotate: 360 }} transition={{ duration: 8, repeat: Infinity, ease: 'linear' }} /> : null}
     {pedestrian && <motion.div className="absolute bottom-24 left-[48%] z-10 h-7 w-2 rounded-full bg-slate-100" animate={{ x: [-25, 20, -25] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}><span className="absolute -top-2 left-0.5 h-2 w-2 rounded-full bg-slate-100" /></motion.div>}
-    <Car color="emerald" duration={traffic ? 6 : 5} />
+    <Car color="emerald" duration={traffic ? 3.2 : 5} delay={traffic ? 2.8 : 0} />
     <Car color="white" duration={7} delay={1.2} className="bottom-14" />
     {emergency && <motion.div className="absolute right-[30%] bottom-20 z-20 text-3xl" animate={{ scale: [1, 1.18, 1] }} transition={{ duration: 0.7, repeat: Infinity }}>⚠️</motion.div>}
     <div className="absolute bottom-2 left-3 z-30 rounded-lg bg-black/65 px-3 py-1.5 backdrop-blur-sm"><p className="text-[10px] font-semibold text-white">🎬 Scène animée</p><p className="text-[9px] text-white/70">Mouvement visuel · aucun son requis</p></div>
