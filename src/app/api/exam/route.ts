@@ -16,9 +16,15 @@ function randomChars(length: number): string {
   return result;
 }
 
+function normalizeCountryCode(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const code = value.trim().toUpperCase();
+  return /^[A-Z]{2}$/.test(code) ? code : null;
+}
+
 async function issueExamCertificate(userId: string, score: number, countryCode: string, licenseCode: string | null) {
   const existing = await db.certification.findFirst({
-    where: { userId, type: 'exam_passed', licenseCode },
+    where: { userId, type: 'exam_passed', licenseCode, countryCode },
     orderBy: { issuedAt: 'desc' },
   });
   if (existing && existing.score != null && existing.score >= score) return existing;
@@ -53,22 +59,45 @@ export async function POST(request: NextRequest) {
       licenseCode?: string;
     };
 
-    if (!answers || !Array.isArray(answers) || answers.length === 0) {
-      return NextResponse.json({ error: 'Réponses requises' }, { status: 400 });
+    const normalizedCountry = normalizeCountryCode(countryCode);
+    if (!normalizedCountry) {
+      return NextResponse.json({ error: 'countryCode valide requis pour soumettre un examen' }, { status: 400 });
+    }
+
+    if (!answers || !Array.isArray(answers) || answers.length === 0 || answers.length > 100) {
+      return NextResponse.json({ error: 'Le nombre de réponses doit être compris entre 1 et 100' }, { status: 400 });
+    }
+
+    const uniqueIds = new Set<string>();
+    for (const answer of answers) {
+      if (!answer || typeof answer.questionId !== 'string' || !answer.questionId.trim()) {
+        return NextResponse.json({ error: 'Identifiant de question invalide' }, { status: 400 });
+      }
+      if (!Number.isInteger(answer.selectedOption) || answer.selectedOption < 0 || answer.selectedOption > 99) {
+        return NextResponse.json({ error: 'Réponse invalide' }, { status: 400 });
+      }
+      if (uniqueIds.has(answer.questionId)) {
+        return NextResponse.json({ error: 'Une question ne peut être soumise qu’une seule fois' }, { status: 400 });
+      }
+      uniqueIds.add(answer.questionId);
     }
 
     const user = await db.user.findUnique({ where: { id: userId } });
     if (!user) return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
 
-    const questionIds = answers.map((a) => a.questionId);
+    const questionIds = [...uniqueIds];
     const questions = await db.question.findMany({ where: { id: { in: questionIds } } });
+    if (questions.length !== questionIds.length) {
+      return NextResponse.json({ error: 'Une ou plusieurs questions ne sont pas valides' }, { status: 400 });
+    }
+
     const questionMap = new Map(questions.map((q) => [q.id, q]));
     let correctAnswers = 0;
     const wrongAnswerIds: string[] = [];
 
     for (const answer of answers) {
-      const question = questionMap.get(answer.questionId);
-      if (question && answer.selectedOption === question.correctIndex) correctAnswers++;
+      const question = questionMap.get(answer.questionId)!;
+      if (answer.selectedOption === question.correctIndex) correctAnswers++;
       else wrongAnswerIds.push(answer.questionId);
     }
 
@@ -83,10 +112,10 @@ export async function POST(request: NextRequest) {
         totalQuestions,
         correctAnswers,
         score,
-        duration: duration ?? 0,
+        duration: Number.isFinite(duration) && (duration ?? 0) >= 0 ? Math.min(duration ?? 0, 86400) : 0,
         passed,
         type: examType,
-        country: countryCode ?? 'FR',
+        country: normalizedCountry,
         licenseCode: licenseCode ?? null,
         wrongAnswers: JSON.stringify(wrongAnswerIds),
       },
@@ -94,7 +123,7 @@ export async function POST(request: NextRequest) {
 
     let certification: Awaited<ReturnType<typeof issueExamCertificate>> | null = null;
     if (passed && examType === 'mock_exam') {
-      certification = await issueExamCertificate(user.id, score, countryCode ?? 'FR', licenseCode ?? null);
+      certification = await issueExamCertificate(user.id, score, normalizedCountry, licenseCode ?? null);
     }
 
     return NextResponse.json({
