@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const difficulty = searchParams.get('difficulty');
     const countParam = searchParams.get('count');
     const licenseCode = searchParams.get('licenseCode');
-    const countryCode = (searchParams.get('countryCode') || 'ZZ').trim().toUpperCase();
+    const requestedCountry = (searchParams.get('countryCode') || 'ZZ').trim().toUpperCase();
     const excludeParam = searchParams.get('exclude');
     const count = countParam ? Math.min(Math.max(parseInt(countParam, 10), 1), 100) : 10;
     const excludeIds = excludeParam ? excludeParam.split(',').map((id) => id.trim()).filter(Boolean) : [];
@@ -38,25 +38,52 @@ export async function GET(request: NextRequest) {
     if (licenseCode) baseWhere.licenseCode = licenseCode;
     if (excludeIds.length > 0) baseWhere.id = { notIn: excludeIds };
 
-    let questions = countryCode !== 'ZZ'
-      ? await db.question.findMany({ where: { ...baseWhere, countryCode }, orderBy: { createdAt: 'asc' } })
+    let questions = requestedCountry !== 'ZZ'
+      ? await db.question.findMany({ where: { ...baseWhere, countryCode: requestedCountry }, orderBy: { createdAt: 'asc' } })
       : [];
     let contentScope = 'country-validated';
+    let contentCountry: string | null = requestedCountry !== 'ZZ' ? requestedCountry : null;
 
+    // When no country-specific bank exists, use only common-theory questions from
+    // the reference bank. Never label those questions as belonging to the user's country.
     if (questions.length === 0) {
       const referenceQuestions = await db.question.findMany({ where: { ...baseWhere, countryCode: 'FR' }, orderBy: { createdAt: 'asc' } });
       questions = referenceQuestions.filter(isCommonTheoryQuestion);
       contentScope = 'global-common-theory';
+      contentCountry = null;
     }
 
     const selected = shuffleArray(questions).slice(0, count);
     const parsed = selected.map((q) => {
       let parsedOptions: string[];
       try { parsedOptions = JSON.parse(q.options); } catch { parsedOptions = [q.options]; }
-      return { id: q.id, countryCode, licenseCode: q.licenseCode, question: q.question, options: parsedOptions, correctIndex: q.correctIndex, explanation: q.explanation, difficulty: q.difficulty, category: q.category, theme: q.theme, tags: safeParse(q.tags), reference: q.reference, hasImage: q.hasImage };
+      return {
+        id: q.id,
+        countryCode: contentCountry,
+        licenseCode: q.licenseCode,
+        question: q.question,
+        options: parsedOptions,
+        correctIndex: q.correctIndex,
+        explanation: q.explanation,
+        difficulty: q.difficulty,
+        category: q.category,
+        theme: q.theme,
+        tags: safeParse(q.tags),
+        reference: q.reference,
+        hasImage: q.hasImage,
+      };
     });
 
-    return NextResponse.json({ questions: parsed, total: parsed.length, contentScope, requestedCountry: countryCode });
+    return NextResponse.json({
+      questions: parsed,
+      total: parsed.length,
+      contentScope,
+      requestedCountry,
+      contentCountry,
+      disclaimer: contentScope === 'global-common-theory'
+        ? 'Ces questions portent sur la théorie commune et ne constituent pas une réglementation nationale.'
+        : null,
+    }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     console.error('[GET /api/learning/questions] Error:', error);
     return NextResponse.json({ error: 'Erreur lors du chargement des questions' }, { status: 500 });
