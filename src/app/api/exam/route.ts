@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
 import { requireAuth, getUserId } from '@/lib/auth';
 
@@ -7,6 +8,8 @@ interface ExamAnswer {
   questionId: string;
   selectedOption: number;
 }
+
+const EXAM_SESSION_COOKIE = 'adso_exam_session';
 
 function randomChars(length: number): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -20,6 +23,36 @@ function normalizeCountryCode(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const code = value.trim().toUpperCase();
   return /^[A-Z]{2}$/.test(code) ? code : null;
+}
+
+function verifyExamSession(token: string | undefined) {
+  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+  if (!secret || !token) return null;
+  const separator = token.lastIndexOf('.');
+  if (separator <= 0) return null;
+  const encoded = token.slice(0, separator);
+  const providedSignature = token.slice(separator + 1);
+  const expectedSignature = crypto.createHmac('sha256', secret).update(encoded).digest('base64url');
+  const a = Buffer.from(providedSignature);
+  const b = Buffer.from(expectedSignature);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8')) as {
+      v: number;
+      issuedAt: number;
+      expiresAt: number;
+      countryCode: string;
+      contentCountry: string | null;
+      contentScope: string;
+      licenseCode: string | null;
+      questionIds: string[];
+    };
+    if (payload.v !== 1 || !Array.isArray(payload.questionIds) || payload.questionIds.length === 0) return null;
+    if (payload.expiresAt < Date.now() || payload.issuedAt > Date.now() + 60_000) return null;
+    return payload;
+  } catch {
+    return null;
+  }
 }
 
 async function issueExamCertificate(userId: string, score: number, countryCode: string, licenseCode: string | null) {
@@ -68,6 +101,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Le nombre de réponses doit être compris entre 1 et 100' }, { status: 400 });
     }
 
+    const sessionCookie = (await cookies()).get(EXAM_SESSION_COOKIE)?.value;
+    const examSession = verifyExamSession(sessionCookie);
+    if (!examSession) {
+      return NextResponse.json({ error: 'Session d’examen invalide ou expirée. Rechargez un nouvel examen.' }, { status: 400 });
+    }
+    if (examSession.countryCode !== normalizedCountry) {
+      return NextResponse.json({ error: 'Le pays de la session ne correspond pas au pays de l’examen.' }, { status: 400 });
+    }
+    if ((examSession.licenseCode || null) !== (licenseCode || null)) {
+      return NextResponse.json({ error: 'La catégorie de permis ne correspond pas à la session.' }, { status: 400 });
+    }
+
+    const sessionQuestionIds = new Set(examSession.questionIds);
     const uniqueIds = new Set<string>();
     for (const answer of answers) {
       if (!answer || typeof answer.questionId !== 'string' || !answer.questionId.trim()) {
@@ -79,6 +125,9 @@ export async function POST(request: NextRequest) {
       if (uniqueIds.has(answer.questionId)) {
         return NextResponse.json({ error: 'Une question ne peut être soumise qu’une seule fois' }, { status: 400 });
       }
+      if (!sessionQuestionIds.has(answer.questionId)) {
+        return NextResponse.json({ error: 'Question non délivrée par cette session d’examen' }, { status: 400 });
+      }
       uniqueIds.add(answer.questionId);
     }
 
@@ -88,7 +137,7 @@ export async function POST(request: NextRequest) {
     const questionIds = [...uniqueIds];
     const questions = await db.question.findMany({ where: { id: { in: questionIds } } });
     if (questions.length !== questionIds.length) {
-      return NextResponse.json({ error: 'Une ou plusieurs questions ne sont pas valides' }, { status: 400 });
+      return NextResponse.json({ error: 'Une ou plusieurs questions ne sont plus valides' }, { status: 400 });
     }
 
     const questionMap = new Map(questions.map((q) => [q.id, q]));
@@ -97,6 +146,11 @@ export async function POST(request: NextRequest) {
 
     for (const answer of answers) {
       const question = questionMap.get(answer.questionId)!;
+      let optionCount = 0;
+      try { optionCount = JSON.parse(question.options).length; } catch { optionCount = 0; }
+      if (optionCount > 0 && answer.selectedOption >= optionCount) {
+        return NextResponse.json({ error: 'Index de réponse hors limites' }, { status: 400 });
+      }
       if (answer.selectedOption === question.correctIndex) correctAnswers++;
       else wrongAnswerIds.push(answer.questionId);
     }
@@ -126,7 +180,7 @@ export async function POST(request: NextRequest) {
       certification = await issueExamCertificate(user.id, score, normalizedCountry, licenseCode ?? null);
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       attemptId: attempt.id,
       score,
       passed,
@@ -135,6 +189,8 @@ export async function POST(request: NextRequest) {
       wrongAnswers: wrongAnswerIds,
       certification,
     });
+    response.cookies.set(EXAM_SESSION_COOKIE, '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/api/exam', maxAge: 0 });
+    return response;
   } catch (error) {
     console.error('[POST /api/exam] Error:', error);
     return NextResponse.json({ error: 'Erreur lors de la soumission de l\'examen' }, { status: 500 });
