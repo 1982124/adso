@@ -24,7 +24,7 @@ interface LocaleState {
   setLanguageAndCountry: (locale: string, country: CountryContext) => void;
 }
 
-const defaultCountry: CountryContext = { code: 'BJ', name: 'Bénin' };
+const defaultCountry: CountryContext = { code: 'ZZ', name: 'International — choisissez votre pays' };
 
 export const useLocaleStore = create<LocaleState>()(
   persist(
@@ -34,37 +34,22 @@ export const useLocaleStore = create<LocaleState>()(
       country: defaultCountry,
       locales: locales.map((code) => ({
         code,
-        name: ({
-          fr: 'Français', en: 'English', es: 'Español', ar: 'العربية', pt: 'Português',
-          de: 'Deutsch', zh: '中文', ja: '日本語', sw: 'Kiswahili', bm: 'Bamanankan',
-        } as Record<string, string>)[code] ?? code,
-        flag: ({
-          fr: '🇫🇷', en: '🇬🇧', es: '🇪🇸', ar: '🇸🇦', pt: '🇧🇷',
-          de: '🇩🇪', zh: '🇨🇳', ja: '🇯🇵', sw: '🇰🇪', bm: '🇲🇱',
-        } as Record<string, string>)[code] ?? '🌍',
+        name: ({ fr: 'Français', en: 'English', es: 'Español', ar: 'العربية', pt: 'Português', de: 'Deutsch', zh: '中文', ja: '日本語', sw: 'Kiswahili', bm: 'Bamanankan' } as Record<string, string>)[code] ?? code,
+        flag: ({ fr: '🇫🇷', en: '🇬🇧', es: '🇪🇸', ar: '🇸🇦', pt: '🇧🇷', de: '🇩🇪', zh: '🇨🇳', ja: '🇯🇵', sw: '🇰🇪', bm: '🇲🇱' } as Record<string, string>)[code] ?? '🌍',
         dir: getLocaleDirection(code),
       })),
-
       setLocale: (locale) => {
         const selectedLocale = isValidLocale(locale) ? locale : 'fr';
         set({ locale: selectedLocale, direction: getLocaleDirection(selectedLocale) });
       },
-
       setCountry: (country) => {
         if (!country?.code || !country?.name) return;
         set({ country });
       },
-
-      // Critical ADSO rule: country and language are independent dimensions.
-      // Example: country=US + locale=fr means US road reality presented in French.
       setLanguageAndCountry: (locale, country) => {
         const selectedLocale = isValidLocale(locale) ? locale : 'fr';
         if (!country?.code || !country?.name) return;
-        set({
-          locale: selectedLocale,
-          direction: getLocaleDirection(selectedLocale),
-          country,
-        });
+        set({ locale: selectedLocale, direction: getLocaleDirection(selectedLocale), country });
       },
     }),
     { name: 'adso-locale-store' },
