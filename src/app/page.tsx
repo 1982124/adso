@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useEffect } from 'react';
 import { useViewStore } from '@/stores/view-store';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -54,6 +55,22 @@ function ModuleLoader({ label }: { label: string }) { return <div className="min
 
 export default function Home() {
   const { currentView } = useViewStore();
+
+  // A root navigation must always start at the real ADSO landing page.
+  // Browsers may restore the previous scroll position after a reload, and a
+  // previous in-app anchor such as #dashboard can otherwise make the app look
+  // as if it opens directly on the dashboard. Reset both conditions on mount.
+  useEffect(() => {
+    if (currentView !== 'home') return;
+    const frame = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      if (window.location.hash) {
+        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [currentView]);
+
   return <><ChunkLoadRecovery /><Navbar /><main role="main" aria-label="ADSO — AI-Driven & Smart Operations"><ViewErrorBoundary key={currentView}>{currentView === 'home' && <HomeView />}{currentView === 'learning' && <LearningPlatform />}{currentView === 'driving' && <AIDrivingModule />}{currentView === 'mechanic' && <MechanicModule />}{currentView === 'scanner' && <ScannerModule />}{currentView === 'telematics' && <TelematicsModule />}{currentView === 'security' && <SecurityModule />}{currentView === 'marketplace' && <MarketplaceModule />}{currentView === 'insurance' && <InsuranceModule />}{currentView === 'fleet' && <FleetModule />}{currentView === 'enterprise' && <EnterpriseModule />}{currentView === 'blueprint' && <BlueprintView />}</ViewErrorBoundary></main><Footer /></>;
 }
 function HomeView() { return <><HeroSection /><AboutSection /><StatsSection /><EcosystemSection /><AIFeaturesSection /><StudentDashboard /><QuizSection /><AIChatSection /><AnalyticsSection /><PricingSection /><RoadmapSection /><SecuritySection /></>; }
