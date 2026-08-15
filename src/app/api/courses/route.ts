@@ -6,15 +6,6 @@ import { courseContent } from '../../../../seed-data/course-content';
 
 const DEFAULT_CATALOG_COUNTRY = 'BJ';
 
-const COUNTRY_CODES = new Set([
-  'DZ','AO','BJ','BW','BF','BI','CV','CM','CF','TD','KM','CG','CD','CI','DJ','EG','GQ','ER',
-  'SZ','ET','GA','GM','GH','GN','GW','KE','LS','LR','LY','MG','MW','ML','MR','MU','MA','MZ',
-  'NA','NE','NG','RW','ST','SN','SC','SL','SO','ZA','SS','SD','TZ','TG','TN','UG','ZM','ZW',
-  'AR','BR','CA','CL','CO','MX','PE','US','CN','KR','IN','JP','MY','PH','SG','TH','TR','VN',
-  'HT','JM','DO','DE','AT','BE','ES','FI','FR','IT','LU','NO','NL','PL','PT','GB','RU','CH','SE','CZ',
-  'SA','AE','AU','ID','NZ'
-]);
-
 const FOREIGN_LEGAL_MARKERS = [
   /\bfrance\b/i, /\bfrançais\b/i, /\bfrançaise\b/i, /\beuros?\b/i,
   /\bpermis à points\b/i, /\b12 points\b/i, /\bcontravention\b/i,
