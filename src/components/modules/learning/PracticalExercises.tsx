@@ -9,82 +9,23 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { ChevronDown, ChevronUp, ExternalLink, Target, ClipboardList, Shield, Leaf } from 'lucide-react';
 
-interface Exercise {
-  id: string; title: string; description: string; category: string; difficulty: string;
-  objectives: string[]; steps: string[]; criteria: string[]; tips: string[];
-  scoring: Record<string, string | number>; countryCode: string; licenseCode: string;
-}
-
-const CATEGORIES: Record<string, string> = {
-  city: 'Ville', highway: 'Autoroute', rural: 'Campagne', mountain: 'Montagne', night: 'Nuit', rain: 'Pluie', fog: 'Brouillard', snow: 'Neige',
-  parking: 'Stationnement', maneuver: 'Manœuvres', intersection: 'Intersection', priority: 'Priorité', roundabout: 'Rond-point', overtaking: 'Dépassement', emergency_braking: "Freinage d'urgence", eco_driving: 'Éco-conduite'
-};
+interface Exercise { id: string; title: string; description: string; category: string; difficulty: string; objectives: string[]; steps: string[]; criteria: string[]; tips: string[]; scoring: Record<string, string | number>; countryCode: string; licenseCode: string; }
+const CATEGORIES: Record<string, string> = { city: 'Ville', highway: 'Autoroute', rural: 'Campagne', mountain: 'Montagne', night: 'Nuit', rain: 'Pluie', fog: 'Brouillard', snow: 'Neige', parking: 'Stationnement', maneuver: 'Manœuvres', intersection: 'Intersection', priority: 'Priorité', roundabout: 'Rond-point', overtaking: 'Dépassement', emergency_braking: "Freinage d'urgence", eco_driving: 'Éco-conduite' };
 const DIFFICULTIES: Record<string, string> = { beginner: 'Débutant', intermediate: 'Intermédiaire', advanced: 'Avancé' };
 const VISUALS: Record<string, { image: string; source: string; alt: string }> = {
   roundabout: { image: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Panneau_giratoire_%28D_906%2C_Saint-Yorre%29_2015-12-05.JPG', source: 'Wikimedia Commons — Saint-Yorre, France', alt: 'Panneau de giratoire photographié en France' },
   city: { image: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Passage_pi%C3%A9ton_France.JPG', source: 'Wikimedia Commons — France', alt: 'Passage piéton photographié en France' },
-  highway: { image: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/A71_-_NS_Virage_%C3%A0_droite.jpg', source: 'Wikimedia Commons — A71, France', alt: 'Situation routière photographiée sur autoroute française' },
+  highway: { image: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/A71_-_NS_Virage_%C3%A0_droite.jpg', source: 'Wikimedia Commons — A71, France', alt: 'Route et signalisation photographiées sur une autoroute française' },
   rain: { image: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Viaduc_Grands_Pr%C3%A9s_-_Chartres_%28FR28%29_-_2021-03-14_-_3.jpg', source: 'Wikimedia Commons — Chartres, France', alt: 'Chaussée et signalisation photographiées en France' },
   rural: { image: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/A71_-_NS_Virage_%C3%A0_droite.jpg', source: 'Wikimedia Commons — A71, France', alt: 'Route et signalisation photographiées en France' },
 };
 
 export default function PracticalExercises() {
-  const [items, setItems] = useState<Exercise[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [category, setCategory] = useState<string | null>(null);
-  const [difficulty, setDifficulty] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const p = new URLSearchParams();
-      if (category) p.set('category', category);
-      if (difficulty) p.set('difficulty', difficulty);
-      const r = await fetch(`/api/learning/practical${p.toString() ? `?${p}` : ''}`);
-      if (!r.ok) throw new Error('practical request failed');
-      const data = await r.json();
-      setItems(Array.isArray(data.exercises) ? data.exercises : []);
-      setTotal(Number(data.total ?? 0));
-    } catch { setItems([]); setTotal(0); }
-    finally { setLoading(false); }
-  }, [category, difficulty]);
+  const [items, setItems] = useState<Exercise[]>([]); const [total, setTotal] = useState(0); const [loading, setLoading] = useState(true); const [category, setCategory] = useState<string | null>(null); const [difficulty, setDifficulty] = useState<string | null>(null); const [expanded, setExpanded] = useState<string | null>(null);
+  const load = useCallback(async () => { setLoading(true); try { const p = new URLSearchParams(); if (category) p.set('category', category); if (difficulty) p.set('difficulty', difficulty); const r = await fetch(`/api/learning/practical${p.toString() ? `?${p}` : ''}`); if (!r.ok) throw new Error('practical request failed'); const data = await r.json(); setItems(Array.isArray(data.exercises) ? data.exercises : []); setTotal(Number(data.total ?? 0)); } catch { setItems([]); setTotal(0); } finally { setLoading(false); } }, [category, difficulty]);
   useEffect(() => { load(); }, [load]);
-
-  return <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-    <div className="flex flex-wrap gap-2">
-      <button onClick={() => setCategory(null)} className={`px-3 py-1.5 rounded-lg text-xs ${category === null ? 'bg-emerald-600 text-white' : 'bg-slate-900 border border-slate-800 text-slate-400'}`}>Toutes</button>
-      {Object.entries(CATEGORIES).map(([k, v]) => <button key={k} onClick={() => setCategory(category === k ? null : k)} className={`px-3 py-1.5 rounded-lg text-xs ${category === k ? 'bg-emerald-600 text-white' : 'bg-slate-900 border border-slate-800 text-slate-400'}`}>{v}</button>)}
-    </div>
-    <div className="flex flex-wrap gap-2">
-      <button onClick={() => setDifficulty(null)} className={`px-3 py-1.5 rounded-lg text-xs ${difficulty === null ? 'bg-emerald-600 text-white' : 'bg-slate-900 border border-slate-800 text-slate-400'}`}>Toutes difficultés</button>
-      {Object.entries(DIFFICULTIES).map(([k, v]) => <button key={k} onClick={() => setDifficulty(difficulty === k ? null : k)} className={`px-3 py-1.5 rounded-lg text-xs ${difficulty === k ? 'bg-emerald-600 text-white' : 'bg-slate-900 border border-slate-800 text-slate-400'}`}>{v}</button>)}
-    </div>
-    {!loading && <p className="text-xs text-slate-500">{total} exercice{total !== 1 ? 's' : ''} réel{total !== 1 ? 's' : ''} chargé{total !== 1 ? 's' : ''} depuis ADSO.</p>}
-    {loading && <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">{Array.from({length:6}).map((_,i)=><div key={i} className="rounded-xl bg-slate-900 border border-slate-800 p-4 space-y-3"><Skeleton className="h-36 bg-slate-800"/><Skeleton className="h-5 w-40 bg-slate-800"/><Skeleton className="h-3 w-full bg-slate-800"/></div>)}</div>}
-    {!loading && items.length === 0 && <div className="py-16 text-center text-slate-400">Aucun exercice disponible pour ces filtres.</div>}
-    {!loading && items.length > 0 && <ScrollArea className="max-h-[760px]"><div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 pr-3">{items.map(x => <ExerciseCard key={x.id} item={x} open={expanded === x.id} onToggle={() => setExpanded(expanded === x.id ? null : x.id)}/>)}</div></ScrollArea>}
-  </motion.div>;
+  return <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5"><div className="flex flex-wrap gap-2"><button onClick={() => setCategory(null)} className={`px-3 py-1.5 rounded-lg text-xs ${category === null ? 'bg-emerald-600 text-white' : 'bg-slate-900 border border-slate-800 text-slate-400'}`}>Toutes</button>{Object.entries(CATEGORIES).map(([k, v]) => <button key={k} onClick={() => setCategory(category === k ? null : k)} className={`px-3 py-1.5 rounded-lg text-xs ${category === k ? 'bg-emerald-600 text-white' : 'bg-slate-900 border border-slate-800 text-slate-400'}`}>{v}</button>)}</div><div className="flex flex-wrap gap-2"><button onClick={() => setDifficulty(null)} className={`px-3 py-1.5 rounded-lg text-xs ${difficulty === null ? 'bg-emerald-600 text-white' : 'bg-slate-900 border border-slate-800 text-slate-400'}`}>Toutes difficultés</button>{Object.entries(DIFFICULTIES).map(([k, v]) => <button key={k} onClick={() => setDifficulty(difficulty === k ? null : k)} className={`px-3 py-1.5 rounded-lg text-xs ${difficulty === k ? 'bg-emerald-600 text-white' : 'bg-slate-900 border border-slate-800 text-slate-400'}`}>{v}</button>)}</div>{!loading && <p className="text-xs text-slate-500">{total} exercice{total !== 1 ? 's' : ''} réel{total !== 1 ? 's' : ''} chargé{total !== 1 ? 's' : ''} depuis ADSO.</p>}{loading && <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="rounded-xl bg-slate-900 border border-slate-800 p-4 space-y-3"><Skeleton className="h-36 bg-slate-800" /><Skeleton className="h-5 w-40 bg-slate-800" /><Skeleton className="h-3 w-full bg-slate-800" /></div>)}</div>}{!loading && items.length === 0 && <div className="py-16 text-center text-slate-400">Aucun exercice disponible pour ces filtres.</div>}{!loading && items.length > 0 && <ScrollArea className="max-h-[760px]"><div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 pr-3">{items.map(x => <ExerciseCard key={x.id} item={x} open={expanded === x.id} onToggle={() => setExpanded(expanded === x.id ? null : x.id)} />)}</div></ScrollArea>}</motion.div>;
 }
 
-function ExerciseCard({ item, open, onToggle }: { item: Exercise; open: boolean; onToggle: () => void }) {
-  const visual = VISUALS[item.category];
-  return <Card className="bg-slate-900/90 border-slate-800 rounded-xl overflow-hidden">
-    {visual && <div className="relative h-48 bg-slate-800"><img src={visual.image} alt={visual.alt} loading="lazy" className="h-full w-full object-cover"/><div className="absolute bottom-0 inset-x-0 bg-black/75 px-2 py-1.5 flex justify-between gap-2"><span className="text-[9px] text-white truncate">Cas réel · {visual.source}</span><a href={visual.image} target="_blank" rel="noreferrer" aria-label="Voir la source de l'image" className="text-emerald-300"><ExternalLink className="w-3 h-3"/></a></div></div>}
-    <button onClick={onToggle} className="w-full text-left p-4 focus-visible:ring-2 focus-visible:ring-emerald-500" aria-expanded={open}>
-      <div className="flex justify-between gap-2"><h3 className="text-white font-semibold text-sm">{item.title}</h3>{open ? <ChevronUp className="w-4 h-4 text-slate-500"/> : <ChevronDown className="w-4 h-4 text-slate-500"/>}</div>
-      <p className="text-slate-400 text-xs mt-1.5 line-clamp-3">{item.description}</p>
-      <div className="flex gap-2 mt-3"><Badge variant="outline" className="text-emerald-400 border-emerald-700/40">{CATEGORIES[item.category] || item.category}</Badge><Badge variant="outline" className="text-slate-300">{DIFFICULTIES[item.difficulty] || item.difficulty}</Badge></div>
-    </button>
-    <AnimatePresence>{open && <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}} className="overflow-hidden"><Separator className="bg-slate-800"/><div className="p-4 space-y-4">
-      <List title="Objectifs" icon={Target} items={item.objectives}/><List title="Étapes" icon={ClipboardList} items={item.steps} numbered/><List title="Critères d'évaluation" icon={Shield} items={item.criteria}/><List title="Conseils" icon={Leaf} items={item.tips}/>
-      {Object.keys(item.scoring || {}).length > 0 && <div><p className="text-slate-500 text-[10px] uppercase tracking-wider">Barème</p><div className="grid grid-cols-2 gap-1 mt-1">{Object.entries(item.scoring).map(([k,v])=><div key={k} className="bg-slate-800/50 rounded px-2 py-1 text-xs flex justify-between"><span className="text-slate-300">{k}</span><b className="text-emerald-400">{v}</b></div>)}</div></div>}
-    </div></motion.div>}</AnimatePresence>
-  </Card>;
-}
-
-function List({ title, icon: Icon, items, numbered = false }: { title: string; icon: React.ElementType; items: string[]; numbered?: boolean }) {
-  if (!items?.length) return null;
-  return <div><p className="text-slate-500 text-[10px] uppercase tracking-wider flex items-center gap-1.5"><Icon className="w-3 h-3 text-emerald-400"/>{title}</p><ul className="mt-1.5 space-y-1">{items.map((x,i)=><li key={`${i}-${x}`} className="text-slate-200 text-xs leading-relaxed flex gap-2"><span className="text-emerald-400 shrink-0">{numbered ? `${i+1}.` : '•'}</span>{x}</li>)}</ul></div>;
-}
+function ExerciseCard({ item, open, onToggle }: { item: Exercise; open: boolean; onToggle: () => void }) { const visual = VISUALS[item.category]; return <Card className="bg-slate-900/90 border-slate-800 rounded-xl overflow-hidden">{visual && <div className="relative h-48 bg-slate-800"><img src={visual.image} alt={visual.alt} loading="lazy" className="h-full w-full object-cover" /><div className="absolute bottom-0 inset-x-0 bg-black/75 px-2 py-1.5 flex justify-between gap-2"><span className="text-[9px] text-white truncate">Illustration réelle · contexte {visual.source}</span><a href={visual.image} target="_blank" rel="noreferrer" aria-label="Voir la source de l'image" className="text-emerald-300"><ExternalLink className="w-3 h-3" /></a></div></div>}<button onClick={onToggle} className="w-full text-left p-4 focus-visible:ring-2 focus-visible:ring-emerald-500" aria-expanded={open}><div className="flex justify-between gap-2"><h3 className="text-white font-semibold text-sm">{item.title}</h3>{open ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}</div><p className="text-slate-400 text-xs mt-1.5 line-clamp-3">{item.description}</p><div className="flex gap-2 mt-3"><Badge variant="outline" className="text-emerald-400 border-emerald-700/40">{CATEGORIES[item.category] || item.category}</Badge><Badge variant="outline" className="text-slate-300">{DIFFICULTIES[item.difficulty] || item.difficulty}</Badge></div></button><AnimatePresence>{open && <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden"><Separator className="bg-slate-800" /><div className="p-4 space-y-4"><List title="Objectifs" icon={Target} items={item.objectives} /><List title="Étapes" icon={ClipboardList} items={item.steps} numbered /><List title="Critères d'évaluation" icon={Shield} items={item.criteria} /><List title="Conseils" icon={Leaf} items={item.tips} />{Object.keys(item.scoring || {}).length > 0 && <div><p className="text-slate-500 text-[10px] uppercase tracking-wider">Barème</p><div className="grid grid-cols-2 gap-1 mt-1">{Object.entries(item.scoring).map(([k, v]) => <div key={k} className="bg-slate-800/50 rounded px-2 py-1 text-xs flex justify-between"><span className="text-slate-300">{k}</span><b className="text-emerald-400">{v}</b></div>)}</div></div>}</div></motion.div>}</AnimatePresence></Card>; }
+function List({ title, icon: Icon, items, numbered = false }: { title: string; icon: React.ElementType; items: string[]; numbered?: boolean }) { if (!items?.length) return null; return <div><p className="text-slate-500 text-[10px] uppercase tracking-wider flex items-center gap-1.5"><Icon className="w-3 h-3 text-emerald-400" />{title}</p><ul className="mt-1.5 space-y-1">{items.map((x, i) => <li key={`${i}-${x}`} className="text-slate-200 text-xs leading-relaxed flex gap-2"><span className="text-emerald-400 shrink-0">{numbered ? `${i + 1}.` : '•'}</span>{x}</li>)}</ul></div>; }
