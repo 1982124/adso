@@ -1,4 +1,5 @@
 import Link from "next/link";
+import LeadCaptureForm from "@/components/leads/LeadCaptureForm";
 
 const offers = [
   { name: "Découverte", eyebrow: "LOW-PAY", description: "Un premier parcours court pour découvrir la méthode ADSO et les fondamentaux de la sécurité routière.", cta: "Découvrir", tone: "border-cyan-400/30 bg-cyan-400/10" },
@@ -25,6 +26,12 @@ export default function OffersPage() {
               <Link href="/formation" className="mt-7 inline-flex rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold hover:bg-white/15">{offer.cta} →</Link>
             </article>
           ))}
+        </section>
+        <section className="mt-8 rounded-3xl border border-emerald-400/20 bg-emerald-400/[0.05] p-7" aria-labelledby="lead-heading">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">🎯 IA Leads Tracker</p>
+          <h2 id="lead-heading" className="mt-2 text-2xl font-semibold">Vous voulez choisir le bon parcours ?</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">Laissez vos coordonnées. ADSO enregistre votre demande avec consentement et permet à l'équipe de suivre la source et l'offre qui vous intéressent.</p>
+          <LeadCaptureForm offer="Offres ADSO" source="offers" />
         </section>
         <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-7">
           <h2 className="text-xl font-semibold">Pourquoi commencer par LOW-PAY ?</h2>
