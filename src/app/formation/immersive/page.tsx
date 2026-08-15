@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type Choice = { id: string; label: string; isCorrect: boolean; scoreDelta: number; consequence: string; explanation: string; competency?: string };
 type Interaction = { id: string; type: string; atSecond: number; prompt: string; explanation?: string; ttsText?: string; points: number; choices: Choice[] };
@@ -20,12 +20,6 @@ export default function ImmersiveFormationPage() {
       if (data.scenes?.[0]) setSelected(data.scenes[0]);
     }).finally(() => setLoading(false));
   }, []);
-
-  const activeInteraction = useMemo(() => {
-    if (!selected || !videoRef.current) return null;
-    const current = videoRef.current.currentTime;
-    return selected.interactions.find((i) => Math.abs(i.atSecond - current) < 0.75 && !answer[i.id]) ?? null;
-  }, [selected, answer]);
 
   async function submit() {
     if (!selected) return;
