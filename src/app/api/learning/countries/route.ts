@@ -40,13 +40,26 @@ function fromStaticCountry(country: (typeof staticCountries)[number]): CountryRe
   };
 }
 
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const continent = searchParams.get('continent');
-    const search = searchParams.get('search')?.trim() ?? '';
-    const normalizedSearch = normalize(search);
+function filterCatalogue(search: string, continent: string | null): CountryResponse[] {
+  const normalizedSearch = normalize(search);
+  return staticCountries
+    .filter((country) => !continent || country.region === continent)
+    .filter((country) => {
+      if (!normalizedSearch) return true;
+      return [country.name, country.code, country.region, ...country.languages]
+        .map(normalize)
+        .some((value) => value.includes(normalizedSearch));
+    })
+    .map(fromStaticCountry);
+}
 
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const continent = searchParams.get('continent');
+  const search = searchParams.get('search')?.trim() ?? '';
+  const normalizedSearch = normalize(search);
+
+  try {
     const where: Record<string, unknown> = {};
     if (continent) where.continent = continent;
 
@@ -80,16 +93,7 @@ export async function GET(request: NextRequest) {
       sanctions: safeParse(c.sanctions),
     }));
 
-    const staticFiltered = staticCountries
-      .filter((country) => !continent || country.region === continent)
-      .filter((country) => {
-        if (!normalizedSearch) return true;
-        const haystack = [country.name, country.code, country.region, ...country.languages].map(normalize);
-        return haystack.some((value) => value.includes(normalizedSearch));
-      })
-      .map(fromStaticCountry);
-
-    let parsed: CountryResponse[] = normalizedSearch
+    const databaseResults = normalizedSearch
       ? dbParsed.filter((country) => {
           const haystack = [country.name, country.code, country.capital]
             .filter(Boolean)
@@ -98,40 +102,30 @@ export async function GET(request: NextRequest) {
         })
       : dbParsed;
 
-    // The database is the authoritative source when populated, but the bundled
-    // catalogue is a mandatory resilience fallback. This prevents the country
-    // selector from disappearing during a cold start, migration, empty DB, or
-    // transient database failure.
-    if (parsed.length === 0) {
-      parsed = staticFiltered;
+    // Database is authoritative only when it actually contains usable results.
+    // Never allow an empty/mis-seeded DB to make the country selector disappear.
+    if (databaseResults.length > 0) {
+      return NextResponse.json({
+        countries: databaseResults,
+        total: databaseResults.length,
+        searched: search || null,
+        source: 'database',
+      }, { headers: { 'Cache-Control': 'no-store' } });
     }
 
+    const catalogue = filterCatalogue(search, continent);
     return NextResponse.json({
-      countries: parsed,
-      total: parsed.length,
+      countries: catalogue,
+      total: catalogue.length,
       searched: search || null,
-      source: dbParsed.length > 0 && parsed === dbParsed ? 'database' : 'catalogue',
-    }, {
-      headers: { 'Cache-Control': 'no-store' },
-    });
+      source: 'catalogue',
+    }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     console.error('[GET /api/learning/countries] Error:', error);
 
-    // Never let a transient DB failure blank the country selector.
-    const { searchParams } = new URL(request.url);
-    const continent = searchParams.get('continent');
-    const search = searchParams.get('search')?.trim() ?? '';
-    const normalizedSearch = normalize(search);
-    const fallback = staticCountries
-      .filter((country) => !continent || country.region === continent)
-      .filter((country) => {
-        if (!normalizedSearch) return true;
-        return [country.name, country.code, country.region, ...country.languages]
-          .map(normalize)
-          .some((value) => value.includes(normalizedSearch));
-      })
-      .map(fromStaticCountry);
-
+    // Country selection is a critical UX path. A transient DB failure must never
+    // turn into an empty selector or a 5xx response.
+    const fallback = filterCatalogue(search, continent);
     return NextResponse.json({
       countries: fallback,
       total: fallback.length,
