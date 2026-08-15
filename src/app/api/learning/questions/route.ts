@@ -28,18 +28,19 @@ export async function GET(request: NextRequest) {
     const difficulty = searchParams.get('difficulty');
     const countParam = searchParams.get('count');
     const licenseCode = searchParams.get('licenseCode');
-    const countryCode = (searchParams.get('countryCode') || 'BJ').trim().toUpperCase();
+    const countryCode = (searchParams.get('countryCode') || 'ZZ').trim().toUpperCase();
     const excludeParam = searchParams.get('exclude');
     const count = countParam ? Math.min(Math.max(parseInt(countParam, 10), 1), 100) : 10;
     const excludeIds = excludeParam ? excludeParam.split(',').map((id) => id.trim()).filter(Boolean) : [];
-
     const baseWhere: Record<string, unknown> = {};
     if (category) baseWhere.category = category;
     if (difficulty) baseWhere.difficulty = difficulty;
     if (licenseCode) baseWhere.licenseCode = licenseCode;
     if (excludeIds.length > 0) baseWhere.id = { notIn: excludeIds };
 
-    let questions = await db.question.findMany({ where: { ...baseWhere, countryCode }, orderBy: { createdAt: 'asc' } });
+    let questions = countryCode !== 'ZZ'
+      ? await db.question.findMany({ where: { ...baseWhere, countryCode }, orderBy: { createdAt: 'asc' } })
+      : [];
     let contentScope = 'country-validated';
 
     if (questions.length === 0) {
@@ -52,12 +53,7 @@ export async function GET(request: NextRequest) {
     const parsed = selected.map((q) => {
       let parsedOptions: string[];
       try { parsedOptions = JSON.parse(q.options); } catch { parsedOptions = [q.options]; }
-      return {
-        id: q.id, countryCode, licenseCode: q.licenseCode, question: q.question,
-        options: parsedOptions, correctIndex: q.correctIndex, explanation: q.explanation,
-        difficulty: q.difficulty, category: q.category, theme: q.theme,
-        tags: safeParse(q.tags), reference: q.reference, hasImage: q.hasImage,
-      };
+      return { id: q.id, countryCode, licenseCode: q.licenseCode, question: q.question, options: parsedOptions, correctIndex: q.correctIndex, explanation: q.explanation, difficulty: q.difficulty, category: q.category, theme: q.theme, tags: safeParse(q.tags), reference: q.reference, hasImage: q.hasImage };
     });
 
     return NextResponse.json({ questions: parsed, total: parsed.length, contentScope, requestedCountry: countryCode });
