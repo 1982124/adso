@@ -19,7 +19,12 @@ import SecuritySection from '@/components/sections/SecuritySection';
 import AnalyticsSection from '@/components/sections/AnalyticsSection';
 import AboutSection from '@/components/sections/AboutSection';
 
-const LearningPlatform = dynamic(() => import('@/components/modules/learning/LearningPlatform'), { ssr: false, loading: () => <ModuleLoader label="Formation" /> });
+// Formation is the core learning surface of ADSO. Keep it in the main client
+// bundle instead of making the whole module dependent on a lazy chunk: a stale
+// or missing deployment chunk must never make the core training experience
+// disappear. Secondary modules remain lazy to keep the initial bundle bounded.
+import LearningPlatform from '@/components/modules/learning/LearningPlatform';
+
 const MechanicModule = dynamic(() => import('@/components/modules/MechanicModule'), { ssr: false, loading: () => <ModuleLoader label="Mécanicien IA" /> });
 const ScannerModule = dynamic(() => import('@/components/modules/ScannerModule'), { ssr: false, loading: () => <ModuleLoader label="Scanner Véhicule" /> });
 const TelematicsModule = dynamic(() => import('@/components/modules/TelematicsModule'), { ssr: false, loading: () => <ModuleLoader label="Télématique" /> });
