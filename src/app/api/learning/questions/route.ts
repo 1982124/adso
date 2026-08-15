@@ -1,7 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { db } from '@/lib/db';
 
 type ContentScope = 'national' | 'harmonized' | 'common' | 'supplementary';
+const EXAM_SESSION_COOKIE = 'adso_exam_session';
+const EXAM_SESSION_TTL_MS = 2 * 60 * 60 * 1000;
+
+function getSessionSecret(): string {
+  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+  if (!secret) throw new Error('AUTH_SECRET/NEXTAUTH_SECRET is required for exam sessions');
+  return secret;
+}
+
+function signExamSession(payload: Record<string, unknown>): string {
+  const encoded = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
+  const signature = crypto.createHmac('sha256', getSessionSecret()).update(encoded).digest('base64url');
+  return `${encoded}.${signature}`;
+}
 
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
@@ -13,9 +28,6 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 function isLikelyCommonTheory(q: { question: string; explanation: string; options: string; reference: string | null }) {
-  // This is a conservative compatibility filter for the legacy reference bank.
-  // It prevents clearly jurisdiction-specific wording from being presented as
-  // universal, while allowing genuinely common road-safety knowledge through.
   const text = `${q.question} ${q.explanation} ${q.options} ${q.reference ?? ''}`.toLowerCase();
   const jurisdictionMarkers = [
     'france', 'français', 'française', 'euro', 'article r', 'permis à points',
@@ -42,7 +54,6 @@ export async function GET(request: NextRequest) {
     if (licenseCode) baseWhere.licenseCode = licenseCode;
     if (excludeIds.length > 0) baseWhere.id = { notIn: excludeIds };
 
-    // Country-specific content is always preferred.
     let questions = requestedCountry !== 'ZZ'
       ? await db.question.findMany({
           where: { ...baseWhere, countryCode: requestedCountry },
@@ -53,10 +64,6 @@ export async function GET(request: NextRequest) {
     let contentScope: ContentScope = questions.length > 0 ? 'national' : 'common';
     let contentCountry: string | null = questions.length > 0 ? requestedCountry : null;
 
-    // The existing reference bank is not assumed to be French law. Until each
-    // item is classified, reuse only questions that are clearly common safety
-    // knowledge. They remain common content rather than being relabeled for the
-    // selected country.
     if (questions.length === 0) {
       const referenceQuestions = await db.question.findMany({
         where: { ...baseWhere, countryCode: 'FR' },
@@ -68,6 +75,21 @@ export async function GET(request: NextRequest) {
     }
 
     const selected = shuffleArray(questions).slice(0, count);
+    if (selected.length === 0) {
+      return NextResponse.json({ error: 'Aucune question disponible pour ce contexte' }, { status: 404 });
+    }
+
+    const session = signExamSession({
+      v: 1,
+      issuedAt: Date.now(),
+      expiresAt: Date.now() + EXAM_SESSION_TTL_MS,
+      countryCode: requestedCountry,
+      contentCountry,
+      contentScope,
+      licenseCode: licenseCode || null,
+      questionIds: selected.map((q) => q.id),
+    });
+
     const parsed = selected.map((q) => {
       let parsedOptions: string[];
       try { parsedOptions = JSON.parse(q.options); } catch { parsedOptions = [q.options]; }
@@ -78,6 +100,8 @@ export async function GET(request: NextRequest) {
         licenseCode: q.licenseCode,
         question: q.question,
         options: parsedOptions,
+        // Kept for backward-compatible UI feedback. The authoritative score is
+        // always calculated server-side from the database at submission time.
         correctIndex: q.correctIndex,
         explanation: q.explanation,
         difficulty: q.difficulty,
@@ -89,7 +113,7 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       questions: parsed,
       total: parsed.length,
       applicability: contentScope,
@@ -100,6 +124,16 @@ export async function GET(request: NextRequest) {
         ? 'Contenu issu du socle commun de sécurité routière. Les règles nationales complémentaires s\'appliquent au pays sélectionné.'
         : null,
     }, { headers: { 'Cache-Control': 'no-store' } });
+
+    response.cookies.set(EXAM_SESSION_COOKIE, session, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/api/exam',
+      maxAge: Math.floor(EXAM_SESSION_TTL_MS / 1000),
+    });
+
+    return response;
   } catch (error) {
     console.error('[GET /api/learning/questions] Error:', error);
     return NextResponse.json({ error: 'Erreur lors du chargement des questions' }, { status: 500 });
