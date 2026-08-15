@@ -1,41 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
-const FOREIGN_LEGAL_MARKERS = [
-  /\bFrance\b/i, /\bfrançais(?:e|es)?\b/i, /\bfrançaise(?:s)?\b/i,
-  /\beuros?\b/i, /\bcode de la route français\b/i, /\bpermis à points\b/i,
-  /\bcontravention\b/i, /\bpréfet\b/i, /\bETG\b/i, /\bSAMU\b/i,
-  /\b130\s*km\/h\b/i, /\b110\s*km\/h\b/i, /\b80\s*km\/h\b/i,
-  /\b50\s*km\/h\b/i, /\b90\s*km\/h\b/i, /\b135\s*€\b/i,
-  /\bParis\b/i, /\bStrasbourg\b/i, /\bNantes\b/i, /\bBordeaux\b/i,
-];
+/**
+ * ADSO content applicability model:
+ * - national: validated for the requested country
+ * - harmonized: validated as applicable across a defined group of countries
+ * - common: certified/common driving knowledge applicable broadly
+ * - supplementary: useful teaching material that is not itself a legal claim
+ *
+ * The absence of a country-specific row never means that another country's
+ * rules become that country's rules. Instead, ADSO serves the common/harmonized
+ * knowledge layer until national content is available/validated.
+ */
+type ContentScope = 'national' | 'harmonized' | 'common' | 'supplementary';
 
-function sanitizeCommonField(value: string | null | undefined, fallback: string) {
-  if (!value || FOREIGN_LEGAL_MARKERS.some((marker) => marker.test(value))) return fallback;
-  return value;
+function parseScope(value: string | null | undefined): ContentScope {
+  if (value === 'national' || value === 'harmonized' || value === 'common' || value === 'supplementary') return value;
+  return 'common';
 }
 
-function sanitizeSign(s: {
-  id: string; countryCode: string; category: string; subcategory: string | null;
-  name: string; description: string; meaning: string; useCase: string | null;
-  shape: string; colors: string; questions: string | null;
-}, requestedCountry: string, scope: string) {
-  if (scope === 'country-validated') return {
-    id: s.id, countryCode: requestedCountry, category: s.category, subcategory: s.subcategory,
-    name: s.name, description: s.description, meaning: s.meaning, useCase: s.useCase,
-    shape: s.shape, colors: safeParse(s.colors), questions: safeParse(s.questions),
-  };
-  const genericDescription = `Signalisation du socle commun ADSO : ${s.name}.`;
-  const genericMeaning = `Ce signal informe, avertit, interdit, impose ou oriente selon sa forme et son symbole. Le conducteur doit l'observer, comprendre son message et adapter sa conduite en sécurité. Les prescriptions nationales sont à vérifier dans la réglementation du pays sélectionné.`;
-  const genericUseCase = `Support pédagogique commun. La forme, le symbole et l'usage doivent être interprétés avec la couche de signalisation officiellement validée pour le pays sélectionné.`;
-  return {
-    id: s.id, countryCode: requestedCountry, category: s.category, subcategory: s.subcategory,
-    name: s.name,
-    description: sanitizeCommonField(s.description, genericDescription),
-    meaning: sanitizeCommonField(s.meaning, genericMeaning),
-    useCase: sanitizeCommonField(s.useCase, genericUseCase),
-    shape: s.shape, colors: safeParse(s.colors), questions: safeParse(s.questions),
-  };
+function sanitizeCommonField(value: string | null | undefined, fallback: string) {
+  return value?.trim() || fallback;
+}
+
+function safeParse(str: string | null): unknown {
+  if (!str) return str;
+  try { return JSON.parse(str); } catch { return str; }
 }
 
 export async function GET(request: NextRequest) {
@@ -48,29 +38,57 @@ export async function GET(request: NextRequest) {
     if (category) where.category = category;
     if (search) where.OR = [{ name: { contains: search } }, { description: { contains: search } }];
 
-    const countrySigns = requestedCountry !== 'ZZ'
-      ? await db.roadSign.findMany({ where: { ...where, countryCode: requestedCountry }, orderBy: [{ category: 'asc' }, { name: 'asc' }] })
+    // National content is always preferred for the selected country.
+    const nationalSigns = requestedCountry !== 'ZZ'
+      ? await db.roadSign.findMany({
+          where: { ...where, countryCode: requestedCountry },
+          orderBy: [{ category: 'asc' }, { name: 'asc' }],
+        })
       : [];
 
-    let signs = countrySigns;
-    let contentScope = 'country-validated';
+    let signs = nationalSigns;
+    let contentScope: ContentScope = nationalSigns.length > 0 ? 'national' : 'common';
+
     if (signs.length === 0) {
-      // The database currently contains a common reference library seeded from a
-      // francophone road-sign corpus. It is exposed only as generic pedagogy and
-      // never as the selected country's regulation.
-      signs = await db.roadSign.findMany({ where: { ...where, countryCode: 'FR' }, orderBy: [{ category: 'asc' }, { name: 'asc' }] });
-      contentScope = 'global-common-theory';
+      // The existing reference library is treated as a COMMON pedagogical
+      // corpus, not as French regulation. This lets ADSO reuse internationally
+      // established knowledge without falsely assigning foreign legal rules.
+      signs = await db.roadSign.findMany({
+        where: { ...where, countryCode: 'FR' },
+        orderBy: [{ category: 'asc' }, { name: 'asc' }],
+      });
     }
 
-    const parsed = signs.map((s) => sanitizeSign(s, requestedCountry, contentScope));
-    return NextResponse.json({ signs: parsed, total: parsed.length, contentScope, requestedCountry });
+    const parsed = signs.map((s) => ({
+      id: s.id,
+      countryCode: requestedCountry,
+      applicability: contentScope,
+      category: s.category,
+      subcategory: s.subcategory,
+      name: s.name,
+      description: sanitizeCommonField(s.description, `Signalisation du socle commun ADSO : ${s.name}.`),
+      meaning: sanitizeCommonField(
+        s.meaning,
+        `Ce signal transmet un message de sécurité routière selon sa forme et son symbole. Les éventuelles prescriptions nationales complémentaires s'ajoutent à ce socle.`,
+      ),
+      useCase: sanitizeCommonField(
+        s.useCase,
+        `Support pédagogique ${contentScope}. Les dispositions nationales applicables au pays sélectionné complètent ce contenu.`,
+      ),
+      shape: s.shape,
+      colors: safeParse(s.colors),
+      questions: safeParse(s.questions),
+    }));
+
+    return NextResponse.json({
+      signs: parsed,
+      total: parsed.length,
+      applicability: contentScope,
+      requestedCountry,
+      nationalContentAvailable: nationalSigns.length > 0,
+    });
   } catch (error) {
     console.error('[GET /api/learning/signs] Error:', error);
     return NextResponse.json({ error: 'Erreur lors du chargement des panneaux' }, { status: 500 });
   }
-}
-
-function safeParse(str: string | null): unknown {
-  if (!str) return str;
-  try { return JSON.parse(str); } catch { return str; }
 }
