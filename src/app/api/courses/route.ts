@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { courseContent } from '../../../../seed-data/course-content';
 
-const DEFAULT_CATALOG_COUNTRY = 'BJ';
+const DEFAULT_CATALOG_COUNTRY = 'ZZ';
 
 const FOREIGN_LEGAL_MARKERS = [
   /\bfrance\b/i, /\bfrançais\b/i, /\bfrançaise\b/i, /\beuros?\b/i,
