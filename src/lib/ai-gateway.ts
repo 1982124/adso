@@ -16,23 +16,40 @@ export async function aiChat(
     request.headers.get('x-vercel-oidc-token') ||
     process.env.VERCEL_OIDC_TOKEN
 
-  const endpoint = openAiKey
-    ? 'https://api.openai.com/v1/chat/completions'
-    : 'https://ai-gateway.vercel.sh/v1/chat/completions'
-  const token = openAiKey || gatewayToken
+  if (openAiKey) {
+    const response = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${openAiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: options.model || process.env.ADSO_AI_MODEL || 'gpt-5.6',
+        input: messages,
+        max_output_tokens: options.maxTokens ?? 500,
+      }),
+      cache: 'no-store',
+    })
 
-  if (!token) {
-    throw new Error('OpenAI authentication is not configured')
+    const payload = await response.json().catch(() => ({})) as {
+      output_text?: string
+      error?: { message?: string }
+    }
+    if (!response.ok) throw new Error(`OpenAI ${response.status}: ${payload.error?.message || 'request failed'}`)
+    if (!payload.output_text) throw new Error('OpenAI returned an empty response')
+    return payload.output_text
   }
 
-  const response = await fetch(endpoint, {
+  if (!gatewayToken) throw new Error('OpenAI authentication is not configured')
+
+  const response = await fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${gatewayToken}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: options.model || process.env.ADSO_AI_MODEL || 'gpt-5.4',
+      model: options.model || process.env.ADSO_AI_MODEL || 'openai/gpt-5.6',
       messages,
       temperature: options.temperature ?? 0.7,
       max_tokens: options.maxTokens ?? 500,
@@ -45,12 +62,8 @@ export async function aiChat(
     choices?: Array<{ message?: { content?: string } }>
     error?: { message?: string }
   }
-
-  if (!response.ok) {
-    throw new Error(`AI provider ${response.status}: ${payload.error?.message || 'request failed'}`)
-  }
-
+  if (!response.ok) throw new Error(`AI Gateway ${response.status}: ${payload.error?.message || 'request failed'}`)
   const content = payload.choices?.[0]?.message?.content
-  if (!content) throw new Error('AI provider returned an empty response')
+  if (!content) throw new Error('AI Gateway returned an empty response')
   return content
 }
