@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 
+export type LearningTab = 'explorer' | 'cours' | 'programme' | 'signalisation' | 'reglementations' | 'permis' | 'examens' | 'exercices' | 'progression';
+
 export type AppModule =
   | 'home'
   | 'learning'
@@ -16,15 +18,19 @@ export type AppModule =
 
 interface ViewState {
   currentView: AppModule;
+  learningTab: LearningTab;
   setView: (view: AppModule) => void;
+  setLearningTab: (tab: LearningTab) => void;
 }
 
 export const useViewStore = create<ViewState>((set) => ({
   currentView: 'home',
+  learningTab: 'explorer',
   setView: (view) => {
     set({ currentView: view });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   },
+  setLearningTab: (tab) => set({ learningTab: tab }),
 }));
 
 export const moduleLabels: Record<AppModule, { label: string; icon: string; description: string }> = {
