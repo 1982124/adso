@@ -18,6 +18,13 @@ export function AccessibilityZoom() {
   useEffect(() => {
     const saved = Number(window.localStorage.getItem(STORAGE_KEY));
     if (Number.isFinite(saved) && saved >= MIN && saved <= MAX) setScale(clamp(saved));
+
+    const onVoiceZoom = (event: Event) => {
+      const detail = (event as CustomEvent<'increase' | 'decrease'>).detail;
+      setScale((current) => clamp(current + (detail === 'increase' ? STEP : -STEP)));
+    };
+    window.addEventListener('adso:zoom', onVoiceZoom);
+    return () => window.removeEventListener('adso:zoom', onVoiceZoom);
   }, []);
 
   useEffect(() => {
@@ -37,34 +44,14 @@ export function AccessibilityZoom() {
         <ZoomIn className="size-4 text-cyan-300" aria-hidden="true" />
         <span>Texte</span>
       </div>
-      <button
-        type="button"
-        onClick={() => update(scale - STEP)}
-        disabled={scale <= MIN}
-        className="flex size-9 items-center justify-center rounded-xl transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-        aria-label="Réduire la taille du texte"
-      >
+      <button type="button" onClick={() => update(scale - STEP)} disabled={scale <= MIN} className="flex size-9 items-center justify-center rounded-xl transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Réduire la taille du texte">
         <Minus className="size-4" aria-hidden="true" />
       </button>
-      <span className="min-w-12 text-center text-xs font-bold tabular-nums" aria-live="polite">
-        {Math.round(scale * 100)}%
-      </span>
-      <button
-        type="button"
-        onClick={() => update(scale + STEP)}
-        disabled={scale >= MAX}
-        className="flex size-9 items-center justify-center rounded-xl transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-        aria-label="Augmenter la taille du texte"
-      >
+      <span className="min-w-12 text-center text-xs font-bold tabular-nums" aria-live="polite">{Math.round(scale * 100)}%</span>
+      <button type="button" onClick={() => update(scale + STEP)} disabled={scale >= MAX} className="flex size-9 items-center justify-center rounded-xl transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Augmenter la taille du texte">
         <Plus className="size-4" aria-hidden="true" />
       </button>
-      <button
-        type="button"
-        onClick={() => update(MIN)}
-        disabled={scale === MIN}
-        className="flex size-9 items-center justify-center rounded-xl transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-        aria-label="Réinitialiser la taille du texte"
-      >
+      <button type="button" onClick={() => update(MIN)} disabled={scale === MIN} className="flex size-9 items-center justify-center rounded-xl transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Réinitialiser la taille du texte">
         <RotateCcw className="size-4" aria-hidden="true" />
       </button>
     </div>
