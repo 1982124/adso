@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Car, ArrowLeft, FileCode, Home, GraduationCap, Wrench, Scan, MapPin, Shield, Store, ChevronDown, ShieldCheck, Truck, Building2, Info } from 'lucide-react';
+import { Menu, X, Car, ArrowLeft, FileCode, Home, GraduationCap, Wrench, Scan, MapPin, Shield, Store, ChevronDown, ShieldCheck, Truck, Building2, Info, LayoutDashboard, Bot } from 'lucide-react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { FrancoiseAssistant } from '@/components/FrancoiseAssistant';
 import { useViewStore, type AppModule, mainModules, moduleLabels, v41Modules } from '@/stores/view-store';
 
 const homeNavLinks = [
@@ -101,6 +103,17 @@ export default function Navbar() {
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileOpen(false)} />
         <div className={`absolute top-14 left-0 right-0 shadow-xl border-b max-h-[85vh] overflow-y-auto ${isBlueprint ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-200'}`}>
           <div className="px-4 py-3 space-y-1">
+            <section className="mb-3 rounded-2xl border border-emerald-400/25 bg-emerald-500/[0.07] p-3" aria-label="Françoise">
+              <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-600">Assistante ADSO</p>
+              <FrancoiseAssistant />
+            </section>
+
+            <Link href="/admin" onClick={() => setIsMobileOpen(false)} className="flex w-full items-center gap-3 rounded-xl border border-amber-400/30 bg-amber-400/[0.08] px-4 py-3 text-sm font-bold text-amber-700 transition hover:bg-amber-400/[0.15]">
+              <LayoutDashboard className="h-5 w-5" aria-hidden="true" />
+              <span>Cockpit Admin</span>
+              <span className="ml-auto text-xs font-normal text-amber-600">Direction</span>
+            </Link>
+
             {mainModules.map((mod) => { const Icon = moduleIcons[moduleLabels[mod]?.icon || 'Home']; const isActive = currentView === mod; return <button type="button" key={mod} onClick={() => handleModuleClick(mod)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium ${isActive ? 'text-emerald-700 bg-emerald-50' : 'text-slate-700 hover:bg-slate-100'}`}><Icon className="w-5 h-5" /><span>{moduleLabels[mod]?.label}</span>{v41Modules.includes(mod) && <span className="ml-auto px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-600">V4</span>}</button>; })}
             {isHome && <><div className="pt-2 mt-2 border-t border-slate-100"><p className="px-4 py-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">Navigation</p></div>{homeNavLinks.map((link) => <button type="button" key={link.href} onClick={() => handleNavClick(link.href)} className={`w-full text-left px-4 py-2.5 pl-8 rounded-lg text-sm ${activeSection === link.href.replace('#', '') ? 'text-emerald-700 bg-emerald-50' : 'text-slate-600 hover:bg-slate-100'}`}>{link.label}</button>)}<div className="pt-2 mt-2 border-t border-slate-100"><Button type="button" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleModuleClick('learning')}>Commencer la formation</Button></div></>}
             <button type="button" onClick={() => handleModuleClick('blueprint')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium ${currentView === 'blueprint' ? 'text-emerald-700 bg-emerald-50' : 'text-slate-700 hover:bg-slate-100'}`}><FileCode className="w-5 h-5" /><span>Architecture</span></button>
