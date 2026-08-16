@@ -1,23 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
-/**
- * ADSO content applicability model:
- * - national: validated for the requested country
- * - harmonized: validated as applicable across a defined group of countries
- * - common: certified/common driving knowledge applicable broadly
- * - supplementary: useful teaching material that is not itself a legal claim
- *
- * The absence of a country-specific row never means that another country's
- * rules become that country's rules. Instead, ADSO serves the common/harmonized
- * knowledge layer until national content is available/validated.
- */
 type ContentScope = 'national' | 'harmonized' | 'common' | 'supplementary';
-
-function parseScope(value: string | null | undefined): ContentScope {
-  if (value === 'national' || value === 'harmonized' || value === 'common' || value === 'supplementary') return value;
-  return 'common';
-}
 
 function sanitizeCommonField(value: string | null | undefined, fallback: string) {
   return value?.trim() || fallback;
@@ -28,64 +12,81 @@ function safeParse(str: string | null): unknown {
   try { return JSON.parse(str); } catch { return str; }
 }
 
+/**
+ * ADSO sign catalogue policy:
+ * - national rows are preferred and explicitly identified;
+ * - common/harmonized knowledge remains available even when a country has
+ *   national rows, so a partial national dataset can never make the catalogue
+ *   look artificially complete;
+ * - foreign rows are never relabelled as national rules.
+ */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const requestedCountry = (searchParams.get('countryCode') || 'ZZ').trim().toUpperCase();
     const category = searchParams.get('category');
     const search = searchParams.get('search');
-    const where: Record<string, unknown> = {};
-    if (category) where.category = category;
-    if (search) where.OR = [{ name: { contains: search } }, { description: { contains: search } }];
 
-    // National content is always preferred for the selected country.
+    const baseWhere: Record<string, unknown> = {};
+    if (category) baseWhere.category = category;
+    if (search) baseWhere.OR = [{ name: { contains: search } }, { description: { contains: search } }];
+
     const nationalSigns = requestedCountry !== 'ZZ'
       ? await db.roadSign.findMany({
-          where: { ...where, countryCode: requestedCountry },
+          where: { ...baseWhere, countryCode: requestedCountry },
           orderBy: [{ category: 'asc' }, { name: 'asc' }],
         })
       : [];
 
-    let signs = nationalSigns;
-    let contentScope: ContentScope = nationalSigns.length > 0 ? 'national' : 'common';
+    // FR is the current curated reference corpus. It is exposed as COMMON
+    // pedagogical knowledge when it is not the requested country.
+    const commonSigns = await db.roadSign.findMany({
+      where: { ...baseWhere, countryCode: 'FR' },
+      orderBy: [{ category: 'asc' }, { name: 'asc' }],
+    });
 
-    if (signs.length === 0) {
-      // The existing reference library is treated as a COMMON pedagogical
-      // corpus, not as French regulation. This lets ADSO reuse internationally
-      // established knowledge without falsely assigning foreign legal rules.
-      signs = await db.roadSign.findMany({
-        where: { ...where, countryCode: 'FR' },
-        orderBy: [{ category: 'asc' }, { name: 'asc' }],
-      });
-    }
+    const seen = new Set<string>();
+    const rows = [
+      ...nationalSigns.map((s) => ({ sign: s, applicability: 'national' as ContentScope })),
+      ...commonSigns.map((s) => ({ sign: s, applicability: requestedCountry === 'FR' ? 'national' as ContentScope : 'common' as ContentScope })),
+    ].filter(({ sign, applicability }) => {
+      const key = `${applicability}:${sign.countryCode}:${sign.name.toLowerCase()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 
-    const parsed = signs.map((s) => ({
-      id: s.id,
+    const parsed = rows.map(({ sign: s, applicability }) => ({
+      id: `${applicability}:${s.id}`,
+      sourceId: s.id,
       countryCode: requestedCountry,
-      applicability: contentScope,
+      sourceCountryCode: s.countryCode,
+      applicability,
       category: s.category,
       subcategory: s.subcategory,
       name: s.name,
-      description: sanitizeCommonField(s.description, `Signalisation du socle commun ADSO : ${s.name}.`),
-      meaning: sanitizeCommonField(
-        s.meaning,
-        `Ce signal transmet un message de sécurité routière selon sa forme et son symbole. Les éventuelles prescriptions nationales complémentaires s'ajoutent à ce socle.`,
-      ),
-      useCase: sanitizeCommonField(
-        s.useCase,
-        `Support pédagogique ${contentScope}. Les dispositions nationales applicables au pays sélectionné complètent ce contenu.`,
-      ),
+      description: sanitizeCommonField(s.description, `Signalisation du socle ADSO : ${s.name}.`),
+      meaning: sanitizeCommonField(s.meaning, 'Ce signal transmet un message de sécurité routière selon sa forme et son symbole.'),
+      useCase: sanitizeCommonField(s.useCase, 'Support pédagogique ADSO ; les prescriptions nationales applicables complètent ce contenu.'),
       shape: s.shape,
       colors: safeParse(s.colors),
       questions: safeParse(s.questions),
     }));
 
+    const categories = parsed.reduce<Record<string, number>>((acc, sign) => {
+      acc[sign.category] = (acc[sign.category] || 0) + 1;
+      return acc;
+    }, {});
+
     return NextResponse.json({
       signs: parsed,
       total: parsed.length,
-      applicability: contentScope,
-      requestedCountry,
+      nationalCount: nationalSigns.length,
+      commonCount: parsed.filter((s) => s.applicability === 'common').length,
       nationalContentAvailable: nationalSigns.length > 0,
+      categories,
+      requestedCountry,
+      applicability: nationalSigns.length > 0 ? 'national+common' : 'common',
     });
   } catch (error) {
     console.error('[GET /api/learning/signs] Error:', error);
