@@ -3,11 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Mic, MicOff, Volume2 } from "lucide-react";
 
-const SpeechRecognitionCtor =
-  typeof window !== "undefined"
-    ? (window.SpeechRecognition || (window as unknown as { webkitSpeechRecognition?: typeof window.SpeechRecognition }).webkitSpeechRecognition)
-    : undefined;
-
 type RecognitionLike = {
   lang: string;
   continuous: boolean;
@@ -19,6 +14,11 @@ type RecognitionLike = {
   stop: () => void;
 };
 
+type SpeechWindow = Window & {
+  SpeechRecognition?: new () => RecognitionLike;
+  webkitSpeechRecognition?: new () => RecognitionLike;
+};
+
 export function VoiceAccess() {
   const [supported, setSupported] = useState(false);
   const [listening, setListening] = useState(false);
@@ -26,7 +26,8 @@ export function VoiceAccess() {
   const recognition = useRef<RecognitionLike | null>(null);
 
   useEffect(() => {
-    setSupported(Boolean(SpeechRecognitionCtor));
+    const speechWindow = window as SpeechWindow;
+    setSupported(Boolean(speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition));
   }, []);
 
   useEffect(() => () => recognition.current?.stop(), []);
@@ -77,7 +78,9 @@ export function VoiceAccess() {
   };
 
   const toggle = () => {
-    if (!supported) {
+    const speechWindow = window as SpeechWindow;
+    const Recognition = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+    if (!Recognition) {
       speak("La commande vocale n'est pas disponible dans ce navigateur. Vous pouvez utiliser la lecture vocale ADSO.");
       return;
     }
@@ -86,9 +89,8 @@ export function VoiceAccess() {
       setListening(false);
       return;
     }
-    const Recognition = SpeechRecognitionCtor as unknown as new () => RecognitionLike;
     const instance = new Recognition();
-    instance.lang = document.documentElement.lang === "fr" ? "fr-FR" : "fr-FR";
+    instance.lang = "fr-FR";
     instance.continuous = false;
     instance.interimResults = false;
     instance.onresult = (event) => {
@@ -108,25 +110,14 @@ export function VoiceAccess() {
   };
 
   return (
-    <div className="fixed bottom-5 left-5 z-[80] flex items-center gap-2">
+    <div className="fixed bottom-5 left-5 z-[80] flex items-center gap-2 print:hidden">
       {enabled && (
-        <button
-          type="button"
-          onClick={() => speak("ADSO : dites lire, accueil, formation, augmenter le texte ou réduire le texte.")}
-          className="rounded-full border bg-background/95 px-3 py-2 text-xs shadow-lg backdrop-blur"
-          aria-label="Lire les commandes vocales disponibles"
-        >
+        <button type="button" onClick={() => speak("ADSO : dites lire, accueil, formation, augmenter le texte ou réduire le texte.")} className="rounded-full border bg-background/95 px-3 py-2 text-xs shadow-lg backdrop-blur" aria-label="Lire les commandes vocales disponibles">
           <Volume2 className="mr-1 inline h-4 w-4" aria-hidden="true" />
           Commandes vocales
         </button>
       )}
-      <button
-        type="button"
-        onClick={toggle}
-        className="flex h-12 w-12 items-center justify-center rounded-full border bg-background shadow-lg transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary"
-        aria-label={listening ? "Arrêter la commande vocale" : "Activer la commande vocale"}
-        title={listening ? "Arrêter la commande vocale" : "Commande vocale ADSO"}
-      >
+      <button type="button" onClick={toggle} className="flex h-12 w-12 items-center justify-center rounded-full border bg-background shadow-lg transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary" aria-label={listening ? "Arrêter la commande vocale" : "Activer la commande vocale"} title={listening ? "Arrêter la commande vocale" : "Commande vocale ADSO"}>
         {listening ? <MicOff className="h-5 w-5" aria-hidden="true" /> : <Mic className="h-5 w-5" aria-hidden="true" />}
         <span className="sr-only">{listening ? "Arrêter" : "Activer"} la commande vocale ADSO</span>
       </button>
