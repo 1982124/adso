@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
-import ZAI from 'z-ai-web-dev-sdk';
-
-let zaiClient: Awaited<ReturnType<typeof ZAI.create>> | null = null;
-async function getZAI() {
-  if (!zaiClient) zaiClient = await ZAI.create();
-  return zaiClient;
-}
+import { aiChat } from '@/lib/ai-gateway';
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,23 +20,17 @@ export async function POST(request: NextRequest) {
     ]);
 
     const context = { users, courses, countries, enrollments, certifications, auditLogs, claims, policies, trips, hazards };
-    const zai = await getZAI();
-    const response = await zai.chat.completions.create({
-      model: 'deepseek-v3',
-      messages: [
+    const reply = await aiChat(
+      request,
+      [
         {
           role: 'system',
-          content: `Tu es ADSO Admin AI, assistant de pilotage sécurisé. Réponds en français. Tu ne dois jamais inventer une donnée: utilise uniquement le contexte chiffré fourni et explique lorsqu'une information manque. Donne une réponse courte, opérationnelle, puis une recommandation si elle est justifiée. Contexte temps réel ADSO: ${JSON.stringify(context)}`,
+          content: `Tu es ADSO Admin AI, assistante de direction sécurisée. Réponds en français. N'invente jamais une donnée : utilise uniquement le contexte chiffré fourni et signale toute information absente. Distingue faits observés, limites et recommandations. Les actions sensibles nécessitent une validation humaine. Contexte temps réel ADSO : ${JSON.stringify(context)}`,
         },
         { role: 'user', content: question },
       ],
-      temperature: 0.2,
-      max_tokens: 700,
-    });
-
-    const reply = typeof response === 'string'
-      ? response
-      : (response as { choices?: Array<{ message?: { content?: string } }> })?.choices?.[0]?.message?.content ?? 'Réponse indisponible.';
+      { model: process.env.ADSO_AI_MODEL || 'gpt-5.4', temperature: 0.2, maxTokens: 700 },
+    );
 
     await db.auditLogEntry.create({
       data: {
