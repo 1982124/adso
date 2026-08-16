@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { Toaster } from "@/components/ui/toaster";
 import { AccessibilityZoom } from "@/components/AccessibilityZoom";
+import { VoiceAccess } from "@/components/VoiceAccess";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -51,12 +52,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}>
         <Providers>{children}</Providers>
         <Toaster />
         <AccessibilityZoom />
+        <VoiceAccess />
       </body>
     </html>
   );
