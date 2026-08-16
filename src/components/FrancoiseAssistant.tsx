@@ -1,6 +1,7 @@
-"use client";
+'use client';
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Loader2, Mic, MicOff, Send, Volume2, X } from "lucide-react";
 
 interface RecognitionLike {
@@ -36,6 +37,15 @@ export function FrancoiseAssistant({ floating = true }: { floating?: boolean }) 
       window.speechSynthesis?.cancel();
     };
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
 
   const speak = (text: string) => {
     if (typeof window === "undefined" || !window.speechSynthesis || !text) return;
@@ -112,6 +122,94 @@ export function FrancoiseAssistant({ floating = true }: { floating?: boolean }) 
     instance.start();
   };
 
+  const dialog = (
+    <div
+      className="fixed inset-0 z-[2147483647] flex items-end justify-center bg-black/50 p-2 print:hidden sm:items-center sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Françoise, assistante ADSO"
+    >
+      <div className="flex max-h-[calc(100dvh-1rem)] w-full max-w-xl flex-col overflow-hidden rounded-3xl border bg-background shadow-2xl sm:max-h-[min(760px,calc(100dvh-2rem))]">
+        <div className="flex shrink-0 items-center justify-between border-b px-5 py-4">
+          <div>
+            <div className="flex items-center gap-2 font-semibold">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">F</span>
+              Françoise
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">Assistante ADSO — texte, écoute et réponse vocale</p>
+          </div>
+          <button type="button" onClick={() => setOpen(false)} className="rounded-full p-2 hover:bg-muted" aria-label="Fermer Françoise">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto p-5">
+          {!reply ? (
+            <div className="rounded-2xl bg-muted/60 p-4 text-sm text-muted-foreground">
+              Bonjour, je suis Françoise. Vous pouvez m'écrire ou appuyer sur le microphone et me parler.
+            </div>
+          ) : (
+            <div className="rounded-2xl bg-muted/60 p-4 text-sm leading-6">
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">Françoise</div>
+              {reply}
+            </div>
+          )}
+        </div>
+
+        <form onSubmit={submit} className="shrink-0 border-t p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:p-4">
+          <div className="flex items-end gap-2 rounded-2xl border bg-background p-2 shadow-sm">
+            <textarea
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  void ask(message, false);
+                }
+              }}
+              placeholder="Écrivez à Françoise…"
+              rows={2}
+              className="min-h-12 min-w-0 flex-1 resize-none bg-transparent px-2 py-2 text-sm outline-none"
+              aria-label="Message à Françoise"
+            />
+            <button
+              type="button"
+              onClick={toggleVoice}
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border ${
+                listening ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+              }`}
+              aria-label={listening ? "Arrêter Françoise" : "Parler à Françoise"}
+              title={voiceSupported ? "Parler à Françoise" : "Commande vocale non disponible"}
+            >
+              {listening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+            </button>
+            <button
+              type="submit"
+              disabled={loading || !message.trim()}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-50"
+              aria-label="Envoyer à Françoise"
+            >
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+            </button>
+          </div>
+          {reply && (
+            <button
+              type="button"
+              onClick={() => speak(reply)}
+              className="mt-2 inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs text-muted-foreground hover:bg-muted"
+              aria-label="Écouter la réponse de Françoise"
+            >
+              <Volume2 className="h-4 w-4" /> Écouter la réponse
+            </button>
+          )}
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Les actions sensibles ou critiques restent soumises aux permissions ADSO et à une validation humaine explicite.
+          </p>
+        </form>
+      </div>
+    </div>
+  );
+
   return (
     <>
       <div className="mb-4 flex w-full justify-center">
@@ -148,58 +246,7 @@ export function FrancoiseAssistant({ floating = true }: { floating?: boolean }) 
         </button>
       )}
 
-      {open && (
-        <div className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/35 p-3 sm:items-center print:hidden" role="dialog" aria-modal="true" aria-label="Françoise, assistante ADSO">
-          <div className="w-full max-w-xl overflow-hidden rounded-3xl border bg-background shadow-2xl">
-            <div className="flex items-center justify-between border-b px-5 py-4">
-              <div>
-                <div className="flex items-center gap-2 font-semibold"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">F</span> Françoise</div>
-                <p className="mt-1 text-xs text-muted-foreground">Assistante ADSO — texte, écoute et réponse vocale</p>
-              </div>
-              <button type="button" onClick={() => setOpen(false)} className="rounded-full p-2 hover:bg-muted" aria-label="Fermer Françoise"><X className="h-5 w-5" /></button>
-            </div>
-
-            <div className="max-h-[55vh] min-h-40 overflow-y-auto p-5">
-              {!reply ? (
-                <div className="rounded-2xl bg-muted/60 p-4 text-sm text-muted-foreground">
-                  Bonjour, je suis Françoise. Vous pouvez m'écrire ou appuyer sur le microphone et me parler.
-                </div>
-              ) : (
-                <div className="rounded-2xl bg-muted/60 p-4 text-sm leading-6">
-                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">Françoise</div>
-                  {reply}
-                </div>
-              )}
-            </div>
-
-            <form onSubmit={submit} className="border-t p-4">
-              <div className="flex items-end gap-2 rounded-2xl border bg-background p-2 shadow-sm">
-                <textarea
-                  value={message}
-                  onChange={(event) => setMessage(event.target.value)}
-                  onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void ask(message, false); } }}
-                  placeholder="Écrivez à Françoise…"
-                  rows={2}
-                  className="min-h-12 flex-1 resize-none bg-transparent px-2 py-2 text-sm outline-none"
-                  aria-label="Message à Françoise"
-                />
-                <button type="button" onClick={toggleVoice} className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border ${listening ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`} aria-label={listening ? "Arrêter Françoise" : "Parler à Françoise"} title={voiceSupported ? "Parler à Françoise" : "Commande vocale non disponible"}>
-                  {listening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-                </button>
-                <button type="submit" disabled={loading || !message.trim()} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-50" aria-label="Envoyer à Françoise">
-                  {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
-                </button>
-              </div>
-              {reply && (
-                <button type="button" onClick={() => speak(reply)} className="mt-2 inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs text-muted-foreground hover:bg-muted" aria-label="Écouter la réponse de Françoise">
-                  <Volume2 className="h-4 w-4" /> Écouter la réponse
-                </button>
-              )}
-              <p className="mt-2 text-[11px] text-muted-foreground">Les actions sensibles ou critiques restent soumises aux permissions ADSO et à une validation humaine explicite.</p>
-            </form>
-          </div>
-        </div>
-      )}
+      {open && typeof document !== "undefined" ? createPortal(dialog, document.body) : null}
     </>
   );
 }
