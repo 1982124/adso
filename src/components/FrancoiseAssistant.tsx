@@ -52,19 +52,13 @@ export function FrancoiseAssistant() {
     setLoading(true);
     setMessage("");
     try {
-      const response = await fetch("/api/chat", {
+      const response = await fetch("/api/francoise", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: trimmed }),
       });
       const data = (await response.json()) as { reply?: string; error?: string };
-      if (!response.ok) {
-        if (response.status === 401) {
-          setReply("Je suis Françoise, l'assistante d'ADSO. Connectez-vous à votre espace ADSO pour démarrer une conversation personnalisée.");
-          return;
-        }
-        throw new Error(data.error || "Service indisponible");
-      }
+      if (!response.ok) throw new Error(data.error || "Service indisponible");
       const nextReply = data.reply || "Je n'ai pas reçu de réponse.";
       setReply(nextReply);
       if (speakReply) speak(nextReply);
@@ -144,7 +138,7 @@ export function FrancoiseAssistant() {
             <div className="max-h-[55vh] min-h-40 overflow-y-auto p-5">
               {!reply ? (
                 <div className="rounded-2xl bg-muted/60 p-4 text-sm text-muted-foreground">
-                  Bonjour, je suis Françoise. Vous pouvez m'écrire ou simplement appuyer sur le microphone et me parler.
+                  Bonjour, je suis Françoise. Vous pouvez m'écrire ou appuyer sur le microphone et me parler.
                 </div>
               ) : (
                 <div className="rounded-2xl bg-muted/60 p-4 text-sm leading-6">
