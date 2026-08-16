@@ -13,8 +13,8 @@ export async function POST(request: NextRequest) {
     if (!body.courseId || !body.moduleId) return NextResponse.json({ error: 'courseId et moduleId requis' }, { status: 400 });
 
     const course = await db.course.findUnique({ where: { id: body.courseId }, select: { id: true, countryCode: true } });
-    const module = await db.module.findUnique({ where: { id: body.moduleId }, select: { id: true, courseId: true, order: true } });
-    if (!course || !module || module.courseId !== course.id) return NextResponse.json({ error: 'Cours ou module introuvable' }, { status: 404 });
+    const courseModule = await db.module.findUnique({ where: { id: body.moduleId }, select: { id: true, courseId: true, order: true } });
+    if (!course || !courseModule || courseModule.courseId !== course.id) return NextResponse.json({ error: 'Cours ou module introuvable' }, { status: 404 });
 
     const totalQuestions = 1;
     const correctAnswers = body.totalQuestions === 1 && body.correct === true ? 1 : 0;
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     const moduleCount = await db.module.count({ where: { courseId: course.id } });
     const previous = await db.studentProgress.findUnique({ where: { courseId_userId: { courseId: course.id, userId } } });
     const completed = new Set<string>(previous?.completedModules ? JSON.parse(previous.completedModules) : []);
-    completed.add(module.id);
+    completed.add(courseModule.id);
     const progress = Math.min(100, Math.round((completed.size / Math.max(1, moduleCount)) * 100));
     const status = progress >= 100 ? 'completed' : 'in_progress';
 
