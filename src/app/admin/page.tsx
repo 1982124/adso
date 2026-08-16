@@ -17,6 +17,7 @@ const cards = [
 
 const hubs = [
   { href: "/admin", label: "📊 Cockpit Direction", description: "Pilotage, sécurité et indicateurs" },
+  { href: "/admin/vault", label: "🔐 Coffre-fort personnel", description: "Zone financière et stratégique protégée" },
   { href: "/admin/leads", label: "🎯 IA Leads Tracker", description: "Prospects, sources, offres et opportunités" },
   { href: "/offres", label: "💳 Offres ADSO", description: "Offres découverte et LOW-PAY" },
   { href: "/formation/cas-visuels", label: "👁️ Cas visuels", description: "Bibliothèque d'apprentissage par situations" },
