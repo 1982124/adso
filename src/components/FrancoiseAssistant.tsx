@@ -117,15 +117,20 @@ export function FrancoiseAssistant() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-5 right-5 z-[90] flex items-center gap-2 rounded-full border border-primary/30 bg-background/95 px-4 py-3 text-sm font-semibold shadow-xl backdrop-blur transition hover:-translate-y-0.5 hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-primary print:hidden"
+        className="fixed bottom-24 right-5 z-[9999] flex items-center gap-2 rounded-full border border-primary/30 bg-background/95 px-4 py-3 text-sm font-semibold shadow-2xl backdrop-blur transition hover:-translate-y-0.5 hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-primary print:hidden sm:bottom-24 lg:bottom-8"
         aria-label="Ouvrir Françoise, l'assistante ADSO"
+        title="Parler à Françoise"
       >
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">F</span>
-        Françoise
+        <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+          F
+          <span className="absolute -right-1 -top-1 flex h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-background" aria-hidden="true" />
+        </span>
+        <span>Françoise</span>
+        <Mic className="h-4 w-4" aria-hidden="true" />
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/35 p-3 sm:items-center print:hidden" role="dialog" aria-modal="true" aria-label="Françoise, assistante ADSO">
+        <div className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/35 p-3 sm:items-center print:hidden" role="dialog" aria-modal="true" aria-label="Françoise, assistante ADSO">
           <div className="w-full max-w-xl overflow-hidden rounded-3xl border bg-background shadow-2xl">
             <div className="flex items-center justify-between border-b px-5 py-4">
               <div>
