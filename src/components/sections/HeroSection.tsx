@@ -5,6 +5,7 @@ import { ArrowRight, Globe, GraduationCap, ShieldCheck, Sparkles, Building2 } fr
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import ADSOShare from '@/components/ADSOShare';
+import { FrancoiseAssistant } from '@/components/FrancoiseAssistant';
 import { useViewStore, type LearningTab } from '@/stores/view-store';
 
 const fadeInUp = { hidden: { opacity: 0, y: 30 }, visible: (i: number) => ({ opacity: 1, y: 0, transition: { delay: i * 0.12, duration: 0.6, ease: 'easeOut' as const } }) };
@@ -37,7 +38,13 @@ export default function HeroSection() {
           <motion.div custom={0} variants={fadeInUp} initial="hidden" animate="visible"><p className="mb-3 text-sm font-semibold uppercase tracking-[0.28em] text-emerald-300/90 sm:text-base">Auto Drive School Online</p><h1 className="text-6xl font-black tracking-[-0.04em] text-white sm:text-7xl md:text-8xl lg:text-9xl">ADSO</h1></motion.div>
           <motion.h2 custom={1} variants={fadeInUp} initial="hidden" animate="visible" className="mt-4 max-w-4xl text-3xl font-bold leading-tight text-emerald-50 sm:text-4xl md:text-5xl">La responsabilité au service de la vie.</motion.h2>
           <motion.p custom={2} variants={fadeInUp} initial="hidden" animate="visible" className="mt-4 max-w-3xl text-base leading-7 text-emerald-100/80 sm:text-lg md:text-xl">Chaque vie est précieuse. ADSO accompagne l&apos;apprentissage, la mobilité et la sécurité routière avec des parcours adaptés à l&apos;âge, au pays et aux réalités locales, tout en fournissant des outils et des indicateurs utiles aux territoires et aux institutions.</motion.p>
-          <motion.div custom={3} variants={fadeInUp} initial="hidden" animate="visible" className="mt-7 flex flex-col gap-3 sm:flex-row sm:gap-4"><Button asChild size="lg" className="min-h-14 rounded-xl bg-emerald-600 px-8 text-base font-bold text-white shadow-lg shadow-emerald-950/50 transition-all hover:bg-emerald-500 hover:shadow-emerald-700/40"><Link href="/student" aria-label="Commencer gratuitement sur ADSO">Commencer mon parcours<ArrowRight className="ml-2 size-5" aria-hidden="true" /></Link></Button><Button asChild variant="outline" size="lg" className="min-h-14 rounded-xl border-white/25 bg-white/5 px-8 text-base font-semibold text-white backdrop-blur-sm hover:bg-white/10 hover:text-white"><a href="#ecosystem" aria-label="Découvrir l’écosystème ADSO">Découvrir ADSO</a></Button></motion.div>
+          <motion.div custom={3} variants={fadeInUp} initial="hidden" animate="visible" className="mt-7 flex w-full flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-4">
+            <FrancoiseAssistant />
+            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:gap-4">
+              <Button asChild size="lg" className="min-h-14 rounded-xl bg-emerald-600 px-8 text-base font-bold text-white shadow-lg shadow-emerald-950/50 transition-all hover:bg-emerald-500 hover:shadow-emerald-700/40"><Link href="/student" aria-label="Commencer gratuitement sur ADSO">Commencer mon parcours<ArrowRight className="ml-2 size-5" aria-hidden="true" /></Link></Button>
+              <Button asChild variant="outline" size="lg" className="min-h-14 rounded-xl border-white/25 bg-white/5 px-8 text-base font-semibold text-white backdrop-blur-sm hover:bg-white/10 hover:text-white"><a href="#ecosystem" aria-label="Découvrir l’écosystème ADSO">Découvrir ADSO</a></Button>
+            </div>
+          </motion.div>
         </div>
         <div className="mt-5"><ADSOShare /></div>
         <motion.div custom={4} variants={fadeInUp} initial="hidden" animate="visible" className="mx-auto mt-6 grid max-w-5xl grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
