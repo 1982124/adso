@@ -19,7 +19,7 @@ type SpeechWindow = Window & {
   webkitSpeechRecognition?: new () => RecognitionLike;
 };
 
-export function FrancoiseAssistant() {
+export function FrancoiseAssistant({ floating = true }: { floating?: boolean }) {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [reply, setReply] = useState("");
@@ -133,6 +133,20 @@ export function FrancoiseAssistant() {
           <Mic className="h-4 w-4 text-emerald-300 transition-transform group-hover:scale-110" aria-hidden="true" />
         </button>
       </div>
+
+      {floating && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="fixed right-3 top-20 z-30 inline-flex items-center gap-2 rounded-full border border-emerald-200/50 bg-emerald-600 px-3.5 py-2.5 text-xs font-bold text-white shadow-xl shadow-emerald-950/30 ring-1 ring-black/10 transition hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 lg:hidden"
+          aria-label="Ouvrir Françoise, l'assistante ADSO"
+          title="Parler à Françoise"
+        >
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15 font-black">F</span>
+          <span>Françoise</span>
+          <Mic className="h-4 w-4" aria-hidden="true" />
+        </button>
+      )}
 
       {open && (
         <div className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/35 p-3 sm:items-center print:hidden" role="dialog" aria-modal="true" aria-label="Françoise, assistante ADSO">
