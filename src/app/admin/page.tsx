@@ -28,7 +28,7 @@ const modules = [
   ["🚦", "Sécurité routière", "Signalisation, réglementation et prévention"],
   ["🎯", "Acquisition", "Leads, offres, campagnes et conversion"],
   ["🛡️", "Gouvernance", "Rôles, audit, sécurité et conformité"],
-  ["🤖", "Intelligence", "Assistante de Direction et analyses"],
+  ["🤖", "Intelligence", "Françoise, assistante de Direction et analyses"],
 ] as const;
 
 export default async function AdminCockpitPage() {
@@ -74,11 +74,11 @@ export default async function AdminCockpitPage() {
         <section className="rounded-3xl border border-emerald-400/20 bg-gradient-to-r from-emerald-400/[0.09] via-cyan-400/[0.04] to-transparent p-5 sm:p-6" aria-labelledby="assistant-heading">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">🤖 Assistante de Direction ADSO</p>
-              <h2 id="assistant-heading" className="mt-2 text-xl font-bold sm:text-2xl">Les décisions commencent par les bonnes données.</h2>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">🤖 FRANÇOISE · ASSISTANTE DE DIRECTION ADSO</p>
+              <h2 id="assistant-heading" className="mt-2 text-xl font-bold sm:text-2xl">Françoise — votre cockpit décisionnel.</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">Analysez les données réelles d'ADSO, les risques, la formation, les pays et l'activité. Les recommandations sont séparées des données observées et les actions sensibles restent soumises à validation humaine.</p>
             </div>
-            <a href="#assistant" className="shrink-0 rounded-xl bg-emerald-500 px-5 py-3 text-center text-sm font-bold text-slate-950 transition hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300">Ouvrir l'assistante ↓</a>
+            <a href="#assistant" className="shrink-0 rounded-xl bg-emerald-500 px-5 py-3 text-center text-sm font-bold text-slate-950 transition hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300">Parler à Françoise ↓</a>
           </div>
         </section>
 
