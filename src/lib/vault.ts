@@ -1,4 +1,4 @@
-import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
 
 const PASSWORD_ENV = "ADSO_VAULT_PASSWORD_HASH";
 const SESSION_ENV = "ADSO_VAULT_SESSION_SECRET";
@@ -11,6 +11,11 @@ export function isVaultConfigured() {
   return Boolean(process.env[PASSWORD_ENV] && process.env[SESSION_ENV]);
 }
 
+function derive(password: string, salt: Buffer, iterations: number) {
+  const first = createHash("sha256").update(Buffer.from(password, "utf8")).update(salt).digest();
+  return pbkdf2Sync(first, salt, iterations, KEYLEN, DIGEST);
+}
+
 export function verifyVaultPassword(password: string) {
   const stored = process.env[PASSWORD_ENV];
   if (!stored || !password) return false;
@@ -18,25 +23,15 @@ export function verifyVaultPassword(password: string) {
   if (version !== "pbkdf2" || !iterationsRaw || !salt || !expected) return false;
   const iterations = Number(iterationsRaw);
   if (!Number.isInteger(iterations) || iterations < 100_000 || iterations > 1_000_000) return false;
-
-  const derived = createHash("sha256")
-    .update(Buffer.from(password, "utf8"))
-    .update(Buffer.from(salt, "hex"))
-    .digest();
-  // A second PBKDF2 pass is performed with the configured salt and cost.
-  const { pbkdf2Sync } = require("node:crypto") as typeof import("node:crypto");
-  const actual = pbkdf2Sync(derived, Buffer.from(salt, "hex"), iterations, KEYLEN, DIGEST).toString("hex");
-  const a = Buffer.from(actual, "hex");
-  const b = Buffer.from(expected, "hex");
-  return a.length === b.length && timingSafeEqual(a, b);
+  const actual = derive(password, Buffer.from(salt, "hex"), iterations);
+  const expectedBuffer = Buffer.from(expected, "hex");
+  return actual.length === expectedBuffer.length && timingSafeEqual(actual, expectedBuffer);
 }
 
 export function createVaultPasswordHash(password: string) {
   if (!password || password.length < 12) throw new Error("Le mot de passe du coffre-fort doit contenir au moins 12 caractères.");
   const salt = randomBytes(16);
-  const first = createHash("sha256").update(Buffer.from(password, "utf8")).update(salt).digest();
-  const { pbkdf2Sync } = require("node:crypto") as typeof import("node:crypto");
-  const derived = pbkdf2Sync(first, salt, ITERATIONS, KEYLEN, DIGEST).toString("hex");
+  const derived = derive(password, salt, ITERATIONS).toString("hex");
   return `pbkdf2$${ITERATIONS}$${salt.toString("hex")}$${derived}`;
 }
 
