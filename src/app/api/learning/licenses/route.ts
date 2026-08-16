@@ -9,6 +9,12 @@ const CATEGORY_ALIASES: Record<string, string[]> = {
   spécial: ['special', 'spécial'],
 };
 
+type LicenseRecord = {
+  id: string; code: string; name: string; description: string; category: string;
+  minAge: number | null; minAgeHeld: number | null; vehicles: unknown; prerequisites: unknown;
+  duration: number | null; theoryExam: boolean; practicalExam: boolean; evaluationCriteria: unknown; icon: string;
+};
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -19,7 +25,7 @@ export async function GET(request: NextRequest) {
     if (category) where.category = aliases?.length ? { in: aliases } : category;
 
     const licenses = await db.licenseCategory.findMany({ where, orderBy: { code: 'asc' } });
-    let parsed = licenses.map((l) => ({
+    let parsed: LicenseRecord[] = licenses.map((l) => ({
       id: l.id, code: l.code, name: l.name, description: l.description, category: l.category,
       minAge: l.minAge, minAgeHeld: l.minAgeHeld, vehicles: safeParse(l.vehicles),
       prerequisites: safeParse(l.prerequisites), duration: l.duration, theoryExam: l.theoryExam,
@@ -33,7 +39,7 @@ export async function GET(request: NextRequest) {
       const filtered = category
         ? types.filter((type) => aliases?.some((alias) => type.toLowerCase().includes(alias)))
         : types;
-      parsed = filtered.map((type, index) => ({
+      parsed = filtered.map((type, index): LicenseRecord => ({
         id: `${countryCode || 'ZZ'}-${type}-${index}`,
         code: type,
         name: type,
