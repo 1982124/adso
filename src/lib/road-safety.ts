@@ -21,6 +21,13 @@ export type RoadSafetySummary = {
   };
 };
 
+type WorldBankRow = {
+  value?: unknown;
+  date?: unknown;
+  countryiso3code?: unknown;
+  country?: { value?: unknown };
+};
+
 const WORLD_BANK_URL =
   "https://api.worldbank.org/v2/country/all/indicator/SH.STA.TRAF.P5?format=json&per_page=20000";
 
@@ -34,7 +41,7 @@ export async function getRoadSafetySummaries(): Promise<RoadSafetySummary[]> {
     throw new Error(`Road safety data provider returned ${response.status}`);
   }
 
-  const payload = (await response.json()) as [unknown, Array<Record<string, unknown>>];
+  const payload = (await response.json()) as [unknown, WorldBankRow[] | undefined];
   const rows = Array.isArray(payload?.[1]) ? payload[1] : [];
   const grouped = new Map<string, RoadSafetyYear[]>();
 
