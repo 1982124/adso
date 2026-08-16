@@ -114,20 +114,25 @@ export function FrancoiseAssistant() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="fixed bottom-24 right-5 z-[9999] flex items-center gap-2 rounded-full border border-primary/30 bg-background/95 px-4 py-3 text-sm font-semibold shadow-2xl backdrop-blur transition hover:-translate-y-0.5 hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-primary print:hidden sm:bottom-24 lg:bottom-8"
-        aria-label="Ouvrir Françoise, l'assistante ADSO"
-        title="Parler à Françoise"
-      >
-        <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          F
-          <span className="absolute -right-1 -top-1 flex h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-background" aria-hidden="true" />
-        </span>
-        <span>Françoise</span>
-        <Mic className="h-4 w-4" aria-hidden="true" />
-      </button>
+      <div className="mb-4 flex w-full justify-center">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="group inline-flex items-center gap-3 rounded-full border border-emerald-300/35 bg-black/30 px-5 py-3 text-sm font-semibold text-white shadow-xl shadow-black/20 backdrop-blur-md transition hover:-translate-y-0.5 hover:border-emerald-300/60 hover:bg-emerald-500/15 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+          aria-label="Ouvrir Françoise, l'assistante ADSO"
+          title="Parler à Françoise"
+        >
+          <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-sm font-black text-white shadow-lg">
+            F
+            <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-emerald-300 ring-2 ring-black/30" aria-hidden="true" />
+          </span>
+          <span className="text-left">
+            <span className="block leading-4">Françoise</span>
+            <span className="block text-xs font-normal text-emerald-100/75">Votre assistante ADSO</span>
+          </span>
+          <Mic className="h-4 w-4 text-emerald-300 transition-transform group-hover:scale-110" aria-hidden="true" />
+        </button>
+      </div>
 
       {open && (
         <div className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/35 p-3 sm:items-center print:hidden" role="dialog" aria-modal="true" aria-label="Françoise, assistante ADSO">
