@@ -38,9 +38,12 @@ export default function HeroSection() {
           <motion.div custom={0} variants={fadeInUp} initial="hidden" animate="visible"><p className="mb-3 text-sm font-semibold uppercase tracking-[0.28em] text-emerald-300/90 sm:text-base">Auto Drive School Online</p><h1 className="text-6xl font-black tracking-[-0.04em] text-white sm:text-7xl md:text-8xl lg:text-9xl">ADSO</h1></motion.div>
           <motion.h2 custom={1} variants={fadeInUp} initial="hidden" animate="visible" className="mt-4 max-w-4xl text-3xl font-bold leading-tight text-emerald-50 sm:text-4xl md:text-5xl">La responsabilité au service de la vie.</motion.h2>
           <motion.p custom={2} variants={fadeInUp} initial="hidden" animate="visible" className="mt-4 max-w-3xl text-base leading-7 text-emerald-100/80 sm:text-lg md:text-xl">Chaque vie est précieuse. ADSO accompagne l&apos;apprentissage, la mobilité et la sécurité routière avec des parcours adaptés à l&apos;âge, au pays et aux réalités locales, tout en fournissant des outils et des indicateurs utiles aux territoires et aux institutions.</motion.p>
-          <motion.div custom={3} variants={fadeInUp} initial="hidden" animate="visible" className="mt-7 flex w-full flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-4">
-            <FrancoiseAssistant />
-            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:gap-4">
+
+          <motion.div custom={3} variants={fadeInUp} initial="hidden" animate="visible" className="mt-7 flex w-full max-w-3xl flex-col items-center">
+            <div className="w-full max-w-md">
+              <FrancoiseAssistant />
+            </div>
+            <div className="mt-1 flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center sm:justify-center sm:gap-4">
               <Button asChild size="lg" className="min-h-14 rounded-xl bg-emerald-600 px-8 text-base font-bold text-white shadow-lg shadow-emerald-950/50 transition-all hover:bg-emerald-500 hover:shadow-emerald-700/40"><Link href="/student" aria-label="Commencer gratuitement sur ADSO">Commencer mon parcours<ArrowRight className="ml-2 size-5" aria-hidden="true" /></Link></Button>
               <Button asChild variant="outline" size="lg" className="min-h-14 rounded-xl border-white/25 bg-white/5 px-8 text-base font-semibold text-white backdrop-blur-sm hover:bg-white/10 hover:text-white"><a href="#ecosystem" aria-label="Découvrir l’écosystème ADSO">Découvrir ADSO</a></Button>
             </div>
