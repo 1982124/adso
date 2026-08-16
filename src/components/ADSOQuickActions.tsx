@@ -32,7 +32,7 @@ export function ADSOQuickActions() {
   };
 
   return (
-    <nav aria-label="Accès rapide ADSO" data-tts-ignore="true" className="fixed bottom-4 left-4 z-[9998] print:hidden max-w-[calc(100vw-6rem)]">
+    <nav aria-label="Accès rapide ADSO" data-tts-ignore="true" className="fixed bottom-20 left-4 z-[9998] max-w-[calc(100vw-6rem)] print:hidden sm:bottom-4">
       <div className="flex items-center gap-1.5 overflow-x-auto rounded-full border border-slate-700/80 bg-slate-950/90 p-1.5 shadow-2xl backdrop-blur-xl">
         {actions.map(({ tab, label, icon: Icon }) => (
           <button
