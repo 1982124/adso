@@ -32,6 +32,10 @@ function getReadablePageText() {
   return cleanText(clone.innerText || clone.textContent || '');
 }
 
+function hasAnyCommand(command: string, aliases: string[]) {
+  return aliases.some((alias) => command.includes(alias));
+}
+
 export function GlobalTTSReader() {
   const [open, setOpen] = useState(false);
   const [speaking, setSpeaking] = useState(false);
@@ -116,26 +120,30 @@ export function GlobalTTSReader() {
 
   const executeVoiceCommand = useCallback((rawCommand: string) => {
     const command = rawCommand.toLocaleLowerCase(prefs.lang.split('-')[0]);
-    if (/\b(pause|pauser|attends)\b/.test(command)) {
+    const isPause = hasAnyCommand(command, ['pause', 'pauser', 'pumzika', '暂停', '一時停止', 'pausar']);
+    const isResume = hasAnyCommand(command, ['reprends', 'reprendre', 'continue', 'continuer', 'resume', 'weiter', 'continuar', 'continua', 'endelea', 'استمر', '继续', '続けて']);
+    const isStop = hasAnyCommand(command, ['stop', 'arrête', 'arrêtez', 'silence', 'tais-toi', 'ne parle plus', 'parar', 'pare', 'stopp', 'simama', 'توقف', 'إيقاف', '停止', '止めて']);
+    const isRestart = hasAnyCommand(command, ['recommence', 'recommencer', 'restart', 'relis', 'relire', 'reiniciar', 'recomeçar', 'neu starten', 'أعد', '重读', '読み直して']);
+    const isRead = hasAnyCommand(command, ['lis', 'lire', 'read', 'lee', 'ler', 'lesen', 'soma', 'اقرأ', '阅读', '読んで']);
+
+    if (isPause) {
       if (speaking && !paused) window.speechSynthesis.pause();
       return;
     }
-    if (/\b(reprends?|continue|continuer|resume|reprend)\b/.test(command)) {
+    if (isResume) {
       if (speaking && paused) window.speechSynthesis.resume();
       return;
     }
-    if (/\b(stop|arr[eê]te|arr[eê]tez|silence|tais[- ]toi|ne parle plus)\b/.test(command)) {
+    if (isStop) {
       stop();
       return;
     }
-    if (/\b(recommence|recommencer|restart|relis|relire)\b/.test(command)) {
+    if (isRestart) {
       stop();
       window.setTimeout(() => speak(getReadablePageText()), 50);
       return;
     }
-    if (/\b(lis|lire|read)\b/.test(command)) {
-      speak(getReadablePageText());
-    }
+    if (isRead) speak(getReadablePageText());
   }, [paused, prefs.lang, speaking, speak, stop]);
 
   const toggleVoiceCommands = useCallback(() => {
@@ -143,7 +151,6 @@ export function GlobalTTSReader() {
     if (listening) {
       recognitionRef.current?.stop();
       setListening(false);
-      if (wasSpeakingBeforeListeningRef.current && paused) window.speechSynthesis.resume();
       return;
     }
 
