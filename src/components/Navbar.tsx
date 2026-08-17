@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Car, Info, GraduationCap, Shield, ShieldCheck, Truck, Building2, LayoutDashboard } from 'lucide-react';
+import { Menu, X, Car, Info, Home, GraduationCap, Shield, ShieldCheck, Truck, Building2, LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { FrancoiseAssistant } from '@/components/FrancoiseAssistant';
