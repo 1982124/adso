@@ -74,8 +74,9 @@ export async function POST(request: Request) {
       onUploadCompleted: async ({ blob, tokenPayload }) => {
         const payload = JSON.parse(tokenPayload ?? '{}') as { assetId?: string };
         if (!payload.assetId) return;
+        // The upload is complete, but publication is deliberately blocked until moderation.
         await db.$executeRawUnsafe(
-          `UPDATE "LabMediaAsset" SET "url"=$1,"pathname"=$2,"status"='ready',"moderationStatus"='pending',"updatedAt"=CURRENT_TIMESTAMP WHERE "id"=$3`,
+          `UPDATE "LabMediaAsset" SET "url"=$1,"pathname"=$2,"status"='processing',"moderationStatus"='pending',"updatedAt"=CURRENT_TIMESTAMP WHERE "id"=$3`,
           blob.url,
           blob.pathname,
           payload.assetId,

@@ -9,14 +9,18 @@ export async function GET() {
   try {
     await db.$queryRaw`SELECT 1`;
 
-    return NextResponse.json({
-      status: 'ok',
-      service: 'adso',
-      database: 'ok',
-      timestamp: new Date().toISOString(),
-      latencyMs: Date.now() - startedAt,
-    });
-  } catch {
+    return NextResponse.json(
+      {
+        status: 'ok',
+        service: 'adso',
+        database: 'ok',
+        timestamp: new Date().toISOString(),
+        latencyMs: Date.now() - startedAt,
+      },
+      { status: 200, headers: { 'Cache-Control': 'no-store' } },
+    );
+  } catch (error) {
+    console.error('[GET /api/health] database check failed', error);
     return NextResponse.json(
       {
         status: 'degraded',
@@ -25,7 +29,7 @@ export async function GET() {
         timestamp: new Date().toISOString(),
         latencyMs: Date.now() - startedAt,
       },
-      { status: 503 },
+      { status: 503, headers: { 'Cache-Control': 'no-store' } },
     );
   }
 }
