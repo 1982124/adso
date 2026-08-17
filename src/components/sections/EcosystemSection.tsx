@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Building2, GraduationCap, Briefcase, Bike, ShieldCheck, Landmark, Smartphone, School, HeartHandshake, ArrowRight } from 'lucide-react';
+import { GraduationCap, Briefcase, Bike, ShieldCheck, Landmark, School, HeartHandshake, ArrowRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface EcosystemCard { id: string; title: string; icon: React.ComponentType<{ className?: string }>; bgClass: string; borderClass: string; iconBg: string; iconColor: string; textColor: string; features: string[]; }
