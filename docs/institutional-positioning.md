@@ -1,5 +1,13 @@
 # ADSO — positionnement institutionnel international
 
+## Entité porteuse
+
+**ADSO est un produit de Neo Digital Startup Academy (NDSA).**
+
+ADSO s'inscrit dans le portefeuille de produits numériques de NDSA. Le premier produit de NDSA est **GMBCore-OS — Global Marketing Business Core Optimization System**, une application d'automatisation de la présentation des produits et de l'opportunité MLM/NeoLife.
+
+GMBCore-OS fournit notamment un **Smart Link personnalisé à chaque distributeur**, conçu pour renforcer sa présence numérique et faciliter la présentation internationale de son activité, sans limite de frontière ni barrière linguistique. Exemple de Smart Link : https://gmbcoreos.com/s/coachjose/
+
 ## Signature
 
 **ADSO — La responsabilité au service de la vie.**
