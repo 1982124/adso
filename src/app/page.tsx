@@ -10,6 +10,7 @@ import ChunkLoadRecovery from '@/components/ChunkLoadRecovery';
 import HeroSection from '@/components/sections/HeroSection';
 import StatsSection from '@/components/sections/StatsSection';
 import EcosystemSection from '@/components/sections/EcosystemSection';
+import VisualLearningGallery from '@/components/sections/VisualLearningGallery';
 import AIFeaturesSection from '@/components/sections/AIFeaturesSection';
 import QuizSection from '@/components/sections/QuizSection';
 import AIChatSection from '@/components/sections/AIChatSection';
@@ -66,7 +67,7 @@ export default function Home() {
 }
 
 function HomeView() {
-  return <><HeroSection /><AboutSection /><StatsSection /><EcosystemSection /><AIFeaturesSection /><QuizSection /><AIChatSection /><AnalyticsSection /><PricingSection /><RoadmapSection /><SecuritySection /></>;
+  return <><HeroSection /><VisualLearningGallery /><AboutSection /><StatsSection /><EcosystemSection /><AIFeaturesSection /><QuizSection /><AIChatSection /><AnalyticsSection /><PricingSection /><RoadmapSection /><SecuritySection /></>;
 }
 
 function BlueprintView() { return <BluePrintLayout><BluePrintCover /><VisionEntreprise /><EcosystemeComplet /><ArchitectureTechnique /><AISCArchitecture /><IAProduit /><Monetisation /><SecuriteEntreprise /><InternationalisationPart /><UXUIDesign /><DataAnalyticsPart /><DevOps /><RoadmapPart /><DirectivesIA /><footer className="border-t border-slate-800 py-12 px-6 text-center"><p className="text-slate-500 text-sm">ADSO — AI-Driven & Smart Operations | Blueprint v1.0 | Août 2026 | Confidentiel</p><p className="text-slate-600 text-xs mt-2">© 2026 ADSO Engineering. Tous droits réservés.</p></footer></BluePrintLayout>; }
