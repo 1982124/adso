@@ -2,7 +2,7 @@
 
 Continuous ADSO engineering follows this order: inspect the real product, diagnose root causes, prioritize security/data/payments/auth/stability, preserve verified functionality, test critical journeys, deploy, verify production, observe, and iterate.
 
-ADSO's product direction is progressive: Education (primary, secondary, lycée, university) -> Driver -> Professional (taxi, moto-taxi, delivery) -> Business (auto-schools, companies, fleets) -> Safety -> Partners.
+ADSO's product direction is progressive: Education (primary, secondary, lycée, university) -> Driver -> Professional (taxi, moto-taxi, delivery) -> Business (driving schools, companies, fleets) -> Safety -> Partners.
 
 All monetization must correspond to real value, real customers and real paid services. Partner rewards are tied to paid sales and retention, never primarily to recruitment.
 
