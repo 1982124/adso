@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { Prisma } from '@prisma/client';
 import { db } from '@/lib/db';
-import { getPricingForCountry, getAvailablePaymentMethods, type PlanId, type BillingPeriod } from '@/lib/pricing-engine';
+import { getPricingForCountry, getAvailablePaymentMethods, canonicalizeProvider, type PlanId, type BillingPeriod } from '@/lib/pricing-engine';
 
 export type PaymentStatus = 'PENDING' | 'PROCESSING' | 'PAID' | 'FAILED' | 'EXPIRED' | 'REFUNDED';
 
@@ -14,7 +14,13 @@ export interface CreatePaymentInput {
   idempotencyKey: string;
 }
 
-const PROVIDERS = new Set(['orange_money', 'wave', 'mtn_momo', 'moov_money', 'chariow', 'maketou', 'stripe', 'manual']);
+const PROVIDERS = new Set([
+  'orange_money', 'wave', 'mtn_momo', 'moov_money', 'free_money', 'mpesa',
+  'airtel_money', 'express_union_mobile', 'kcb_mpesa', 'chariow', 'maketou',
+  'card', 'paypal', 'apple_pay', 'google_pay', 'bank_transfer', 'bancontact',
+  'twint', 'klarna', 'bizum', 'satispay', 'sofort', 'cash_plus', 'flouci',
+  'baridimob', 'cib', 'manual',
+]);
 
 function normalizeCountry(value: string): string {
   const code = value.trim().toUpperCase();
@@ -23,7 +29,7 @@ function normalizeCountry(value: string): string {
 }
 
 function normalizeProvider(value: string): string {
-  const provider = value.trim().toLowerCase();
+  const provider = canonicalizeProvider(value);
   if (!PROVIDERS.has(provider)) throw new Error('Unsupported payment provider');
   return provider;
 }
@@ -143,6 +149,7 @@ export async function processPaymentWebhook(params: {
   status: Extract<PaymentStatus, 'PAID' | 'FAILED' | 'REFUNDED'>;
   rawPayload: string;
   signatureValid: boolean;
+  billingPeriod?: BillingPeriod;
 }) {
   await ensurePaymentTables();
   if (!params.signatureValid) throw new Error('Invalid webhook signature');
@@ -159,8 +166,8 @@ export async function processPaymentWebhook(params: {
       VALUES (${crypto.randomUUID()},${params.paymentOrderId},${provider},${params.eventId},${params.eventType},TRUE,${params.rawPayload})
     `);
 
-    const orders = await tx.$queryRaw<{ userId: string; plan: string; countryCode: string; currency: string; amountMinor: number; status: PaymentStatus }[]>(Prisma.sql`
-      SELECT "userId","plan","countryCode","currency","amountMinor","status" FROM "PaymentOrder" WHERE "id"=${params.paymentOrderId} FOR UPDATE
+    const orders = await tx.$queryRaw<{ userId: string; plan: string; countryCode: string; currency: string; amountMinor: number; status: PaymentStatus; metadata: string | null }[]>(Prisma.sql`
+      SELECT "userId","plan","countryCode","currency","amountMinor","status","metadata" FROM "PaymentOrder" WHERE "id"=${params.paymentOrderId} FOR UPDATE
     `);
     const order = orders[0];
     if (!order) throw new Error('Payment order not found');
@@ -172,7 +179,14 @@ export async function processPaymentWebhook(params: {
 
     if (params.status === 'PAID') {
       const start = new Date();
-      const end = new Date(start); end.setMonth(end.getMonth() + 1);
+      let billingPeriod: BillingPeriod = params.billingPeriod ?? 'monthly';
+      if (!params.billingPeriod && order.metadata) {
+        try {
+          const parsed = JSON.parse(order.metadata) as { billingPeriod?: BillingPeriod };
+          if (parsed.billingPeriod === 'yearly') billingPeriod = 'yearly';
+        } catch { /* keep monthly fallback */ }
+      }
+      const end = periodEnd(start, billingPeriod);
       await tx.$executeRaw(Prisma.sql`
         INSERT INTO "Subscription" ("id","userId","plan","status","countryCode","currency","provider","currentPeriodStart","currentPeriodEnd")
         VALUES (${crypto.randomUUID()},${order.userId},${order.plan},'ACTIVE',${order.countryCode},${order.currency},${provider},${start},${end})
