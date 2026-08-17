@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowRight, Globe, GraduationCap, ShieldCheck, Sparkles, Building2, Bike, School, BriefcaseBusiness, HeartHandshake } from 'lucide-react';
+import { ArrowRight, Globe, GraduationCap, ShieldCheck, Building2, Bike, School, BriefcaseBusiness, HeartHandshake } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import ADSOShare from '@/components/ADSOShare';
@@ -42,9 +42,12 @@ export default function HeroSection() {
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true"><motion.div className="absolute left-0 top-[25%] h-px w-40 bg-emerald-400/15" animate={{ x: [0, 120, 0] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' as const }} /><motion.div className="absolute right-0 top-[48%] h-px w-56 bg-emerald-300/15" animate={{ x: [0, -140, 0] }} transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' as const }} /><div className="absolute left-1/2 top-1/2 size-[min(70vw,700px)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-400/5" /></div>
       <div className="relative z-10 mx-auto w-full max-w-6xl px-5 pb-8 pt-24 sm:px-8 md:pt-20 lg:pb-10">
         <div className="flex flex-col items-center text-center">
-          <motion.div custom={0} variants={fadeInUp} initial="hidden" animate="visible"><p className="mb-3 text-sm font-semibold uppercase tracking-[0.28em] text-emerald-300/90 sm:text-base">Éducation routière · mobilité sûre · professionnalisation</p><h1 className="text-6xl font-black tracking-[-0.04em] text-white sm:text-7xl md:text-8xl lg:text-9xl">ADSO</h1></motion.div>
-          <motion.h2 custom={1} variants={fadeInUp} initial="hidden" animate="visible" className="mt-4 max-w-4xl text-3xl font-bold leading-tight text-emerald-50 sm:text-4xl md:text-5xl">De l’école au conducteur professionnel, apprendre à mieux partager la route.</motion.h2>
-          <motion.p custom={2} variants={fadeInUp} initial="hidden" animate="visible" className="mt-4 max-w-3xl text-base leading-7 text-emerald-100/80 sm:text-lg md:text-xl">ADSO accompagne les jeunes du primaire à l’université, prépare les futurs conducteurs, professionnalise les conducteurs de taxi-moto et de mobilité, et donne aux écoles, entreprises, flottes, assureurs et institutions des outils de prévention mesurable.</motion.p>
+          <motion.div custom={0} variants={fadeInUp} initial="hidden" animate="visible">
+            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.28em] text-emerald-300/90 sm:text-base">Afrique d’abord · éducation routière · mobilité sûre</p>
+            <h1 className="text-6xl font-black tracking-[-0.04em] text-white sm:text-7xl md:text-8xl lg:text-9xl">ADSO</h1>
+          </motion.div>
+          <motion.h2 custom={1} variants={fadeInUp} initial="hidden" animate="visible" className="mt-4 max-w-4xl text-3xl font-bold leading-tight text-emerald-50 sm:text-4xl md:text-5xl">Construire en Afrique une génération mieux formée à la route, de l’école au conducteur professionnel.</motion.h2>
+          <motion.p custom={2} variants={fadeInUp} initial="hidden" animate="visible" className="mt-4 max-w-3xl text-base leading-7 text-emerald-100/80 sm:text-lg md:text-xl">ADSO commence par l’Afrique : éducation routière du primaire à l’université, préparation des futurs conducteurs, professionnalisation des taxi-motos et outils pour écoles, entreprises, flottes, assureurs et institutions. L’expansion mondiale viendra après validation du modèle africain.</motion.p>
 
           <motion.div custom={3} variants={fadeInUp} initial="hidden" animate="visible" className="mt-7 flex w-full max-w-3xl flex-col items-center">
             <div className="w-full max-w-md"><FrancoiseAssistant /></div>
@@ -61,7 +64,7 @@ export default function HeroSection() {
         <motion.div custom={5} variants={fadeInUp} initial="hidden" animate="visible" className="mx-auto mt-6 grid max-w-5xl grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {audiences.map(({ icon: Icon, title, text }) => <div key={title} className="rounded-2xl border border-white/10 bg-white/[0.045] p-4 text-left backdrop-blur-md"><div className="flex items-center gap-2"><Icon className="size-5 text-emerald-300" aria-hidden="true" /><h3 className="font-bold text-white">{title}</h3></div><p className="mt-2 text-sm leading-6 text-emerald-50/75">{text}</p></div>)}
         </motion.div>
-        <motion.section custom={6} variants={fadeInUp} initial="hidden" animate="visible" className="mx-auto mt-6 max-w-5xl rounded-3xl border border-white/10 bg-black/30 p-5 text-left backdrop-blur-md sm:p-7" aria-labelledby="institutional-heading"><div className="flex items-center gap-3"><Building2 className="size-5 text-emerald-300" aria-hidden="true" /><h2 id="institutional-heading" className="text-lg font-bold text-white sm:text-xl">Une infrastructure de prévention pour toute la chaîne de mobilité</h2></div><div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{institutionalPillars.map((item) => <div key={item} className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm leading-6 text-emerald-50/90">{item}</div>)}</div></motion.section>
+        <motion.section custom={6} variants={fadeInUp} initial="hidden" animate="visible" className="mx-auto mt-6 max-w-5xl rounded-3xl border border-white/10 bg-black/30 p-5 text-left backdrop-blur-md sm:p-7" aria-labelledby="institutional-heading"><div className="flex items-center gap-3"><Building2 className="size-5 text-emerald-300" aria-hidden="true" /><h2 id="institutional-heading" className="text-lg font-bold text-white sm:text-xl">Une infrastructure africaine de prévention pour toute la chaîne de mobilité</h2></div><div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{institutionalPillars.map((item) => <div key={item} className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm leading-6 text-emerald-50/90">{item}</div>)}</div></motion.section>
       </div>
     </section>
   );
