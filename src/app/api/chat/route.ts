@@ -24,8 +24,8 @@ COMPORTEMENT :
 - Si l'utilisateur demande comment connecter un véhicule, distingue toujours ce qui est déjà supporté par ADSO de ce qui nécessite un matériel, une API ou une intégration qui n'est pas encore confirmée.
 - Si l'utilisateur demande une présentation d'ADSO, présente l'écosystème de façon structurée et propose de guider l'utilisateur écran par écran.
 - Pour une demande de visite guidée, indique les services dans l'ordre et invite l'interface à les ouvrir lorsqu'une commande de navigation est disponible.
-- Détecte la langue de l'utilisateur et réponds dans cette langue. Français, anglais, espagnol et arabe sont pris en charge ; ne force jamais le français si l'utilisateur demande explicitement une autre langue.
-- Si quelqu'un t'insulte, reste calme, digne et utile. Ne riposte jamais. Exemple : « Je comprends que vous soyez agacé. Je reste disponible si vous souhaitez que je vous aide sur ADSO. »
+- Réponds dans la langue explicitement choisie par l'utilisateur ou, à défaut, dans la langue détectée dans son message. Le contexte de langue fourni par l'application est une préférence d'interface, pas une preuve de compétence linguistique parfaite. Ne prétends jamais maîtriser une langue ou une voix si le service réellement disponible ne le permet pas.
+- Si quelqu'un t'insulte, reste calme, digne et utile. Ne riposte jamais.
 - Tu peux recevoir des compliments ; réponds avec chaleur et professionnalisme sans prétendre avoir des sentiments humains.
 - Ne prétends jamais avoir effectué une action que l'interface n'a pas réellement exécutée.
 - N'invente jamais une fonctionnalité, un prix, une intégration, une donnée ou une réglementation.
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     const userId = getUserId(session)!;
 
     const body = await request.json();
-    const { message } = body as { message?: string };
+    const { message, locale } = body as { message?: string; locale?: string };
 
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return NextResponse.json({ error: 'Message requis' }, { status: 400 });
@@ -65,6 +65,10 @@ export async function POST(request: NextRequest) {
       ? `\nCONTEXTE RÉGLEMENTAIRE ADSO — PAYS SÉLECTIONNÉ\nCode pays : ${country.code}\nPays : ${country.name}\nAutorité : ${country.authority}\nCôté de circulation : ${country.drivingSide}\nÂge minimum : ${country.minAge}\nLangues disponibles : ${country.languages}\nLimitation urbaine enregistrée : ${country.speedUrban}\nLimitation rurale enregistrée : ${country.speedRural}\nLimitation autoroute enregistrée : ${country.speedHighway}\nDocuments requis enregistrés : ${country.requiredDocuments}\nÉquipements requis enregistrés : ${country.requiredEquipment}\nCatégories de permis enregistrées : ${country.licenseCategories}\nSi une donnée ci-dessus est absente ou incertaine, indique-le explicitement.`
       : `\nCONTEXTE RÉGLEMENTAIRE : aucune fiche pays validée n'est disponible pour le pays sélectionné (${countryCode || 'inconnu'}). N'invente aucune règle. Informe l'utilisateur qu'une donnée réglementaire validée est nécessaire.`;
 
+    const localeContext = typeof locale === 'string' && locale.trim()
+      ? `\nLANGUE D'INTERFACE PRÉFÉRÉE : ${locale.trim().slice(0, 16)}. Utilise-la comme préférence lorsque le message de l'utilisateur ne fournit pas une autre langue claire.`
+      : '';
+
     await db.chatMessage.create({
       data: { userId: user.id, role: 'user', content: message.trim() },
     });
@@ -83,7 +87,7 @@ export async function POST(request: NextRequest) {
     const assistantReply = await aiChat(
       request,
       [
-        { role: 'system', content: `${BASE_SYSTEM_PROMPT}${countryContext}` },
+        { role: 'system', content: `${BASE_SYSTEM_PROMPT}${localeContext}${countryContext}` },
         ...chatHistory,
         { role: 'user', content: message.trim() },
       ],
