@@ -1,36 +1,22 @@
 /**
  * Dynamic pricing engine for ADSO.
  *
- * Calculates localised prices using Purchasing Power Parity (PPP) multipliers,
- * applies billing-period discounts, resolves payment methods, and formats
- * currency values with `Intl.NumberFormat`.
+ * Customer-facing prices remain country-aware while payment providers use
+ * stable canonical identifiers internally.
  */
 
 import { countries, type Country } from '@/data/countries';
 
-// ─── Types ──────────────────────────────────────────────────────────────────
-
-/** Result of a pricing calculation for a given country and plan. */
 export interface PricingResult {
-  /** Localised price after PPP and billing discounts. */
   price: number;
-  /** Original base price in EUR (before any discounts). */
   originalPrice: number;
-  /** ISO 4217 currency code for the country. */
   currency: string;
-  /** Discount percentage applied (0–100). */
   discount: number;
 }
 
-/** Supported billing periods. */
 export type BillingPeriod = 'monthly' | 'yearly';
-
-/** Supported plan identifiers. */
 export type PlanId = 'free' | 'starter' | 'pro' | 'premium';
 
-// ─── Constants ──────────────────────────────────────────────────────────────
-
-/** Base prices in EUR for each plan (monthly). */
 const BASE_PRICES: Record<PlanId, number> = {
   free: 0,
   starter: 9.99,
@@ -38,115 +24,79 @@ const BASE_PRICES: Record<PlanId, number> = {
   premium: 39.99,
 } as const;
 
-/**
- * PPP multipliers by region.
- * Values < 1 reduce the price for lower-purchasing-power economies.
- */
 const PPP_MULTIPLIERS: Record<string, number> = {
-  west_africa: 0.25,
-  east_africa: 0.30,
-  north_africa: 0.40,
-  south_america: 0.50,
-  south_asia: 0.35,
-  southeast_asia: 0.45,
-  europe: 1.0,
-  north_america: 1.0,
+  Afrique: 0.25,
+  Europe: 1.0,
+  Asie: 0.35,
+  Amerique: 0.50,
+  'Amérique du Nord': 1.0,
+  'Amérique du Sud': 0.50,
+  'Moyen-Orient': 0.45,
+  Océanie: 1.0,
 } as const;
 
-/** Discount applied when billing yearly instead of monthly. */
 const YEARLY_DISCOUNT_PERCENT = 20;
-
-/** Default multiplier when a country's region is unknown. */
 const DEFAULT_PPP = 1.0;
 
-// ─── Core functions ─────────────────────────────────────────────────────────
+/** Canonical provider identifiers used by payment-core and checkout APIs. */
+const PAYMENT_PROVIDER_ALIASES: Record<string, string> = {
+  'Orange Money': 'orange_money',
+  'Orange Money Africa': 'orange_money',
+  'MTN Mobile Money': 'mtn_momo',
+  'MTN MoMo': 'mtn_momo',
+  'Moov Money': 'moov_money',
+  'Wave': 'wave',
+  'Free Money': 'free_money',
+  'M-Pesa': 'mpesa',
+  'Airtel Money': 'airtel_money',
+  'Express Union Mobile': 'express_union_mobile',
+  'KCB M-Pesa': 'kcb_mpesa',
+  'Chariow': 'chariow',
+  'Maketou': 'maketou',
+  'Carte bancaire': 'card',
+  'PayPal': 'paypal',
+  'Apple Pay': 'apple_pay',
+  'Google Pay': 'google_pay',
+  'Virement bancaire': 'bank_transfer',
+  'Bancontact': 'bancontact',
+  'TWINT': 'twint',
+  'Klarna': 'klarna',
+  'Bizum': 'bizum',
+  'Satispay': 'satispay',
+  'Sofortüberweisung': 'sofort',
+  'Cash Plus': 'cash_plus',
+  'Flouci': 'flouci',
+  'BaridiMob': 'baridimob',
+  'CIB': 'cib',
+};
 
-/**
- * Calculate localised pricing for a given country and plan.
- *
- * Applies the PPP multiplier for the country's region and assumes
- * monthly billing. Use {@link calculateDiscount} + manual math if you
- * need the yearly price directly.
- *
- * @param countryCode - ISO 3166-1 alpha-2 code (e.g. `'SN'`, `'FR'`).
- * @param planId      - Plan identifier (`'free'`, `'starter'`, `'pro'`, `'premium'`).
- * @returns A {@link PricingResult} with localised price, original price, currency, and discount.
- *          Falls back to EUR with PPP 1.0 for unknown countries/plans.
- */
-export function getPricingForCountry(
-  countryCode: string,
-  planId: string,
-): PricingResult {
+export function getPricingForCountry(countryCode: string, planId: string): PricingResult {
   const basePrice = BASE_PRICES[planId as PlanId] ?? 0;
   const country = getCountryByCode(countryCode);
-
-  const ppp = country
-    ? (PPP_MULTIPLIERS[country.region] ?? DEFAULT_PPP)
-    : DEFAULT_PPP;
-
+  const ppp = country ? (PPP_MULTIPLIERS[country.region] ?? DEFAULT_PPP) : DEFAULT_PPP;
   const currency = country?.currency?.code ?? 'EUR';
-
-  // price = base × PPP (rounded to 2 dp)
   const price = Math.round(basePrice * ppp * 100) / 100;
-
-  // Discount represents the PPP reduction as a percentage
   const discount = ppp < 1 ? Math.round((1 - ppp) * 100) : 0;
-
-  return {
-    price,
-    originalPrice: basePrice,
-    currency,
-    discount,
-  };
+  return { price, originalPrice: basePrice, currency, discount };
 }
 
-/**
- * Calculate the discount percentage for a given plan and billing period.
- *
- * - `monthly` → 0 % discount
- * - `yearly`  → 20 % discount
- *
- * @param _planId        - Plan identifier (reserved for future plan-specific discounts).
- * @param billingPeriod  - `'monthly'` or `'yearly'`.
- * @returns Discount percentage (0–100).
- */
-export function calculateDiscount(
-  _planId: string,
-  billingPeriod: BillingPeriod,
-): number {
+export function calculateDiscount(_planId: string, billingPeriod: BillingPeriod): number {
   return billingPeriod === 'yearly' ? YEARLY_DISCOUNT_PERCENT : 0;
 }
 
-/**
- * Return the list of available payment method identifiers for a country.
- *
- * @param countryCode - ISO 3166-1 alpha-2 code.
- * @returns Array of payment provider strings (e.g. `['orange_money', 'wave']`).
- *          Returns an empty array for unknown countries.
- */
 export function getAvailablePaymentMethods(countryCode: string): string[] {
   const country = getCountryByCode(countryCode);
-  return country ? [...country.paymentProviders] : [];
+  if (!country) return [];
+  return country.paymentProviders.map((provider) => PAYMENT_PROVIDER_ALIASES[provider] ?? canonicalizeProvider(provider));
 }
 
-/**
- * Format a price amount as a localised currency string.
- *
- * Uses `Intl.NumberFormat` with the country's locale and currency.
- * Falls back to `'en-US'` locale and `'EUR'` currency when unavailable.
- *
- * @param amount       - Numeric amount to format.
- * @param currencyCode - ISO 4217 currency code (e.g. `'XOF'`, `'EUR'`).
- * @param locale       - Optional BCP 47 locale override.
- * @returns A formatted string (e.g. `'9,99 €'`, `'5 000 XOF'`).
- */
-export function formatPrice(
-  amount: number,
-  currencyCode: string,
-  locale?: string,
-): string {
- const resolvedLocale = locale ?? 'en-US';
+export function canonicalizeProvider(provider: string): string {
+  const trimmed = provider.trim();
+  return PAYMENT_PROVIDER_ALIASES[trimmed] ?? trimmed.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+}
 
+export function formatPrice(amount: number, currencyCode: string, locale?: string): string {
+  const resolvedLocale = locale ?? 'en-US';
   try {
     const formatter = new Intl.NumberFormat(resolvedLocale, {
       style: 'currency',
@@ -156,16 +106,10 @@ export function formatPrice(
     });
     return formatter.format(amount);
   } catch {
-    // Fallback for unsupported currency codes
     return `${amount.toFixed(2)} ${currencyCode}`;
   }
 }
 
-// ─── Internal helpers ───────────────────────────────────────────────────────
-
-/**
- * Find a country by code from the countries data.
- */
 function getCountryByCode(code: string): Country | undefined {
-  return countries.find((c) => c.code === code);
+  return countries.find((c) => c.code === code.toUpperCase());
 }
