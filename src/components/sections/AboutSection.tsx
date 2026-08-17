@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ShieldCheck, Heart, Brain, Globe2, Users, Route, Award, Building2 } from 'lucide-react';
+import { ShieldCheck, Heart, Brain, Globe2, Users, Route, Award, Building2, Network } from 'lucide-react';
 
 const pillars = [
   { icon: Brain, title: 'Apprendre et maîtriser', text: 'Des parcours adaptés au pays, au permis, au niveau et aux besoins de chaque utilisateur.' },
@@ -23,6 +23,23 @@ export default function AboutSection() {
           <p className="mt-6 text-slate-300 leading-8">
             ADSO est une plateforme numérique d'apprentissage, de prévention et d'accompagnement de la mobilité. Elle prépare les citoyens aux réalités de la circulation, mesure leur progression et met l'intelligence artificielle au service de l'apprentissage, de la sécurité et de la prévention.
           </p>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} className="mt-10 rounded-3xl border border-emerald-500/20 bg-emerald-500/5 p-6 sm:p-8">
+          <div className="flex items-start gap-4">
+            <div className="shrink-0 w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center"><Network className="w-6 h-6" /></div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Un produit de NDSA</p>
+              <h3 className="mt-2 text-xl sm:text-2xl font-bold">Neo Digital Startup Academy (NDSA)</h3>
+              <p className="mt-3 text-sm sm:text-base leading-7 text-slate-300">
+                ADSO est un produit de Neo Digital Startup Academy (NDSA). Il s'inscrit dans un portefeuille de solutions numériques dont le premier produit est <strong>GMBCore-OS — Global Marketing Business Core Optimization System</strong>, une application d'automatisation de la présentation des produits et de l'opportunité MLM/NeoLife.
+              </p>
+              <p className="mt-3 text-sm leading-6 text-slate-400">
+                GMBCore-OS fournit notamment un Smart Link personnalisé à chaque distributeur afin de renforcer sa présence numérique et de faciliter la présentation internationale de son activité, au-delà des frontières et des barrières linguistiques.
+              </p>
+              <a href="https://gmbcoreos.com/s/coachjose/" target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/15 transition-colors">Découvrir un Smart Link GMBCore-OS</a>
+            </div>
+          </div>
         </motion.div>
 
         <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
