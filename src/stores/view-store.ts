@@ -5,16 +5,11 @@ export type LearningTab = 'explorer' | 'cours' | 'programme' | 'signalisation' |
 export type AppModule =
   | 'home'
   | 'learning'
-  | 'mechanic'
-  | 'scanner'
-  | 'telematics'
-  | 'security'
-  | 'marketplace'
   | 'driving'
+  | 'security'
   | 'insurance'
   | 'fleet'
-  | 'enterprise'
-  | 'blueprint';
+  | 'enterprise';
 
 interface ViewState {
   currentView: AppModule;
@@ -35,23 +30,16 @@ export const useViewStore = create<ViewState>((set) => ({
 
 export const moduleLabels: Record<AppModule, { label: string; icon: string; description: string }> = {
   home: { label: 'Accueil', icon: 'Home', description: "Page d'accueil ADSO" },
-  learning: { label: 'Formation', icon: 'GraduationCap', description: "Plateforme d'apprentissage" },
-  driving: { label: 'Conduite IA', icon: 'Car', description: 'Moniteur de conduite intelligent' },
-  mechanic: { label: 'Mécanicien IA', icon: 'Wrench', description: 'Diagnostic mécanique intelligent' },
-  scanner: { label: 'Scanner', icon: 'Scan', description: 'Scanner véhicule OBD-II' },
-  telematics: { label: 'Télématique', icon: 'MapPin', description: 'Suivi GPS et télématique' },
-  security: { label: 'Sécurité', icon: 'Shield', description: 'Sécurité véhicule' },
-  marketplace: { label: 'Marketplace', icon: 'Store', description: 'Marketplace services auto' },
-  insurance: { label: 'Assurance IA', icon: 'ShieldCheck', description: "Plateforme d'assurance intelligente" },
-  fleet: { label: 'Flotte', icon: 'Truck', description: 'Gestion de flotte' },
-  enterprise: { label: 'Entreprise', icon: 'Building2', description: "Plateforme d'entreprise" },
-  blueprint: { label: 'Architecture', icon: 'FileCode', description: 'Blueprint technique' },
+  learning: { label: 'Éducation routière', icon: 'GraduationCap', description: "Parcours de l'école au futur conducteur" },
+  driving: { label: 'Conducteur', icon: 'Car', description: 'Préparation et accompagnement du conducteur' },
+  security: { label: 'Sécurité', icon: 'Shield', description: 'Prévention et culture de sécurité routière' },
+  insurance: { label: 'Assurance', icon: 'ShieldCheck', description: "Services de prévention autour de l'assurance" },
+  fleet: { label: 'Flottes', icon: 'Truck', description: 'Formation et pilotage des conducteurs professionnels' },
+  enterprise: { label: 'Établissements & entreprises', icon: 'Building2', description: 'Solutions ADSO pour écoles, entreprises et opérateurs de mobilité' },
 };
 
 export const mainModules: AppModule[] = [
-  'home', 'learning', 'driving', 'mechanic', 'scanner',
-  'telematics', 'security', 'marketplace', 'insurance',
-  'fleet', 'enterprise',
+  'home', 'learning', 'driving', 'security', 'insurance', 'fleet', 'enterprise',
 ];
 
 export const v41Modules: AppModule[] = ['driving', 'insurance', 'fleet', 'enterprise'];
