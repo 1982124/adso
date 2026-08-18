@@ -18,7 +18,7 @@ import RoadmapSection from '@/components/sections/RoadmapSection';
 import SecuritySection from '@/components/sections/SecuritySection';
 import AnalyticsSection from '@/components/sections/AnalyticsSection';
 import AboutSection from '@/components/sections/AboutSection';
-
+import ADSOExperienceSection from '@/components/ADSOExperienceSection';
 import LearningPlatform from '@/components/modules/learning/LearningPlatform';
 
 const AIDrivingModule = dynamic(() => import('@/components/modules/v41/AIDrivingModule'), { ssr: false, loading: () => <ModuleLoader label="Conduite IA" /> });
@@ -30,14 +30,11 @@ function ModuleLoader({ label }: { label: string }) { return <div className="min
 
 export default function Home() {
   const { currentView } = useViewStore();
-
   useEffect(() => {
     if (currentView !== 'home') return;
     const frame = window.requestAnimationFrame(() => {
       window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-      if (window.location.hash) {
-        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
-      }
+      if (window.location.hash) window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
     });
     return () => window.cancelAnimationFrame(frame);
   }, [currentView]);
@@ -46,9 +43,7 @@ export default function Home() {
 }
 
 function HomeView() {
-  return <><HeroSection /><AboutSection /><StatsSection /><EcosystemSection /><AIFeaturesSection /><QuizSection /><AIChatSection /><AnalyticsSection /><PricingSection /><RoadmapSection /><SecuritySection /></>;
+  return <><HeroSection /><ADSOExperienceSection /><AboutSection /><StatsSection /><EcosystemSection /><AIFeaturesSection /><QuizSection /><AIChatSection /><AnalyticsSection /><PricingSection /><RoadmapSection /><SecuritySection /></>;
 }
 
-function SecurityModuleView() {
-  return <SecuritySection />;
-}
+function SecurityModuleView() { return <SecuritySection />; }
