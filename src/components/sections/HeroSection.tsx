@@ -3,12 +3,13 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, GraduationCap, ShieldCheck, Building2, PlayCircle, UserRound, School2 } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { FrancoiseAssistant } from '@/components/FrancoiseAssistant';
 import { useViewStore, type LearningTab } from '@/stores/view-store';
 
 const fadeInUp = { hidden: { opacity: 0, y: 24 }, visible: (i: number) => ({ opacity: 1, y: 0, transition: { delay: i * 0.1, duration: 0.55, ease: 'easeOut' as const } }) };
+
+const HERO_PHOTO = 'https://images.pexels.com/photos/6173272/pexels-photo-6173272.jpeg?auto=compress&cs=tinysrgb&w=1800';
 
 const pillars: { icon: typeof GraduationCap; label: string; tab: LearningTab }[] = [
   { icon: GraduationCap, label: 'Élèves · culture de la circulation', tab: 'programme' },
@@ -56,8 +57,15 @@ export default function HeroSection() {
         <motion.div id="immersive" custom={6} variants={fadeInUp} initial="hidden" animate="visible" className="relative">
           <div className="absolute -inset-3 rounded-[2rem] bg-emerald-400/10 blur-2xl" aria-hidden="true" />
           <div className="relative overflow-hidden rounded-[2rem] border border-white/15 bg-white/5 p-2 shadow-2xl backdrop-blur">
-            <Image src="/adso-immersive-scene.svg" alt="Scène immersive ADSO : élève près d'une école, panneau de traversée d'élèves, moto sans casque et parent qui alerte sur le danger" width={1200} height={760} priority className="h-auto w-full rounded-[1.5rem]" />
-            <div className="absolute bottom-6 left-6 right-6 flex flex-col gap-2 rounded-2xl border border-white/15 bg-slate-950/90 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-wider text-emerald-300">ADSO Immersif</p><p className="font-bold text-white">Observe → Décide → Vois la conséquence</p></div><Link href="/student" className="text-sm font-bold text-emerald-300 hover:text-emerald-200">Commencer →</Link></div>
+            <div className="relative aspect-[4/3] overflow-hidden rounded-[1.5rem] bg-slate-900">
+              <img src={HERO_PHOTO} alt="Conducteur africain au volant d'un véhicule sur une route, photographie réaliste" className="h-full w-full object-cover" fetchPriority="high" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/15 to-transparent" aria-hidden="true" />
+              <div className="absolute left-5 top-5 rounded-2xl border border-white/20 bg-slate-950/75 px-4 py-3 backdrop-blur-md">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-300">ADSO Immersif</p>
+                <p className="mt-1 text-sm font-bold text-white">Une vraie situation. Une vraie décision.</p>
+              </div>
+              <div className="absolute bottom-5 left-5 right-5 flex flex-col gap-2 rounded-2xl border border-white/15 bg-slate-950/90 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-wider text-emerald-300">Photographie réelle</p><p className="font-bold text-white">Observe → Décide → Vois la conséquence</p></div><Link href="/student" className="text-sm font-bold text-emerald-300 hover:text-emerald-200">Commencer →</Link></div>
+            </div>
           </div>
         </motion.div>
       </div>
