@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Car, Info, Home, GraduationCap, Shield, Truck, Building2, LayoutDashboard, Globe2 } from 'lucide-react';
+import { Menu, X, Car, Home, GraduationCap, Shield, Truck, Building2, LayoutDashboard, Globe2, Mic } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { FrancoiseAssistant } from '@/components/FrancoiseAssistant';
@@ -17,9 +17,7 @@ const homeNavLinks = [
   { label: 'Roadmap', href: '#roadmap' },
 ];
 
-const moduleIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-  Home, GraduationCap, Car, Shield, Truck, Building2,
-};
+const moduleIcons: Record<string, React.ComponentType<{ className?: string }>> = { Home, GraduationCap, Car, Shield, Truck, Building2 };
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -47,64 +45,45 @@ export default function Navbar() {
     if (currentView !== 'home') setView('home');
     setTimeout(() => document.querySelector(href)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
   };
-
-  const handleModuleClick = (module: AppModule) => {
-    setIsMobileOpen(false);
-    setView(module);
-  };
-
+  const handleModuleClick = (module: AppModule) => { setIsMobileOpen(false); setView(module); };
   const navBg = isScrolled ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-slate-200' : 'bg-transparent';
   const textPrimary = isScrolled ? 'text-slate-900' : 'text-white';
   const textSecondary = isScrolled ? 'text-slate-600' : 'text-white/80';
   const hoverBg = isScrolled ? 'hover:text-slate-900 hover:bg-slate-100' : 'hover:text-white hover:bg-white/10';
-  // Africa-first: keep the primary navigation focused on learning, safety and professional mobility.
   const coreDesktopMods: AppModule[] = ['home', 'learning', 'driving', 'security', 'fleet', 'enterprise'];
 
   return <>
-    <motion.nav initial={{ y: -100 }} animate={{ y: 0 }} transition={{ duration: 0.6, ease: 'easeOut' }} className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navBg}`}>
-      <div className="max-w-[1400px] mx-auto px-3 sm:px-4 lg:px-6">
-        <div className="flex items-center justify-between h-14 lg:h-16">
-          <button type="button" onClick={() => setView('home')} className="flex items-center gap-2 group shrink-0" aria-label="ADSO Accueil">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-600 group-hover:bg-emerald-700 transition-colors"><Car className="w-5 h-5 text-white" /></div>
+    <motion.nav initial={{ y: -100 }} animate={{ y: 0 }} transition={{ duration: 0.6, ease: 'easeOut' }} className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${navBg}`}>
+      <div className="mx-auto w-full max-w-[1400px] px-3 sm:px-4 lg:px-6">
+        <div className="flex h-14 items-center justify-between lg:h-16">
+          <button type="button" onClick={() => setView('home')} className="flex shrink-0 items-center gap-2 group" aria-label="ADSO Accueil">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 transition-colors group-hover:bg-emerald-700"><Car className="h-5 w-5 text-white" /></div>
             <span className={`text-lg font-bold tracking-tight ${textPrimary}`}>ADSO</span>
-            {!isHome && <span className="hidden sm:inline-flex ml-2 px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/20 text-emerald-600">{moduleLabels[currentView]?.label}</span>}
+            {!isHome && <span className="ml-2 hidden rounded bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-600 sm:inline-flex">{moduleLabels[currentView]?.label}</span>}
           </button>
 
-          <div className="hidden lg:flex items-center gap-0.5">
-            {coreDesktopMods.map((mod) => {
-              const Icon = moduleIcons[moduleLabels[mod]?.icon || 'Home'];
-              const isActive = currentView === mod;
-              return <button type="button" key={mod} onClick={() => handleModuleClick(mod)} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium transition-all ${isActive ? isScrolled ? 'bg-emerald-50 text-emerald-700' : 'bg-white/15 text-white' : `${textSecondary} ${hoverBg}`}`}><Icon className="w-4 h-4" /><span>{moduleLabels[mod]?.label}</span></button>;
-            })}
-            <button type="button" onClick={() => handleNavClick('#international')} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium transition-all ${textSecondary} ${hoverBg}`}><Globe2 className="w-4 h-4" /><span>Afrique</span></button>
+          <div className="hidden items-center gap-0.5 lg:flex">
+            {coreDesktopMods.map((mod) => { const Icon = moduleIcons[moduleLabels[mod]?.icon || 'Home']; const isActive = currentView === mod; return <button type="button" key={mod} onClick={() => handleModuleClick(mod)} className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition-all ${isActive ? isScrolled ? 'bg-emerald-50 text-emerald-700' : 'bg-white/15 text-white' : `${textSecondary} ${hoverBg}`}`}><Icon className="h-4 w-4"/><span>{moduleLabels[mod]?.label}</span></button>; })}
+            <button type="button" onClick={() => handleNavClick('#international')} className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition-all ${textSecondary} ${hoverBg}`}><Globe2 className="h-4 w-4"/><span>Afrique</span></button>
           </div>
 
-          <div className="flex items-center gap-2">
-            {isHome ? <Button size="sm" className="hidden md:inline-flex bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setView('learning')}>Commencer la formation</Button> : null}
-            <button type="button" onClick={() => setIsMobileOpen(v => !v)} className={`lg:hidden p-2 rounded-md transition-colors ${textSecondary}`} aria-label={isMobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'}>{isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}</button>
+          <div className="flex items-center gap-1">
+            {isHome && <Button size="sm" className="hidden bg-emerald-600 text-white hover:bg-emerald-700 md:inline-flex" onClick={() => setView('learning')}>Commencer la formation</Button>}
+            <div className="lg:hidden"><FrancoiseAssistant floating={false} compact /></div>
+            <button type="button" onClick={() => setIsMobileOpen(v => !v)} className={`rounded-full p-2 transition-colors ${textSecondary} ${hoverBg}`} aria-label={isMobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'}>{isMobileOpen ? <X className="h-5 w-5"/> : <Menu className="h-5 w-5"/>}</button>
           </div>
         </div>
       </div>
     </motion.nav>
 
     <AnimatePresence>
-      {isMobileOpen && <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="fixed inset-0 z-40 lg:hidden">
+      {isMobileOpen && <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="fixed inset-0 z-40 lg:hidden">
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileOpen(false)} />
-        <div className="absolute top-14 left-0 right-0 shadow-xl border-b max-h-[85vh] overflow-y-auto bg-white border-slate-200">
-          <div className="px-4 py-3 space-y-1">
-            <section className="mb-3 rounded-2xl border border-emerald-400/25 bg-emerald-500/[0.07] p-3" aria-label="Françoise">
-              <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-600">Assistante ADSO</p>
-              <FrancoiseAssistant />
-            </section>
-
-            <Link href="/admin" onClick={() => setIsMobileOpen(false)} className="flex w-full items-center gap-3 rounded-xl border border-amber-400/30 bg-amber-400/[0.08] px-4 py-3 text-sm font-bold text-amber-700 transition hover:bg-amber-400/[0.15]">
-              <LayoutDashboard className="h-5 w-5" aria-hidden="true" />
-              <span>Cockpit Admin</span>
-              <span className="ml-auto text-xs font-normal text-amber-600">Direction</span>
-            </Link>
-
-            {mainModules.filter((mod) => mod !== 'insurance').map((mod) => { const Icon = moduleIcons[moduleLabels[mod]?.icon || 'Home']; const isActive = currentView === mod; return <button type="button" key={mod} onClick={() => handleModuleClick(mod)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium ${isActive ? 'text-emerald-700 bg-emerald-50' : 'text-slate-700 hover:bg-slate-100'}`}><Icon className="w-5 h-5" /><span>{moduleLabels[mod]?.label}</span></button>; })}
-            {isHome && <><div className="pt-2 mt-2 border-t border-slate-100"><p className="px-4 py-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">Explorer ADSO</p></div>{homeNavLinks.map((link) => <button type="button" key={link.href} onClick={() => handleNavClick(link.href)} className={`w-full text-left px-4 py-2.5 pl-8 rounded-lg text-sm ${activeSection === link.href.replace('#', '') ? 'text-emerald-700 bg-emerald-50' : 'text-slate-600 hover:bg-slate-100'}`}>{link.label}</button>)}<div className="pt-2 mt-2 border-t border-slate-100"><Button type="button" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleModuleClick('learning')}>Commencer la formation</Button></div></>}
+        <div className="absolute left-0 right-0 top-14 max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-b border-slate-200 bg-white shadow-xl">
+          <div className="space-y-1 px-4 py-3">
+            <Link href="/admin" onClick={() => setIsMobileOpen(false)} className="flex w-full items-center gap-3 rounded-xl border border-amber-400/30 bg-amber-400/[0.08] px-4 py-3 text-sm font-bold text-amber-700 transition hover:bg-amber-400/[0.15]"><LayoutDashboard className="h-5 w-5" aria-hidden="true"/><span>Cockpit Admin</span><span className="ml-auto text-xs font-normal text-amber-600">Direction</span></Link>
+            {mainModules.filter((mod) => mod !== 'insurance').map((mod) => { const Icon = moduleIcons[moduleLabels[mod]?.icon || 'Home']; const isActive = currentView === mod; return <button type="button" key={mod} onClick={() => handleModuleClick(mod)} className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium ${isActive ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-100'}`}><Icon className="h-5 w-5"/><span>{moduleLabels[mod]?.label}</span></button>; })}
+            {isHome && <><div className="mt-2 border-t border-slate-100 pt-2"><p className="px-4 py-1 text-xs font-semibold uppercase tracking-wider text-slate-400">Explorer ADSO</p></div>{homeNavLinks.map((link) => <button type="button" key={link.href} onClick={() => handleNavClick(link.href)} className={`w-full rounded-lg px-4 py-2.5 pl-8 text-left text-sm ${activeSection === link.href.replace('#', '') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-100'}`}>{link.label}</button>)}<div className="mt-2 border-t border-slate-100 pt-2"><Button type="button" className="w-full bg-emerald-600 text-white hover:bg-emerald-700" onClick={() => handleModuleClick('learning')}>Commencer la formation</Button></div></>}
           </div>
         </div>
       </motion.div>}
