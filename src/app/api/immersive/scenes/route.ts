@@ -33,10 +33,11 @@ async function ensureTables() {
 }
 
 export async function GET() {
+  // Published scenes are intentionally public so the immersive library does not
+  // appear empty to a visitor. Drafts remain visible only to their creator.
   const session = await getSession();
-  if (!session?.user) return NextResponse.json({ error: 'Authentification requise' }, { status: 401 });
   try {
-    await ensureTables();
+    const userId = session?.user ? getUserId(session) : null;
     const scenes = await db.$queryRawUnsafe(`
       SELECT s.*, COALESCE(json_agg(json_build_object(
         'id', i.id, 'type', i.type, 'atSecond', i."atSecond", 'prompt', i.prompt,
@@ -50,8 +51,10 @@ export async function GET() {
       FROM "ImmersiveScene" s LEFT JOIN "ImmersiveInteraction" i ON i."sceneId" = s.id
       WHERE s.status = 'published' OR s."createdById" = $1
       GROUP BY s.id ORDER BY s."order", s."createdAt" DESC
-    `, getUserId(session));
-    return NextResponse.json({ scenes });
+    `, userId);
+    return NextResponse.json({ scenes }, {
+      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
+    });
   } catch (error) {
     console.error('[immersive/scenes GET]', error);
     return NextResponse.json({ error: 'Impossible de charger les scènes' }, { status: 500 });
