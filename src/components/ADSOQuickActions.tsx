@@ -15,11 +15,16 @@ const actions: Action[] = [
 export function ADSOQuickActions() {
   const setView = useViewStore((state) => state.setView);
   const setLearningTab = useViewStore((state) => state.setLearningTab);
+  const currentView = useViewStore((state) => state.currentView);
 
   const openLearning = (tab: LearningTab) => {
     setLearningTab(tab);
     setView('learning');
   };
+
+  // On Home, never place a floating control over editorial content, images or calls to action.
+  // Quick actions belong to the learning workspace where they are useful and expected.
+  if (currentView === 'home') return null;
 
   const share = async () => {
     const data = {
@@ -32,16 +37,10 @@ export function ADSOQuickActions() {
   };
 
   return (
-    <nav aria-label="Accès rapide ADSO" data-tts-ignore="true" className="fixed bottom-20 left-4 z-[9998] max-w-[calc(100vw-6rem)] print:hidden sm:bottom-4">
-      <div className="flex items-center gap-1.5 overflow-x-auto rounded-full border border-slate-700/80 bg-slate-950/90 p-1.5 shadow-2xl backdrop-blur-xl">
+    <nav aria-label="Accès rapide ADSO" data-tts-ignore="true" className="fixed bottom-4 left-1/2 z-[9998] w-[min(760px,calc(100vw-1rem))] -translate-x-1/2 print:hidden">
+      <div className="flex items-center justify-center gap-1.5 overflow-x-auto rounded-full border border-slate-700/80 bg-slate-950/90 p-1.5 shadow-2xl backdrop-blur-xl">
         {actions.map(({ tab, label, icon: Icon }) => (
-          <button
-            key={tab}
-            type="button"
-            onClick={() => openLearning(tab)}
-            title={label}
-            className="flex min-h-10 shrink-0 items-center gap-2 rounded-full px-3 text-xs font-semibold text-slate-300 transition hover:bg-emerald-500/15 hover:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-400"
-          >
+          <button key={tab} type="button" onClick={() => openLearning(tab)} title={label} className="flex min-h-10 shrink-0 items-center gap-2 rounded-full px-3 text-xs font-semibold text-slate-300 transition hover:bg-emerald-500/15 hover:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-400">
             <Icon className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">{label}</span>
           </button>
         ))}
