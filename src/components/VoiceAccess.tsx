@@ -22,30 +22,22 @@ type SpeechWindow = Window & {
 
 const PRESENTATION: Array<{ view: AppModule; text: string }> = [
   { view: "home", text: "Voici l'accueil ADSO, le point de départ de votre expérience." },
-  { view: "learning", text: "Voici Formation, le cœur de la plateforme : cours, signalisation, réglementations, permis, examens et progression." },
-  { view: "driving", text: "Voici Conduite IA, pour apprendre et améliorer sa conduite avec un accompagnement intelligent." },
-  { view: "mechanic", text: "Voici Mécanicien IA, pour comprendre les problèmes et le diagnostic du véhicule." },
-  { view: "scanner", text: "Voici Scanner, pour exploiter les informations compatibles OBD deux du véhicule." },
-  { view: "telematics", text: "Voici Télématique, pour exploiter les données de trajet et contribuer à une mobilité plus sûre." },
-  { view: "security", text: "Voici Sécurité, dédiée à la prévention et aux bonnes pratiques de sécurité automobile." },
-  { view: "marketplace", text: "Voici Marketplace, où les services et partenaires de l'écosystème automobile peuvent être présentés." },
-  { view: "insurance", text: "Voici Assurance IA, pour les usages intelligents autour de l'assurance automobile." },
-  { view: "fleet", text: "Voici Flotte, pour organiser et piloter les véhicules professionnels." },
-  { view: "enterprise", text: "Voici Entreprise, pour les écoles, entreprises et opérateurs de mobilité." },
+  { view: "learning", text: "Voici Formation, le cœur de la plateforme : éducation routière, signalisation, réglementations, permis, examens et progression." },
+  { view: "driving", text: "Voici Conducteur, pour apprendre et améliorer sa conduite avec un accompagnement intelligent." },
+  { view: "security", text: "Voici Sécurité, dédiée à la prévention et à la culture de sécurité routière." },
+  { view: "insurance", text: "Voici Assurance, pour les usages de prévention autour de l'assurance automobile." },
+  { view: "fleet", text: "Voici Flottes, pour former et piloter les conducteurs professionnels." },
+  { view: "enterprise", text: "Voici Établissements et entreprises, pour les écoles, entreprises et opérateurs de mobilité." },
 ];
 
 const MODULE_ALIASES: Array<{ view: AppModule; words: string[] }> = [
   { view: "home", words: ["accueil", "home", "départ"] },
   { view: "learning", words: ["formation", "cours", "apprentissage", "signalisation", "permis", "examens"] },
-  { view: "driving", words: ["conduite ia", "conduite", "moniteur ia"] },
-  { view: "mechanic", words: ["mécanicien ia", "mécanicien", "mecanicien", "diagnostic"] },
-  { view: "scanner", words: ["scanner", "obd", "obd deux", "obd 2"] },
-  { view: "telematics", words: ["télématique", "telematique", "gps", "trajet"] },
+  { view: "driving", words: ["conduite ia", "conduite", "moniteur ia", "conducteur"] },
   { view: "security", words: ["sécurité", "securite", "prévention routière", "prevention routiere"] },
-  { view: "marketplace", words: ["marketplace", "publicité", "publicite", "partenaire"] },
   { view: "insurance", words: ["assurance", "assurance ia", "assureur"] },
-  { view: "fleet", words: ["flotte", "gestion de flotte", "véhicules professionnels"] },
-  { view: "enterprise", words: ["entreprise", "municipalité", "municipalite", "école", "ecole"] },
+  { view: "fleet", words: ["flotte", "flottes", "gestion de flotte", "véhicules professionnels"] },
+  { view: "enterprise", words: ["entreprise", "établissement", "établissements", "municipalité", "municipalite", "école", "ecole"] },
 ];
 
 function normalize(text: string) {
@@ -152,7 +144,7 @@ export function VoiceAccess() {
       return;
     }
 
-    speak(`J'ai entendu : ${raw}. Vous pouvez me demander d'ouvrir Formation, Conduite IA, Mécanicien IA, Scanner, Télématique, Sécurité, Marketplace, Assurance, Flotte ou Entreprise, ou dire : présente-moi ADSO.`);
+    speak(`J'ai entendu : ${raw}. Vous pouvez me demander d'ouvrir Formation, Conducteur, Sécurité, Assurance, Flottes ou Établissements, ou dire : présente-moi ADSO.`);
   };
 
   const toggle = () => {
