@@ -7,7 +7,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ViewErrorBoundary from '@/components/ViewErrorBoundary';
 import ChunkLoadRecovery from '@/components/ChunkLoadRecovery';
-import HeroSection from '@/components/sections/HeroSection';
+import HeroRealisticHome from '@/components/sections/HeroRealisticHome';
 import StatsSection from '@/components/sections/StatsSection';
 import EcosystemSection from '@/components/sections/EcosystemSection';
 import AIFeaturesSection from '@/components/sections/AIFeaturesSection';
@@ -26,7 +26,7 @@ const InsuranceModule = dynamic(() => import('@/components/modules/v41/Insurance
 const FleetModule = dynamic(() => import('@/components/modules/v41/FleetModule'), { ssr: false, loading: () => <ModuleLoader label="Gestion de Flotte" /> });
 const EnterpriseModule = dynamic(() => import('@/components/modules/v41/EnterpriseModule'), { ssr: false, loading: () => <ModuleLoader label="Entreprise" /> });
 
-function ModuleLoader({ label }: { label: string }) { return <div className="min-h-[60vh] flex items-center justify-center"><div className="text-center space-y-3"><div className="w-10 h-10 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto" /><p className="text-slate-500 text-sm">Chargement {label}...</p></div></div>; }
+function ModuleLoader({ label }: { label: string }) { return <div className="min-h-[60vh] flex items-center justify-center"><div className="text-center space-y-3"><div className="w-10 h-10 border-3 border-emerald-600 border-t-transparent rounded-full mx-auto animate-spin" /><p className="text-slate-500 text-sm">Chargement {label}...</p></div></div>; }
 
 export default function Home() {
   const { currentView } = useViewStore();
@@ -43,7 +43,7 @@ export default function Home() {
 }
 
 function HomeView() {
-  return <><HeroSection /><ADSOExperienceSection /><AboutSection /><StatsSection /><EcosystemSection /><AIFeaturesSection /><QuizSection /><AIChatSection /><AnalyticsSection /><PricingSection /><RoadmapSection /><SecuritySection /></>;
+  return <><HeroRealisticHome /><ADSOExperienceSection /><AboutSection /><StatsSection /><EcosystemSection /><AIFeaturesSection /><QuizSection /><AIChatSection /><AnalyticsSection /><PricingSection /><RoadmapSection /><SecuritySection /></>;
 }
 
 function SecurityModuleView() { return <SecuritySection />; }
