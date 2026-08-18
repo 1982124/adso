@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Globe, Car, ShieldCheck, BookOpen, GraduationCap, Shield, Truck, Building2, ArrowRight, MapPin, Sparkles } from 'lucide-react';
+import { Car, ShieldCheck, GraduationCap, Shield, Truck, Building2, ArrowRight, MapPin, Sparkles } from 'lucide-react';
 import { useViewStore, type AppModule, type LearningTab } from '@/stores/view-store';
 import { useLocaleStore } from '@/stores/locale-store';
 import CountryExplorer from './CountryExplorer';
@@ -13,10 +13,10 @@ import CoursesView from './CoursesView';
 import RoadSignsLibrary from './RoadSignsLibrary';
 import SchoolProgram from './SchoolProgram';
 import RegulationsView from './RegulationsView';
+import RealWorldScenes from './RealWorldScenes';
 
 const LicenseBrowser = dynamic(() => import('./LicenseBrowser'), { ssr: false, loading: () => <TabLoader /> });
 const ExamPlatform = dynamic(() => import('./ExamPlatform'), { ssr: false, loading: () => <TabLoader /> });
-const PracticalExercises = dynamic(() => import('./PracticalExercises'), { ssr: false, loading: () => <TabLoader /> });
 const ProgressDashboard = dynamic(() => import('./ProgressDashboard'), { ssr: false, loading: () => <TabLoader /> });
 
 function TabLoader() { return <div className="flex items-center justify-center py-16"><div className="text-center space-y-3"><div className="h-8 w-8 animate-spin rounded-full border-[3px] border-emerald-600 border-t-transparent mx-auto" /><p className="text-sm text-slate-500">Chargement...</p></div></div>; }
@@ -88,7 +88,7 @@ export default function LearningPlatform() {
           </TabsList>
         </div>
         <TabsContent value="cours"><CoursesView /></TabsContent>
-        <TabsContent value="exercices"><PracticalExercises /></TabsContent>
+        <TabsContent value="exercices"><RealWorldScenes /></TabsContent>
         <TabsContent value="examens"><ExamPlatform /></TabsContent>
         <TabsContent value="progression"><ProgressDashboard /></TabsContent>
         <TabsContent value="signalisation"><RoadSignsLibrary /></TabsContent>
