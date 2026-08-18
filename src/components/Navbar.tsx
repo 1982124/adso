@@ -2,25 +2,23 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Car, Info, Home, GraduationCap, Shield, ShieldCheck, Truck, Building2, LayoutDashboard } from 'lucide-react';
+import { Menu, X, Car, Info, Home, GraduationCap, Shield, Truck, Building2, LayoutDashboard, Globe2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { FrancoiseAssistant } from '@/components/FrancoiseAssistant';
 import { useViewStore, type AppModule, mainModules, moduleLabels } from '@/stores/view-store';
 
 const homeNavLinks = [
-  { label: 'Qui sommes-nous ?', href: '#about' },
   { label: 'Pourquoi ADSO ?', href: '#stats' },
-  { label: 'Notre chaîne de valeur', href: '#ecosystem' },
-  { label: 'Expérience immersive', href: '#ai-features' },
-  { label: 'Quiz', href: '#quiz' },
-  { label: 'IA Coach', href: '#ai-chat' },
+  { label: 'ADSO Immersif', href: '#ai-features' },
+  { label: 'Éducation routière', href: '#ecosystem' },
   { label: 'Tarifs', href: '#pricing' },
+  { label: 'Afrique First', href: '#international' },
   { label: 'Roadmap', href: '#roadmap' },
 ];
 
 const moduleIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-  Home, GraduationCap, Car, Shield, ShieldCheck, Truck, Building2,
+  Home, GraduationCap, Car, Shield, Truck, Building2,
 };
 
 export default function Navbar() {
@@ -34,7 +32,7 @@ export default function Navbar() {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
       if (!isHome) return;
-      const sections = ['about', 'stats', 'ecosystem', 'ai-features', 'quiz', 'ai-chat', 'pricing', 'roadmap'];
+      const sections = ['stats', 'ai-features', 'ecosystem', 'pricing', 'international', 'roadmap'];
       for (let i = sections.length - 1; i >= 0; i--) {
         const el = document.getElementById(sections[i]);
         if (el && el.getBoundingClientRect().top <= 120) { setActiveSection(sections[i]); break; }
@@ -59,7 +57,8 @@ export default function Navbar() {
   const textPrimary = isScrolled ? 'text-slate-900' : 'text-white';
   const textSecondary = isScrolled ? 'text-slate-600' : 'text-white/80';
   const hoverBg = isScrolled ? 'hover:text-slate-900 hover:bg-slate-100' : 'hover:text-white hover:bg-white/10';
-  const coreDesktopMods: AppModule[] = ['home', 'learning', 'driving', 'security', 'insurance', 'fleet', 'enterprise'];
+  // Africa-first: keep the primary navigation focused on learning, safety and professional mobility.
+  const coreDesktopMods: AppModule[] = ['home', 'learning', 'driving', 'security', 'fleet', 'enterprise'];
 
   return <>
     <motion.nav initial={{ y: -100 }} animate={{ y: 0 }} transition={{ duration: 0.6, ease: 'easeOut' }} className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navBg}`}>
@@ -77,7 +76,7 @@ export default function Navbar() {
               const isActive = currentView === mod;
               return <button type="button" key={mod} onClick={() => handleModuleClick(mod)} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium transition-all ${isActive ? isScrolled ? 'bg-emerald-50 text-emerald-700' : 'bg-white/15 text-white' : `${textSecondary} ${hoverBg}`}`}><Icon className="w-4 h-4" /><span>{moduleLabels[mod]?.label}</span></button>;
             })}
-            <button type="button" onClick={() => handleNavClick('#about')} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium transition-all ${textSecondary} ${hoverBg}`}><Info className="w-4 h-4" /><span>À propos</span></button>
+            <button type="button" onClick={() => handleNavClick('#international')} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium transition-all ${textSecondary} ${hoverBg}`}><Globe2 className="w-4 h-4" /><span>Afrique</span></button>
           </div>
 
           <div className="flex items-center gap-2">
@@ -104,8 +103,8 @@ export default function Navbar() {
               <span className="ml-auto text-xs font-normal text-amber-600">Direction</span>
             </Link>
 
-            {mainModules.map((mod) => { const Icon = moduleIcons[moduleLabels[mod]?.icon || 'Home']; const isActive = currentView === mod; return <button type="button" key={mod} onClick={() => handleModuleClick(mod)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium ${isActive ? 'text-emerald-700 bg-emerald-50' : 'text-slate-700 hover:bg-slate-100'}`}><Icon className="w-5 h-5" /><span>{moduleLabels[mod]?.label}</span></button>; })}
-            {isHome && <><div className="pt-2 mt-2 border-t border-slate-100"><p className="px-4 py-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">Navigation</p></div>{homeNavLinks.map((link) => <button type="button" key={link.href} onClick={() => handleNavClick(link.href)} className={`w-full text-left px-4 py-2.5 pl-8 rounded-lg text-sm ${activeSection === link.href.replace('#', '') ? 'text-emerald-700 bg-emerald-50' : 'text-slate-600 hover:bg-slate-100'}`}>{link.label}</button>)}<div className="pt-2 mt-2 border-t border-slate-100"><Button type="button" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleModuleClick('learning')}>Commencer la formation</Button></div></>}
+            {mainModules.filter((mod) => mod !== 'insurance').map((mod) => { const Icon = moduleIcons[moduleLabels[mod]?.icon || 'Home']; const isActive = currentView === mod; return <button type="button" key={mod} onClick={() => handleModuleClick(mod)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium ${isActive ? 'text-emerald-700 bg-emerald-50' : 'text-slate-700 hover:bg-slate-100'}`}><Icon className="w-5 h-5" /><span>{moduleLabels[mod]?.label}</span></button>; })}
+            {isHome && <><div className="pt-2 mt-2 border-t border-slate-100"><p className="px-4 py-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">Explorer ADSO</p></div>{homeNavLinks.map((link) => <button type="button" key={link.href} onClick={() => handleNavClick(link.href)} className={`w-full text-left px-4 py-2.5 pl-8 rounded-lg text-sm ${activeSection === link.href.replace('#', '') ? 'text-emerald-700 bg-emerald-50' : 'text-slate-600 hover:bg-slate-100'}`}>{link.label}</button>)}<div className="pt-2 mt-2 border-t border-slate-100"><Button type="button" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleModuleClick('learning')}>Commencer la formation</Button></div></>}
           </div>
         </div>
       </motion.div>}
