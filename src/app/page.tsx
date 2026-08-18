@@ -3,7 +3,6 @@
 import dynamic from 'next/dynamic';
 import { useEffect } from 'react';
 import { useViewStore } from '@/stores/view-store';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ViewErrorBoundary from '@/components/ViewErrorBoundary';
 import ChunkLoadRecovery from '@/components/ChunkLoadRecovery';
@@ -39,7 +38,7 @@ export default function Home() {
     return () => window.cancelAnimationFrame(frame);
   }, [currentView]);
 
-  return <><ChunkLoadRecovery /><Navbar /><main role="main" aria-label="ADSO — éducation routière et mobilité sûre"><ViewErrorBoundary key={currentView}>{currentView === 'home' && <HomeView />}{currentView === 'learning' && <LearningPlatform />}{currentView === 'driving' && <AIDrivingModule />}{currentView === 'security' && <SecurityModuleView />}{currentView === 'insurance' && <InsuranceModule />}{currentView === 'fleet' && <FleetModule />}{currentView === 'enterprise' && <EnterpriseModule />}</ViewErrorBoundary></main><Footer /></>;
+  return <><ChunkLoadRecovery /><main role="main" aria-label="ADSO — éducation routière et mobilité sûre"><ViewErrorBoundary key={currentView}>{currentView === 'home' && <HomeView />}{currentView === 'learning' && <LearningPlatform />}{currentView === 'driving' && <AIDrivingModule />}{currentView === 'security' && <SecurityModuleView />}{currentView === 'insurance' && <InsuranceModule />}{currentView === 'fleet' && <FleetModule />}{currentView === 'enterprise' && <EnterpriseModule />}</ViewErrorBoundary></main><Footer /></>;
 }
 
 function HomeView() {
