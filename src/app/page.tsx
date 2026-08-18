@@ -18,6 +18,7 @@ import RoadmapSection from '@/components/sections/RoadmapSection';
 import SecuritySection from '@/components/sections/SecuritySection';
 import AnalyticsSection from '@/components/sections/AnalyticsSection';
 import AboutSection from '@/components/sections/AboutSection';
+import AudienceCurriculumSection from '@/components/sections/AudienceCurriculumSection';
 
 import LearningPlatform from '@/components/modules/learning/LearningPlatform';
 
@@ -35,9 +36,7 @@ export default function Home() {
     if (currentView !== 'home') return;
     const frame = window.requestAnimationFrame(() => {
       window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-      if (window.location.hash) {
-        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
-      }
+      if (window.location.hash) window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
     });
     return () => window.cancelAnimationFrame(frame);
   }, [currentView]);
@@ -46,7 +45,7 @@ export default function Home() {
 }
 
 function HomeView() {
-  return <><HeroSection /><AboutSection /><StatsSection /><EcosystemSection /><AIFeaturesSection /><QuizSection /><AIChatSection /><AnalyticsSection /><PricingSection /><RoadmapSection /><SecuritySection /></>;
+  return <><HeroSection /><AboutSection /><AudienceCurriculumSection /><StatsSection /><EcosystemSection /><AIFeaturesSection /><QuizSection /><AIChatSection /><AnalyticsSection /><PricingSection /><RoadmapSection /><SecuritySection /></>;
 }
 
 function SecurityModuleView() {
