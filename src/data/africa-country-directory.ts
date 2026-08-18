@@ -1,0 +1,66 @@
+// ADSO — neutral country directory for onboarding.
+// This directory is intentionally limited to identity and driving-side context.
+// Regulatory values must come from validated country-specific sources before being taught as rules.
+export interface AfricaCountryDirectoryEntry {
+  code: string;
+  name: string;
+  flag: string;
+  drivingSide: 'left' | 'right';
+}
+
+export const africaCountryDirectory: AfricaCountryDirectoryEntry[] = [
+  { code: 'DZ', name: 'Algérie', flag: '🇩🇿', drivingSide: 'right' },
+  { code: 'AO', name: 'Angola', flag: '🇦🇴', drivingSide: 'right' },
+  { code: 'BJ', name: 'Bénin', flag: '🇧🇯', drivingSide: 'right' },
+  { code: 'BW', name: 'Botswana', flag: '🇧🇼', drivingSide: 'left' },
+  { code: 'BF', name: 'Burkina Faso', flag: '🇧🇫', drivingSide: 'right' },
+  { code: 'BI', name: 'Burundi', flag: '🇧🇮', drivingSide: 'right' },
+  { code: 'CV', name: 'Cabo Verde', flag: '🇨🇻', drivingSide: 'right' },
+  { code: 'CM', name: 'Cameroun', flag: '🇨🇲', drivingSide: 'right' },
+  { code: 'CF', name: 'République centrafricaine', flag: '🇨🇫', drivingSide: 'right' },
+  { code: 'TD', name: 'Tchad', flag: '🇹🇩', drivingSide: 'right' },
+  { code: 'KM', name: 'Comores', flag: '🇰🇲', drivingSide: 'right' },
+  { code: 'CG', name: 'Congo', flag: '🇨🇬', drivingSide: 'right' },
+  { code: 'CD', name: 'République démocratique du Congo', flag: '🇨🇩', drivingSide: 'right' },
+  { code: 'DJ', name: 'Djibouti', flag: '🇩🇯', drivingSide: 'right' },
+  { code: 'EG', name: 'Égypte', flag: '🇪🇬', drivingSide: 'right' },
+  { code: 'GQ', name: 'Guinée équatoriale', flag: '🇬🇶', drivingSide: 'right' },
+  { code: 'ER', name: 'Érythrée', flag: '🇪🇷', drivingSide: 'right' },
+  { code: 'SZ', name: 'Eswatini', flag: '🇸🇿', drivingSide: 'left' },
+  { code: 'ET', name: 'Éthiopie', flag: '🇪🇹', drivingSide: 'right' },
+  { code: 'GA', name: 'Gabon', flag: '🇬🇦', drivingSide: 'right' },
+  { code: 'GM', name: 'Gambie', flag: '🇬🇲', drivingSide: 'right' },
+  { code: 'GH', name: 'Ghana', flag: '🇬🇭', drivingSide: 'right' },
+  { code: 'GN', name: 'Guinée', flag: '🇬🇳', drivingSide: 'right' },
+  { code: 'GW', name: 'Guinée-Bissau', flag: '🇬🇼', drivingSide: 'right' },
+  { code: 'CI', name: "Côte d'Ivoire", flag: '🇨🇮', drivingSide: 'right' },
+  { code: 'KE', name: 'Kenya', flag: '🇰🇪', drivingSide: 'left' },
+  { code: 'LS', name: 'Lesotho', flag: '🇱🇸', drivingSide: 'left' },
+  { code: 'LR', name: 'Libéria', flag: '🇱🇷', drivingSide: 'right' },
+  { code: 'LY', name: 'Libye', flag: '🇱🇾', drivingSide: 'right' },
+  { code: 'MG', name: 'Madagascar', flag: '🇲🇬', drivingSide: 'right' },
+  { code: 'MW', name: 'Malawi', flag: '🇲🇼', drivingSide: 'left' },
+  { code: 'ML', name: 'Mali', flag: '🇲🇱', drivingSide: 'right' },
+  { code: 'MR', name: 'Mauritanie', flag: '🇲🇷', drivingSide: 'right' },
+  { code: 'MU', name: 'Maurice', flag: '🇲🇺', drivingSide: 'left' },
+  { code: 'MA', name: 'Maroc', flag: '🇲🇦', drivingSide: 'right' },
+  { code: 'MZ', name: 'Mozambique', flag: '🇲🇿', drivingSide: 'left' },
+  { code: 'NA', name: 'Namibie', flag: '🇳🇦', drivingSide: 'left' },
+  { code: 'NE', name: 'Niger', flag: '🇳🇪', drivingSide: 'right' },
+  { code: 'NG', name: 'Nigeria', flag: '🇳🇬', drivingSide: 'right' },
+  { code: 'RW', name: 'Rwanda', flag: '🇷🇼', drivingSide: 'right' },
+  { code: 'ST', name: 'Sao Tomé-et-Principe', flag: '🇸🇹', drivingSide: 'right' },
+  { code: 'SN', name: 'Sénégal', flag: '🇸🇳', drivingSide: 'right' },
+  { code: 'SC', name: 'Seychelles', flag: '🇸🇨', drivingSide: 'left' },
+  { code: 'SL', name: 'Sierra Leone', flag: '🇸🇱', drivingSide: 'right' },
+  { code: 'SO', name: 'Somalie', flag: '🇸🇴', drivingSide: 'right' },
+  { code: 'ZA', name: 'Afrique du Sud', flag: '🇿🇦', drivingSide: 'left' },
+  { code: 'SS', name: 'Soudan du Sud', flag: '🇸🇸', drivingSide: 'right' },
+  { code: 'SD', name: 'Soudan', flag: '🇸🇩', drivingSide: 'right' },
+  { code: 'TZ', name: 'Tanzanie', flag: '🇹🇿', drivingSide: 'left' },
+  { code: 'TG', name: 'Togo', flag: '🇹🇬', drivingSide: 'right' },
+  { code: 'TN', name: 'Tunisie', flag: '🇹🇳', drivingSide: 'right' },
+  { code: 'UG', name: 'Ouganda', flag: '🇺🇬', drivingSide: 'left' },
+  { code: 'ZM', name: 'Zambie', flag: '🇿🇲', drivingSide: 'left' },
+  { code: 'ZW', name: 'Zimbabwe', flag: '🇿🇼', drivingSide: 'left' },
+];
