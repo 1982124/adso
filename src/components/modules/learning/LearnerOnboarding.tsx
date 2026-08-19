@@ -5,10 +5,10 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Check, Globe2, GraduationCap, Bike, CarFront, Wrench, Search, Languages, Target } from 'lucide-react';
 import { useLocaleStore } from '@/stores/locale-store';
 import { Input } from '@/components/ui/input';
+import { africaCountryDirectory } from '@/data/africa-country-directory';
 
 interface Country { id: string; code: string; name: string; flag: string; continent: string; }
 type LearnerProfile = 'primaire' | 'secondaire' | 'lycee' | 'apprenti' | 'universitaire' | 'taxi-moto' | 'taxi-voiture';
-
 type Objective = 'decouvrir' | 'comprendre' | 'mobilite' | 'conduire' | 'permis' | 'code-pro' | 'revision';
 
 const PROFILES: { id: LearnerProfile; label: string; icon: typeof GraduationCap; accent: string; objective: Objective }[] = [
@@ -31,6 +31,7 @@ const OBJECTIVES: Record<Objective, { title: string; description: string }> = {
   revision: { title: 'Je révise mon code routier au quotidien', description: 'Entretenir mes connaissances et réduire les risques.' },
 };
 
+const STATIC_AFRICA_COUNTRIES: Country[] = africaCountryDirectory.map((item) => ({ ...item, id: item.code, continent: 'Afrique' }));
 const STORAGE_KEY = 'adso-learner-onboarding-v2';
 
 export default function LearnerOnboarding({ onComplete }: { onComplete: () => void }) {
@@ -40,7 +41,7 @@ export default function LearnerOnboarding({ onComplete }: { onComplete: () => vo
   const setLanguageAndCountry = useLocaleStore((s) => s.setLanguageAndCountry);
   const setLocale = useLocaleStore((s) => s.setLocale);
   const setCountry = useLocaleStore((s) => s.setCountry);
-  const [countries, setCountries] = useState<Country[]>([]);
+  const [countries, setCountries] = useState<Country[]>(STATIC_AFRICA_COUNTRIES);
   const [query, setQuery] = useState('');
   const [profile, setProfile] = useState<LearnerProfile | null>(null);
   const [objective, setObjective] = useState<Objective | null>(null);
@@ -59,8 +60,14 @@ export default function LearnerOnboarding({ onComplete }: { onComplete: () => vo
     const controller = new AbortController();
     fetch('/api/learning/countries?continent=Afrique', { signal: controller.signal, cache: 'no-store' })
       .then((res) => res.ok ? res.json() : Promise.reject(new Error('countries')))
-      .then((data) => setCountries(Array.isArray(data.countries) ? data.countries : []))
-      .catch(() => setCountries([]));
+      .then((data) => {
+        const remote = Array.isArray(data.countries) ? data.countries : [];
+        if (remote.length > 0) setCountries(remote);
+      })
+      .catch(() => {
+        // Keep the complete static African directory visible if the API is unavailable.
+        setCountries(STATIC_AFRICA_COUNTRIES);
+      });
     return () => controller.abort();
   }, [setCountry, setLocale]);
 
@@ -97,7 +104,6 @@ export default function LearnerOnboarding({ onComplete }: { onComplete: () => vo
       </div>
       <div className="mt-5 grid grid-cols-4 gap-2 text-center text-[11px] font-bold uppercase tracking-wide text-slate-500"><span className="rounded-full bg-white px-2 py-1.5 shadow-sm dark:bg-slate-950">1 · Pays</span><span className="rounded-full bg-white px-2 py-1.5 shadow-sm dark:bg-slate-950">2 · Langue</span><span className="rounded-full bg-white px-2 py-1.5 shadow-sm dark:bg-slate-950">3 · Profil</span><span className="rounded-full bg-white px-2 py-1.5 shadow-sm dark:bg-slate-950">4 · Objectif</span></div>
     </div>
-
     <div className="p-5 sm:p-7">
       <div className="grid gap-6 lg:grid-cols-2">
         <div>
@@ -108,7 +114,6 @@ export default function LearnerOnboarding({ onComplete }: { onComplete: () => vo
           </div>
           {countries.length === 0 && <p className="mt-3 text-xs text-slate-500">Le catalogue des pays est momentanément indisponible. ADSO conserve ton choix s'il a déjà été enregistré.</p>}
         </div>
-
         <div>
           <p className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white"><Languages className="h-4 w-4 text-emerald-600" /> 2. Dans quelle langue veux-tu apprendre ?</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -116,7 +121,6 @@ export default function LearnerOnboarding({ onComplete }: { onComplete: () => vo
           </div>
         </div>
       </div>
-
       <div className="mt-7 grid gap-6 lg:grid-cols-[1fr_0.8fr]">
         <div>
           <p className="mb-2 text-sm font-bold text-slate-900 dark:text-white">3. Quel est ton profil ?</p>
@@ -124,7 +128,6 @@ export default function LearnerOnboarding({ onComplete }: { onComplete: () => vo
             {PROFILES.map(({ id, label, icon: Icon, accent }) => { const selected = profile === id; return <button type="button" key={id} aria-pressed={selected} onClick={() => chooseProfile(id)} className={`flex items-center gap-3 rounded-xl border p-3 text-left transition ${selected ? 'border-emerald-600 bg-emerald-50 dark:border-emerald-400 dark:bg-emerald-500/10' : 'border-slate-200 bg-white hover:border-emerald-500/40 dark:border-slate-800 dark:bg-slate-900/60'}`}><div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${selected ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500 dark:bg-slate-800'}`}><Icon className="h-4 w-4" /></div><div className="min-w-0 flex-1"><p className="text-sm font-semibold text-slate-900 dark:text-white">{label}</p><p className="truncate text-xs text-slate-500">{accent}</p></div>{selected && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}</button>; })}
           </div>
         </div>
-
         <div>
           <p className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white"><Target className="h-4 w-4 text-[#c89b3c]" /> 4. Ton objectif</p>
           <div className="rounded-2xl border border-[#c89b3c]/25 bg-[#f7f4ec] p-4 dark:bg-amber-950/10">
@@ -132,7 +135,6 @@ export default function LearnerOnboarding({ onComplete }: { onComplete: () => vo
           </div>
         </div>
       </div>
-
       <motion.button type="button" disabled={!ready} onClick={finish} whileTap={{ scale: 0.98 }} className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-emerald-950/10 transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-40">Commencer mon cursus ADSO <ArrowRight className="h-4 w-4" /></motion.button>
       <p className="mt-2 text-center text-[11px] text-slate-500">Ton pays, ta langue, ton profil et ton objectif pourront être modifiés plus tard.</p>
     </div>
