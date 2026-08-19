@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button';
 import { useViewStore } from '@/stores/view-store';
 import { useState } from 'react';
 
-const HERO_IMAGE = 'https://commons.wikimedia.org/wiki/Special:FilePath/V%C3%A9hicule_accident%C3%A9_circulant_sur_une_route_%C3%A0_Cotonou_02.jpg';
+// Real photograph from Cotonou, Benin. CC BY-SA 4.0, author Adoscam.
+// The photo contains real people, vehicles and an actual road-accident context.
+const HERO_IMAGE = 'https://commons.wikimedia.org/wiki/Special:FilePath/Police_b%C3%A9ninoise_constat_d%27accident_de_v%C3%A9hicules_a_Cotonou_au_B%C3%A9nin.jpg';
 
 export default function HeroRealisticHome() {
   const setView = useViewStore((state) => state.setView);
@@ -47,17 +49,10 @@ export default function HeroRealisticHome() {
 
       <div className="mx-auto w-full max-w-7xl px-4 pb-12 pt-4 sm:px-6 sm:pt-6 lg:px-8">
         <div className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-black shadow-2xl shadow-black/40">
-          <div className="relative aspect-[16/9] min-h-[280px] w-full overflow-hidden bg-slate-900 sm:min-h-[420px] lg:min-h-[560px]">
-            <img src={HERO_IMAGE} alt="Véhicule accidenté sur une route à Cotonou, au Bénin — scène routière réelle" className="absolute inset-0 h-full w-full object-cover object-center" loading="eager" fetchPriority="high" decoding="async" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-black/10" aria-hidden="true" />
-            <div className="absolute bottom-4 left-4 right-4 sm:bottom-7 sm:left-7 sm:right-7">
-              <span className="inline-flex rounded-full border border-white/20 bg-black/55 px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.16em] text-white backdrop-blur">Cotonou · Bénin · situation réelle</span>
-            </div>
+          <div className="relative aspect-[16/9] min-h-[300px] w-full overflow-hidden bg-slate-900 sm:min-h-[480px] lg:min-h-[640px]">
+            <img src={HERO_IMAGE} alt="Constat d'un accident de véhicules à Cotonou, au Bénin — personnes, véhicules et route réels" className="absolute inset-0 h-full w-full object-cover object-center" loading="eager" fetchPriority="high" decoding="async" />
           </div>
-          <div className="border-t border-white/10 bg-slate-950/95 px-5 py-4 sm:px-7">
-            <p className="text-sm font-bold text-emerald-200">Scène réelle · observer avant d'agir</p>
-            <p className="mt-1 text-sm leading-6 text-slate-300">ADSO transforme une situation routière réelle en expérience d'apprentissage.</p>
-          </div>
+          <p className="border-t border-white/10 bg-slate-950 px-4 py-2 text-[10px] leading-4 text-slate-500 sm:px-6">Photo réelle prise à Cotonou, Bénin · Adoscam / Wikimedia Commons · CC BY-SA 4.0</p>
         </div>
 
         <div className="mx-auto max-w-4xl py-10 text-center sm:py-14">
