@@ -1,29 +1,48 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Mic, Menu, PlayCircle } from 'lucide-react';
+import { ArrowRight, Mic, Menu, PlayCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useViewStore } from '@/stores/view-store';
+import { useState } from 'react';
 
 const HERO_IMAGE = 'https://commons.wikimedia.org/wiki/Special:FilePath/V%C3%A9hicule_accident%C3%A9_circulant_sur_une_route_%C3%A0_Cotonou_02.jpg';
 
 export default function HeroRealisticHome() {
   const setView = useViewStore((state) => state.setView);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const openVoice = () => window.dispatchEvent(new CustomEvent('adso:voice-toggle'));
+
+  const navigate = (view: Parameters<typeof setView>[0]) => {
+    setView(view);
+    setMenuOpen(false);
+  };
 
   return (
     <section id="hero" className="relative overflow-hidden bg-slate-950 text-white">
-      <header className="relative z-20 border-b border-white/10 bg-slate-950/95 backdrop-blur">
+      <header className="relative z-30 border-b border-white/10 bg-slate-950/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center px-4 sm:px-6 lg:px-8">
           <Link href="/" aria-label="ADSO — Accueil" className="text-2xl font-black tracking-[-0.04em] text-white">ADSO</Link>
           <div className="mx-auto flex items-center gap-2">
-            <button type="button" onClick={() => setView('learning')} aria-label="Ouvrir Françoise" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-emerald-300/30 bg-emerald-400/10 text-emerald-200 transition hover:bg-emerald-400/20">
+            <button type="button" onClick={openVoice} aria-label="Ouvrir Françoise" title="Françoise — assistante ADSO" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-emerald-300/30 bg-emerald-400/10 text-emerald-200 transition hover:bg-emerald-400/20 focus:outline-none focus:ring-2 focus:ring-emerald-300/60">
               <Mic className="size-5" />
             </button>
           </div>
-          <button type="button" aria-label="Ouvrir le menu" className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-white/90 transition hover:bg-white/10">
-            <Menu className="size-6" />
+          <button type="button" onClick={() => setMenuOpen((open) => !open)} aria-expanded={menuOpen} aria-controls="adso-mobile-menu" aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'} className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-white/90 transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/40">
+            {menuOpen ? <X className="size-6" /> : <Menu className="size-6" />}
           </button>
         </div>
+        {menuOpen && (
+          <nav id="adso-mobile-menu" aria-label="Navigation ADSO" className="border-t border-white/10 bg-slate-950 px-4 py-3 sm:px-6 lg:px-8">
+            <div className="mx-auto grid max-w-7xl gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              <button type="button" onClick={() => navigate('learning')} className="rounded-xl px-4 py-3 text-left font-bold text-white hover:bg-white/10">Formation</button>
+              <button type="button" onClick={() => navigate('driving')} className="rounded-xl px-4 py-3 text-left font-bold text-white hover:bg-white/10">Conducteur</button>
+              <button type="button" onClick={() => navigate('security')} className="rounded-xl px-4 py-3 text-left font-bold text-white hover:bg-white/10">Sécurité</button>
+              <button type="button" onClick={() => navigate('fleet')} className="rounded-xl px-4 py-3 text-left font-bold text-white hover:bg-white/10">Flottes</button>
+            </div>
+          </nav>
+        )}
       </header>
 
       <div className="mx-auto w-full max-w-7xl px-4 pb-12 pt-4 sm:px-6 sm:pt-6 lg:px-8">
