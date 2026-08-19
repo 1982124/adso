@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { Prisma } from '@prisma/client';
 import { db } from '@/lib/db';
 import { getPricingForCountry, getAvailablePaymentMethods, canonicalizeProvider, type PlanId, type BillingPeriod } from '@/lib/pricing-engine';
+import { getCommercialOffer } from '@/lib/commercial-offers';
 
 export type PaymentStatus = 'PENDING' | 'PROCESSING' | 'PAID' | 'FAILED' | 'EXPIRED' | 'REFUNDED';
 
@@ -55,9 +56,12 @@ export async function createPaymentOrder(input: CreatePaymentInput) {
   const countryCode = normalizeCountry(input.countryCode);
   const provider = normalizeProvider(input.provider);
   const idempotencyKey = normalizeIdempotencyKey(input.idempotencyKey);
-  const pricing = getPricingForCountry(countryCode, input.plan);
-  const yearlyDiscount = input.billingPeriod === 'yearly' ? 20 : 0;
-  const price = Math.round(pricing.price * (1 - yearlyDiscount / 100) * 100) / 100;
+  const offer = getCommercialOffer(input.plan);
+  if (!offer || !offer.checkoutEnabled || getPricingForCountry(countryCode, input.plan, input.billingPeriod).price <= 0) {
+    throw new Error('Offer is not available for checkout');
+  }
+
+  const pricing = getPricingForCountry(countryCode, input.plan, input.billingPeriod);
   const methods = getAvailablePaymentMethods(countryCode);
   if (!methods.includes(provider) && provider !== 'manual') throw new Error('Provider is not enabled for this country');
 
@@ -69,13 +73,15 @@ export async function createPaymentOrder(input: CreatePaymentInput) {
 
   const id = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
-  const metadata = JSON.stringify({ billingPeriod: input.billingPeriod, originalPrice: pricing.originalPrice, discount: yearlyDiscount + pricing.discount });
+  const metadata = JSON.stringify({ billingPeriod: input.billingPeriod, originalPrice: pricing.originalPrice, discount: pricing.discount });
+  const amount = amountMinor(pricing.price, pricing.currency);
+
   await db.$executeRaw(Prisma.sql`
     INSERT INTO "PaymentOrder" ("id","userId","plan","countryCode","currency","amountMinor","provider","status","idempotencyKey","metadata","expiresAt")
-    VALUES (${id},${input.userId},${input.plan},${countryCode},${pricing.currency},${amountMinor(price, pricing.currency)},${provider},'PENDING',${idempotencyKey},${metadata},${expiresAt})
+    VALUES (${id},${input.userId},${input.plan},${countryCode},${pricing.currency},${amount},${provider},'PENDING',${idempotencyKey},${metadata},${expiresAt})
   `);
 
-  return { id, status: 'PENDING' as const, amountMinor: amountMinor(price, pricing.currency), currency: pricing.currency, provider, checkoutUrl: null };
+  return { id, status: 'PENDING' as const, amountMinor: amount, currency: pricing.currency, provider, checkoutUrl: null };
 }
 
 export function verifyWebhookSignature(rawBody: string, signature: string | null, secret: string | undefined): boolean {
