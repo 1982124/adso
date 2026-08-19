@@ -17,30 +17,30 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ADSO — La responsabilité au service de la vie",
+  title: "ADSO — African Driving Safety & Orientation",
   description:
-    "ADSO est la plateforme internationale d'éducation à la mobilité, à la citoyenneté et à la sécurité routière, personnalisée par l'intelligence artificielle.",
+    "ADSO — African Driving Safety & Orientation. Plateforme d'éducation routière, de sécurité, de prévention et d'orientation pour une mobilité responsable en Afrique et à l'international.",
   keywords: [
     "ADSO",
-    "mobilité",
-    "citoyenneté",
-    "sécurité routière",
-    "code de la route",
+    "African Driving Safety & Orientation",
+    "sécurité routière en Afrique",
     "éducation routière",
+    "prévention routière",
     "conduite responsable",
-    "IA",
-    "auto-école",
-    "permis de conduire",
+    "mobilité sûre",
+    "code de la route",
+    "formation conducteur",
+    "orientation routière",
   ],
-  authors: [{ name: "ADSO Engineering" }],
+  authors: [{ name: "ADSO" }],
   icons: {
     icon: "/icon.svg",
   },
   manifest: "/manifest.webmanifest",
   openGraph: {
-    title: "ADSO — La responsabilité au service de la vie",
+    title: "ADSO — African Driving Safety & Orientation",
     description:
-      "Apprendre, comprendre et agir pour une mobilité plus sûre. Chaque vie est précieuse.",
+      "Apprendre à mieux partager la route. Éducation routière, sécurité, prévention et orientation pour une mobilité responsable.",
     type: "website",
   },
 };
