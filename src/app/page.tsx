@@ -15,7 +15,6 @@ import AIChatSection from '@/components/sections/AIChatSection';
 import PricingSection from '@/components/sections/PricingSection';
 import RoadmapSection from '@/components/sections/RoadmapSection';
 import SecuritySection from '@/components/sections/SecuritySection';
-import AnalyticsSection from '@/components/sections/AnalyticsSection';
 import AboutSection from '@/components/sections/AboutSection';
 import ADSOExperienceSection from '@/components/ADSOExperienceSection';
 import LearningPlatform from '@/components/modules/learning/LearningPlatform';
@@ -42,7 +41,7 @@ export default function Home() {
 }
 
 function HomeView() {
-  return <><HeroRealisticHome /><ADSOExperienceSection /><AboutSection /><StatsSection /><EcosystemSection /><AIFeaturesSection /><QuizSection /><AIChatSection /><AnalyticsSection /><PricingSection /><RoadmapSection /><SecuritySection /></>;
+  return <><HeroRealisticHome /><ADSOExperienceSection /><AboutSection /><StatsSection /><EcosystemSection /><AIFeaturesSection /><QuizSection /><AIChatSection /><PricingSection /><RoadmapSection /><SecuritySection /></>;
 }
 
 function SecurityModuleView() { return <SecuritySection />; }
