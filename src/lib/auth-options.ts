@@ -4,9 +4,6 @@ import { db } from '@/lib/db';
 import { verifyPassword } from '@/lib/password';
 
 const nextAuthSecret = process.env.NEXTAUTH_SECRET?.trim();
-if (!nextAuthSecret || nextAuthSecret.length < 32) {
-  throw new Error('NEXTAUTH_SECRET must be configured with at least 32 characters');
-}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -58,5 +55,5 @@ export const authOptions: NextAuthOptions = {
   pages: { signIn: '/', error: '/' },
   session: { strategy: 'jwt', maxAge: 24 * 60 * 60 },
   jwt: { maxAge: 24 * 60 * 60 },
-  secret: nextAuthSecret,
+  ...(nextAuthSecret ? { secret: nextAuthSecret } : {}),
 };
