@@ -1,10 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { COMMERCIAL_OFFERS } from '@/lib/commercial-offers';
 
 export interface Plan {
   id: string;
   name: string;
   price: number;
+  yearlyPrice: number | null;
   currency: string;
   features: string[];
 }
@@ -14,56 +16,18 @@ const DEFAULT_PLANS: Plan[] = [
     id: 'free',
     name: 'Gratuit',
     price: 0,
-    currency: 'EUR',
-    features: [
-      'Accès aux cours de base',
-      '3 quiz par jour',
-      'Profil étudiant',
-      'Support communautaire',
-    ],
+    yearlyPrice: 0,
+    currency: 'XOF',
+    features: ['Découverte d’ADSO', 'Contenus gratuits', 'Profil utilisateur'],
   },
-  {
-    id: 'starter',
-    name: 'Starter',
-    price: 9.99,
-    currency: 'EUR',
-    features: [
-      'Tous les cours de théorie',
-      'Quiz illimités',
-      'Simulations de base',
-      'Suivi de progression',
-      'Support par email',
-    ],
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    price: 19.99,
-    currency: 'EUR',
-    features: [
-      'Tout le contenu Starter',
-      'Simulations avancées',
-      'Examens blancs illimités',
-      'Coach IA personnel',
-      'Moniteur en ligne',
-      'Support prioritaire',
-    ],
-  },
-  {
-    id: 'premium',
-    name: 'Premium',
-    price: 39.99,
-    currency: 'EUR',
-    features: [
-      'Tout le contenu Pro',
-      'Certification officielle',
-      'Neuro-pédagogie avancée',
-      'Tablette moniteur incluse',
-      'API marketplace',
-      'Support dédié 24/7',
-      'Accès multi-appareils',
-    ],
-  },
+  ...COMMERCIAL_OFFERS.map((offer) => ({
+    id: offer.id,
+    name: offer.name,
+    price: offer.monthly ?? 0,
+    yearlyPrice: offer.yearly,
+    currency: offer.currency,
+    features: [...offer.features],
+  })),
 ];
 
 type BillingPeriod = 'monthly' | 'yearly';
@@ -81,9 +45,16 @@ interface SubscriptionState {
   reactivateSubscription: () => void;
 }
 
+function addBillingPeriod(date: Date, period: BillingPeriod): Date {
+  const next = new Date(date);
+  if (period === 'yearly') next.setFullYear(next.getFullYear() + 1);
+  else next.setMonth(next.getMonth() + 1);
+  return next;
+}
+
 export const useSubscriptionStore = create<SubscriptionState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       plan: 'free',
       plans: DEFAULT_PLANS,
       billingPeriod: 'monthly',
@@ -93,8 +64,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       setPlan: (planId) => {
         const isPaidPlan = planId !== 'free';
         const now = new Date();
-        const expires = new Date(now);
-        expires.setMonth(expires.getMonth() + 1);
+        const expires = addBillingPeriod(now, get().billingPeriod);
         set({
           plan: planId,
           isActive: true,
@@ -108,8 +78,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
       reactivateSubscription: () => {
         const now = new Date();
-        const expires = new Date(now);
-        expires.setMonth(expires.getMonth() + 1);
+        const expires = addBillingPeriod(now, get().billingPeriod);
         set({
           isActive: true,
           expiresAt: expires.toISOString(),
