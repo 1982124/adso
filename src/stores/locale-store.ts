@@ -25,6 +25,13 @@ interface LocaleState {
 }
 
 const defaultCountry: CountryContext = { code: 'ZZ', name: 'International — choisissez votre pays' };
+const LOCALE_COOKIE = 'adso-locale';
+const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+function persistLocaleCookie(locale: string) {
+  if (typeof document === 'undefined') return;
+  document.cookie = `${LOCALE_COOKIE}=${encodeURIComponent(locale)}; Path=/; Max-Age=${LOCALE_COOKIE_MAX_AGE}; SameSite=Lax`;
+}
 
 export const useLocaleStore = create<LocaleState>()(
   persist(
@@ -40,6 +47,7 @@ export const useLocaleStore = create<LocaleState>()(
       })),
       setLocale: (locale) => {
         const selectedLocale = isValidLocale(locale) ? locale : 'fr';
+        persistLocaleCookie(selectedLocale);
         set({ locale: selectedLocale, direction: getLocaleDirection(selectedLocale) });
       },
       setCountry: (country) => {
@@ -49,6 +57,7 @@ export const useLocaleStore = create<LocaleState>()(
       setLanguageAndCountry: (locale, country) => {
         const selectedLocale = isValidLocale(locale) ? locale : 'fr';
         if (!country?.code || !country?.name) return;
+        persistLocaleCookie(selectedLocale);
         set({ locale: selectedLocale, direction: getLocaleDirection(selectedLocale), country });
       },
     }),
