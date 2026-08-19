@@ -29,11 +29,14 @@ function ModuleLoader({ label }: { label: string }) {
 }
 
 export default function Home() {
-  const { currentView } = useViewStore();
+  const { currentView, setView } = useViewStore();
 
-  // The public root is the canonical ADSO landing page. Prevent browser/session
-  // scroll restoration from reopening the page in the middle of Pricing/AI chat.
+  // The public root is always the canonical ADSO landing page. Zustand is a
+  // client-side singleton, so returning to / after visiting another module can
+  // otherwise reuse the previous module state. Reset that state before paint.
   useLayoutEffect(() => {
+    if (currentView !== 'home') setView('home');
+
     const previous = window.history.scrollRestoration;
     window.history.scrollRestoration = 'manual';
     const reset = () => window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
@@ -48,6 +51,8 @@ export default function Home() {
       window.removeEventListener('pageshow', reset);
       window.history.scrollRestoration = previous;
     };
+    // Intentionally run only on root mount: module navigation must remain usable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return <><ChunkLoadRecovery /><main role="main" aria-label="ADSO — éducation routière et mobilité sûre"><ViewErrorBoundary key={currentView}>{currentView === 'home' && <HomeView />}{currentView === 'learning' && <LearningPlatform />}{currentView === 'driving' && <AIDrivingModule />}{currentView === 'security' && <SecurityModuleView />}{currentView === 'insurance' && <InsuranceModule />}{currentView === 'fleet' && <FleetModule />}{currentView === 'enterprise' && <EnterpriseModule />}</ViewErrorBoundary></main><Footer /></>;
