@@ -1,11 +1,18 @@
 /**
- * Dynamic pricing engine for ADSO.
+ * ADSO pricing engine.
  *
- * Customer-facing prices remain country-aware while payment providers use
- * stable canonical identifiers internally.
+ * Commercial launch offers are defined once in commercial-offers.ts and reused
+ * by the subscription UI and checkout integrations. Provider identifiers remain
+ * stable and country-aware.
  */
 
 import { countries, type Country } from '@/data/countries';
+import {
+  COMMERCIAL_OFFERS,
+  getCommercialOffer,
+  getOfferPrice,
+  type BillingPeriod,
+} from '@/lib/commercial-offers';
 
 export interface PricingResult {
   price: number;
@@ -14,15 +21,8 @@ export interface PricingResult {
   discount: number;
 }
 
-export type BillingPeriod = 'monthly' | 'yearly';
-export type PlanId = 'free' | 'starter' | 'pro' | 'premium';
-
-const BASE_PRICES: Record<PlanId, number> = {
-  free: 0,
-  starter: 9.99,
-  pro: 19.99,
-  premium: 39.99,
-} as const;
+export type PlanId = 'free' | (typeof COMMERCIAL_OFFERS)[number]['id'];
+export type { BillingPeriod } from '@/lib/commercial-offers';
 
 const PPP_MULTIPLIERS: Record<string, number> = {
   Afrique: 0.25,
@@ -35,9 +35,6 @@ const PPP_MULTIPLIERS: Record<string, number> = {
   Océanie: 1.0,
 } as const;
 
-const YEARLY_DISCOUNT_PERCENT = 20;
-const DEFAULT_PPP = 1.0;
-
 /** Canonical provider identifiers used by payment-core and checkout APIs. */
 const PAYMENT_PROVIDER_ALIASES: Record<string, string> = {
   'Orange Money': 'orange_money',
@@ -45,43 +42,69 @@ const PAYMENT_PROVIDER_ALIASES: Record<string, string> = {
   'MTN Mobile Money': 'mtn_momo',
   'MTN MoMo': 'mtn_momo',
   'Moov Money': 'moov_money',
-  'Wave': 'wave',
+  Wave: 'wave',
   'Free Money': 'free_money',
   'M-Pesa': 'mpesa',
   'Airtel Money': 'airtel_money',
   'Express Union Mobile': 'express_union_mobile',
   'KCB M-Pesa': 'kcb_mpesa',
-  'Chariow': 'chariow',
-  'Maketou': 'maketou',
+  Chariow: 'chariow',
+  Maketou: 'maketou',
   'Carte bancaire': 'card',
-  'PayPal': 'paypal',
+  PayPal: 'paypal',
   'Apple Pay': 'apple_pay',
   'Google Pay': 'google_pay',
   'Virement bancaire': 'bank_transfer',
-  'Bancontact': 'bancontact',
-  'TWINT': 'twint',
-  'Klarna': 'klarna',
-  'Bizum': 'bizum',
-  'Satispay': 'satispay',
-  'Sofortüberweisung': 'sofort',
+  Bancontact: 'bancontact',
+  TWINT: 'twint',
+  Klarna: 'klarna',
+  Bizum: 'bizum',
+  Satispay: 'satispay',
+  Sofortüberweisung: 'sofort',
   'Cash Plus': 'cash_plus',
-  'Flouci': 'flouci',
-  'BaridiMob': 'baridimob',
-  'CIB': 'cib',
+  Flouci: 'flouci',
+  BaridiMob: 'baridimob',
+  CIB: 'cib',
 };
 
-export function getPricingForCountry(countryCode: string, planId: string): PricingResult {
-  const basePrice = BASE_PRICES[planId as PlanId] ?? 0;
+export function getPricingForCountry(countryCode: string, planId: string, billingPeriod: BillingPeriod = 'monthly'): PricingResult {
+  if (planId === 'free') {
+    return { price: 0, originalPrice: 0, currency: 'XOF', discount: 0 };
+  }
+
+  const offer = getCommercialOffer(planId);
+  if (!offer) {
+    return { price: 0, originalPrice: 0, currency: 'XOF', discount: 0 };
+  }
+
   const country = getCountryByCode(countryCode);
-  const ppp = country ? (PPP_MULTIPLIERS[country.region] ?? DEFAULT_PPP) : DEFAULT_PPP;
-  const currency = country?.currency?.code ?? 'EUR';
-  const price = Math.round(basePrice * ppp * 100) / 100;
-  const discount = ppp < 1 ? Math.round((1 - ppp) * 100) : 0;
-  return { price, originalPrice: basePrice, currency, discount };
+  const currency = country?.currency?.code ?? offer.currency;
+  const basePrice = getOfferPrice(planId, billingPeriod);
+
+  if (basePrice === null) {
+    return { price: 0, originalPrice: 0, currency, discount: 0 };
+  }
+
+  // Validated launch prices are canonical in XOF. International localization
+  // can be added per country without changing the offer IDs or checkout API.
+  const price = basePrice;
+  const monthly = offer.monthly ?? basePrice;
+  const yearly = offer.yearly;
+  const effectiveMonthlyYearly = yearly === null ? monthly : yearly / 12;
+  const discount = billingPeriod === 'yearly' && monthly > 0
+    ? Math.max(0, Math.round((1 - effectiveMonthlyYearly / monthly) * 100))
+    : 0;
+
+  return {
+    price,
+    originalPrice: billingPeriod === 'yearly' ? yearly ?? basePrice : monthly,
+    currency,
+    discount,
+  };
 }
 
-export function calculateDiscount(_planId: string, billingPeriod: BillingPeriod): number {
-  return billingPeriod === 'yearly' ? YEARLY_DISCOUNT_PERCENT : 0;
+export function calculateDiscount(planId: string, billingPeriod: BillingPeriod): number {
+  return getPricingForCountry('ML', planId, billingPeriod).discount;
 }
 
 export function getAvailablePaymentMethods(countryCode: string): string[] {
@@ -96,7 +119,7 @@ export function canonicalizeProvider(provider: string): string {
 }
 
 export function formatPrice(amount: number, currencyCode: string, locale?: string): string {
-  const resolvedLocale = locale ?? 'en-US';
+  const resolvedLocale = locale ?? 'fr-FR';
   try {
     const formatter = new Intl.NumberFormat(resolvedLocale, {
       style: 'currency',
@@ -113,3 +136,5 @@ export function formatPrice(amount: number, currencyCode: string, locale?: strin
 function getCountryByCode(code: string): Country | undefined {
   return countries.find((c) => c.code === code.toUpperCase());
 }
+
+export { COMMERCIAL_OFFERS };
