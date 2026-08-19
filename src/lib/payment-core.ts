@@ -40,61 +40,6 @@ function normalizeIdempotencyKey(value: string): string {
   return key;
 }
 
-async function ensurePaymentTables() {
-  await db.$executeRawUnsafe(`
-    CREATE TABLE IF NOT EXISTS "PaymentOrder" (
-      "id" TEXT PRIMARY KEY,
-      "userId" TEXT NOT NULL,
-      "plan" TEXT NOT NULL,
-      "countryCode" TEXT NOT NULL,
-      "currency" TEXT NOT NULL,
-      "amountMinor" INTEGER NOT NULL,
-      "provider" TEXT NOT NULL,
-      "status" TEXT NOT NULL DEFAULT 'PENDING',
-      "idempotencyKey" TEXT NOT NULL UNIQUE,
-      "providerReference" TEXT UNIQUE,
-      "checkoutUrl" TEXT,
-      "metadata" TEXT,
-      "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      "paidAt" TIMESTAMP,
-      "expiresAt" TIMESTAMP
-    )
-  `);
-  await db.$executeRawUnsafe(`
-    CREATE TABLE IF NOT EXISTS "PaymentEvent" (
-      "id" TEXT PRIMARY KEY,
-      "paymentOrderId" TEXT NOT NULL,
-      "provider" TEXT NOT NULL,
-      "eventId" TEXT NOT NULL,
-      "eventType" TEXT NOT NULL,
-      "signatureValid" BOOLEAN NOT NULL DEFAULT FALSE,
-      "payload" TEXT NOT NULL,
-      "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      "processedAt" TIMESTAMP,
-      UNIQUE("provider", "eventId")
-    )
-  `);
-  await db.$executeRawUnsafe(`
-    CREATE TABLE IF NOT EXISTS "Subscription" (
-      "id" TEXT PRIMARY KEY,
-      "userId" TEXT NOT NULL,
-      "plan" TEXT NOT NULL,
-      "status" TEXT NOT NULL DEFAULT 'ACTIVE',
-      "countryCode" TEXT NOT NULL,
-      "currency" TEXT NOT NULL,
-      "provider" TEXT NOT NULL,
-      "providerCustomerId" TEXT,
-      "providerSubscriptionId" TEXT UNIQUE,
-      "currentPeriodStart" TIMESTAMP NOT NULL,
-      "currentPeriodEnd" TIMESTAMP NOT NULL,
-      "cancelAtPeriodEnd" BOOLEAN NOT NULL DEFAULT FALSE,
-      "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-}
-
 function amountMinor(price: number, currency: string): number {
   return currency === 'XOF' || currency === 'XAF' ? Math.round(price) : Math.round(price * 100);
 }
@@ -107,7 +52,6 @@ function periodEnd(start: Date, billingPeriod: BillingPeriod): Date {
 }
 
 export async function createPaymentOrder(input: CreatePaymentInput) {
-  await ensurePaymentTables();
   const countryCode = normalizeCountry(input.countryCode);
   const provider = normalizeProvider(input.provider);
   const idempotencyKey = normalizeIdempotencyKey(input.idempotencyKey);
@@ -151,7 +95,6 @@ export async function processPaymentWebhook(params: {
   signatureValid: boolean;
   billingPeriod?: BillingPeriod;
 }) {
-  await ensurePaymentTables();
   if (!params.signatureValid) throw new Error('Invalid webhook signature');
   const provider = normalizeProvider(params.provider);
 
