@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Check, Crown, Building2, Bike } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -9,7 +10,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { COMMERCIAL_OFFERS, formatXof, type BillingPeriod } from '@/lib/commercial-offers'
 
 export default function PricingSection() {
-  const [billingPeriod, setBillingPeriod] = React.useState<BillingPeriod>('monthly')
+  const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly')
 
   return (
     <section id="pricing" className="bg-white px-4 py-20">
