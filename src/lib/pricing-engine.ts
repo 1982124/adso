@@ -24,17 +24,6 @@ export interface PricingResult {
 export type PlanId = 'free' | (typeof COMMERCIAL_OFFERS)[number]['id'];
 export type { BillingPeriod } from '@/lib/commercial-offers';
 
-const PPP_MULTIPLIERS: Record<string, number> = {
-  Afrique: 0.25,
-  Europe: 1.0,
-  Asie: 0.35,
-  Amerique: 0.50,
-  'Amérique du Nord': 1.0,
-  'Amérique du Sud': 0.50,
-  'Moyen-Orient': 0.45,
-  Océanie: 1.0,
-} as const;
-
 /** Canonical provider identifiers used by payment-core and checkout APIs. */
 const PAYMENT_PROVIDER_ALIASES: Record<string, string> = {
   'Orange Money': 'orange_money',
@@ -77,17 +66,13 @@ export function getPricingForCountry(countryCode: string, planId: string, billin
     return { price: 0, originalPrice: 0, currency: 'XOF', discount: 0 };
   }
 
-  const country = getCountryByCode(countryCode);
-  const currency = country?.currency?.code ?? offer.currency;
   const basePrice = getOfferPrice(planId, billingPeriod);
-
   if (basePrice === null) {
-    return { price: 0, originalPrice: 0, currency, discount: 0 };
+    return { price: 0, originalPrice: 0, currency: offer.currency, discount: 0 };
   }
 
   // Validated launch prices are canonical in XOF. International localization
   // can be added per country without changing the offer IDs or checkout API.
-  const price = basePrice;
   const monthly = offer.monthly ?? basePrice;
   const yearly = offer.yearly;
   const effectiveMonthlyYearly = yearly === null ? monthly : yearly / 12;
@@ -96,9 +81,9 @@ export function getPricingForCountry(countryCode: string, planId: string, billin
     : 0;
 
   return {
-    price,
+    price: basePrice,
     originalPrice: billingPeriod === 'yearly' ? yearly ?? basePrice : monthly,
-    currency,
+    currency: offer.currency,
     discount,
   };
 }
