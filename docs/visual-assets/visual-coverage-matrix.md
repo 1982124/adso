@@ -4,13 +4,15 @@
 
 Chaque leçon doit proposer un support visuel qui permet de comprendre le sujet avant la lecture complète du texte. Pour une personne peu ou non alphabétisée, le visuel doit montrer l'action, les usagers, le danger et, lorsque nécessaire, la bonne décision.
 
-## Sources africaines à examiner avant toute génération IA
+## Sources africaines examinées
 
-- Rwanda National Police — campagnes scolaires de traversée et sécurité routière.
-- Uganda Police Force / Directorate of Traffic and Road Safety — démonstrations casque et éducation des enfants.
-- Automobile Association of Tanzania / FIA — programmes scolaires et infrastructures de traversée.
-- WHO Regional Office for Africa — ressources et campagnes de sécurité routière.
-- Wikimedia Commons — photographies africaines avec licences explicites à vérifier asset par asset.
+- Rwanda National Police — campagnes scolaires de traversée, feux, téléphone, vitesse, alcool et comportement des élèves. Les publications officielles décrivent notamment des démonstrations de passages piétons et feux tricolores. Source : https://police.gov.rw/media/news-detail/news/police-extends-road-safety-awareness-to-schools/
+- Rwanda National Police — étude pratique avec élèves et parents sur la sécurité routière. Source : https://police.gov.rw/media/news-detail/news/rwanda-national-police-sensitize-green-hills-academy-pupils-on-safe-road-use/
+- Uganda Police / Directorate of Traffic and Road Safety — démonstrations de casque et sensibilisation scolaire. Une photographie publique montre un agent expliquant l'usage d'un casque à des enfants ; **droits de réutilisation commerciale à vérifier avant intégration**.
+- Automobile Association of Tanzania / FIA — programme scolaire avec passages zébrés, panneaux STOP et signalisation « School Ahead » ; **droits de réutilisation de la photographie à vérifier avant intégration**.
+- WHO Regional Office for Africa — bibliothèque multimédia avec séries « Botswana: Road Safety » ; les fiches indiquent des restrictions/conditions de téléchargement, donc **ne pas intégrer automatiquement sans permission/licence vérifiée**.
+- WHO Africa — programme « Save Kids Lives » et matériel de sécurité du trajet école, utile pour définir la couverture pédagogique. Source : https://www.afro.who.int/news/save-kids-lives-road-safety
+- Wikimedia Commons — photographies africaines sous licences explicites déjà retenues dans le registre ADSO, à vérifier asset par asset.
 
 ## Couverture minimale
 
@@ -18,25 +20,25 @@ Chaque leçon doit proposer un support visuel qui permet de comprendre le sujet 
 |---|---|---|---|---|
 | Sortie d'école / traversée | école + enfants + adulte + circulation | Rwanda/Sénégal/Tanzanie | Oui | Couvert partiellement |
 | Taxi-moto / environnement scolaire | moto + école + usagers | Bénin/Togo | Oui | Couvert |
-| Casque conducteur | casque porté correctement | police/campagnes africaines | Oui | À renforcer |
+| Casque conducteur | casque porté correctement | Uganda Police / campagnes africaines | Oui | À renforcer |
 | Absence de casque | comparaison visuelle sûre/dangereuse | campagnes africaines | Oui | À créer si absent |
 | STOP | panneau + véhicule arrêté | sources réglementaires officielles | Oui | À vérifier |
 | Cédez-le-passage | panneau + trajectoires | sources réglementaires officielles | Oui | À vérifier |
 | Priorité | trajectoires colorées + véhicules | sources réglementaires | Oui | À créer si absent |
-| Feu rouge/orange/vert | feu + véhicules + décision | sources officielles | Oui | À vérifier |
+| Feu rouge/orange/vert | feu + véhicules + décision | Rwanda Police / sources officielles | Oui | À vérifier |
 | Passage piéton | piéton + véhicule + arrêt | Rwanda/Tanzanie | Oui | Couvert |
 | Distance de sécurité | deux véhicules + distance visible | — | Oui | Manquant |
 | Freinage | trajectoire + distance d'arrêt | — | Oui | Manquant |
 | Angle mort | conducteur + zone invisible + usager | — | Oui | Manquant |
-| Téléphone au volant | conducteur + téléphone + danger | — | Oui | Manquant |
+| Téléphone au volant | conducteur + téléphone + danger | Rwanda Police / campagnes | Oui | Manquant |
 | Fatigue | conducteur fatigué + signes visibles | — | Oui | Manquant |
-| Alcool/drogue | conducteur incapable + véhicule immobilisé | — | Oui | Manquant |
+| Alcool/drogue | conducteur incapable + véhicule immobilisé | campagnes institutionnelles | Oui | Manquant |
 | Pluie | chaussée mouillée + visibilité réduite | — | Oui | Manquant |
 | Nuit | visibilité réduite + phares | — | Oui | Manquant |
 | Route dégradée | nid-de-poule/obstacle + anticipation | Afrique réelle | Oui | À renforcer |
 | Dépassement | deux véhicules + trajectoires | — | Oui | Manquant |
 | Rond-point | trajectoires + priorité | — | Oui | Manquant |
-| Accident / sécurisation | scène non graphique + triangle/zone sûre | campagnes/secours | Oui | À renforcer |
+| Accident / sécurisation | scène non graphique + zone sûre | campagnes/secours | Oui | À renforcer |
 | Premiers secours | gestes sûrs sans scène graphique | organisations de secours | Oui | Manquant |
 | Ceinture | conducteur/passagers attachés | campagnes | Oui | À vérifier |
 | Enfant à bord | enfant correctement installé | campagnes | Oui | À vérifier |
