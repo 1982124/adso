@@ -5,6 +5,7 @@ import { Providers } from "@/components/Providers";
 import { Toaster } from "@/components/ui/toaster";
 import { AccessibilityZoom } from "@/components/AccessibilityZoom";
 import { VoiceAccess } from "@/components/VoiceAccess";
+import LessonVisualEnhancer from "@/components/LessonVisualEnhancer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -57,6 +58,7 @@ export default function RootLayout({
         <Toaster />
         <AccessibilityZoom />
         <VoiceAccess />
+        <LessonVisualEnhancer />
       </body>
     </html>
   );
