@@ -6,29 +6,58 @@ type Choice = { id: string; label: string; isCorrect: boolean; scoreDelta: numbe
 type Interaction = { id: string; type: string; atSecond: number; prompt: string; explanation?: string; ttsText?: string; points: number; choices: Choice[] };
 type Scene = { id: string; title: string; description: string; videoUrl: string; durationSeconds: number; competency: string; level: string; language: string; status: string; interactions: Interaction[] };
 
+type SaveState = 'idle' | 'saving' | 'saved' | 'error';
+
 export default function ImmersiveFormationPage() {
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [selected, setSelected] = useState<Scene | null>(null);
   const [answer, setAnswer] = useState<Record<string, string>>({});
   const [result, setResult] = useState<{ score: number; maxScore: number; accuracy: number; competencyGain: number } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saveState, setSaveState] = useState<SaveState>('idle');
+  const [saveError, setSaveError] = useState('');
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    fetch('/api/immersive/scenes').then((r) => r.json()).then((data) => {
-      setScenes(Array.isArray(data.scenes) ? data.scenes : []);
-      if (data.scenes?.[0]) setSelected(data.scenes[0]);
-    }).finally(() => setLoading(false));
+    fetch('/api/immersive/scenes')
+      .then((r) => r.json())
+      .then((data) => {
+        setScenes(Array.isArray(data.scenes) ? data.scenes : []);
+        if (data.scenes?.[0]) setSelected(data.scenes[0]);
+      })
+      .catch(() => setScenes([]))
+      .finally(() => setLoading(false));
   }, []);
 
   async function submit() {
-    if (!selected) return;
+    if (!selected || saveState === 'saving') return;
+    setSaveState('saving');
+    setSaveError('');
+    setResult(null);
+
     const answers = selected.interactions.filter((i) => answer[i.id]).map((i) => {
       const choice = i.choices.find((c) => c.id === answer[i.id]);
       return { interactionId: i.id, choiceId: answer[i.id], scoreDelta: choice?.scoreDelta ?? 0, correct: Boolean(choice?.isCorrect) };
     });
-    const response = await fetch('/api/immersive/attempts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sceneId: selected.id, competency: selected.competency, interactions: selected.interactions, answers }) });
-    if (response.ok) setResult(await response.json());
+
+    try {
+      const response = await fetch('/api/immersive/attempts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ sceneId: selected.id, competency: selected.competency, interactions: selected.interactions, answers }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        const message = data?.error || (response.status === 401 ? 'Connectez-vous pour enregistrer votre progression.' : 'Impossible d’enregistrer la progression.');
+        throw new Error(message);
+      }
+      setResult(data);
+      setSaveState('saved');
+    } catch (error) {
+      setSaveState('error');
+      setSaveError(error instanceof Error ? error.message : 'Impossible d’enregistrer la progression.');
+    }
   }
 
   return (
@@ -45,7 +74,7 @@ export default function ImmersiveFormationPage() {
             <div className="mb-4 flex items-center justify-between"><h2 className="font-bold">Bibliothèque</h2><span className="rounded-full bg-emerald-400/10 px-2 py-1 text-xs text-emerald-300">{scenes.length}</span></div>
             {loading && <p className="text-sm text-slate-500">Chargement…</p>}
             {!loading && scenes.length === 0 && <div className="rounded-2xl border border-dashed border-white/10 p-4 text-sm text-slate-500">Aucune scène publiée. Les instructeurs peuvent créer les scènes via l’API d’authoring.</div>}
-            <div className="space-y-2">{scenes.map((scene) => <button key={scene.id} onClick={() => { setSelected(scene); setAnswer({}); setResult(null); }} className={`w-full rounded-2xl p-3 text-left transition ${selected?.id === scene.id ? 'bg-emerald-400/10 ring-1 ring-emerald-400/40' : 'bg-white/[0.03] hover:bg-white/[0.06]'}`}><div className="font-semibold">{scene.title}</div><div className="mt-1 text-xs text-slate-500">{scene.durationSeconds}s · {scene.competency}</div></button>)}</div>
+            <div className="space-y-2">{scenes.map((scene) => <button key={scene.id} onClick={() => { setSelected(scene); setAnswer({}); setResult(null); setSaveState('idle'); setSaveError(''); }} className={`w-full rounded-2xl p-3 text-left transition ${selected?.id === scene.id ? 'bg-emerald-400/10 ring-1 ring-emerald-400/40' : 'bg-white/[0.03] hover:bg-white/[0.06]'}`}><div className="font-semibold">{scene.title}</div><div className="mt-1 text-xs text-slate-500">{scene.durationSeconds}s · {scene.competency}</div></button>)}</div>
           </aside>
 
           <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03]">
@@ -59,7 +88,10 @@ export default function ImmersiveFormationPage() {
                 <h2 className="mt-4 text-2xl font-black">{selected.title}</h2><p className="mt-2 text-slate-400">{selected.description}</p>
                 <div className="mt-6 grid gap-3 sm:grid-cols-3">{selected.interactions.map((interaction) => <div key={interaction.id} className="rounded-2xl border border-white/10 p-3"><div className="text-xs uppercase tracking-wider text-slate-500">{interaction.type}</div><div className="mt-1 font-semibold">Pause à {interaction.atSecond}s</div></div>)}</div>
                 {selected.interactions.map((interaction) => <div key={interaction.id} className="mt-5 rounded-2xl border border-white/10 bg-slate-900/60 p-5"><div className="text-xs font-bold uppercase tracking-wider text-amber-300">{interaction.type} · {interaction.points} points</div><h3 className="mt-2 text-lg font-bold">{interaction.prompt}</h3><div className="mt-4 grid gap-2">{interaction.choices.map((choice) => <button key={choice.id} onClick={() => setAnswer((current) => ({ ...current, [interaction.id]: choice.id }))} className={`rounded-xl border p-3 text-left text-sm transition ${answer[interaction.id] === choice.id ? 'border-emerald-400 bg-emerald-400/10' : 'border-white/10 hover:border-white/20'}`}>{choice.label}</button>)}</div>{answer[interaction.id] && <div className="mt-4 rounded-xl bg-white/5 p-4 text-sm text-slate-300"><strong className="text-white">Conséquence :</strong> {interaction.choices.find((c) => c.id === answer[interaction.id])?.consequence}<br /><strong className="text-white">Pourquoi :</strong> {interaction.choices.find((c) => c.id === answer[interaction.id])?.explanation}</div>}</div>)}
-                <button onClick={submit} className="mt-6 rounded-xl bg-emerald-400 px-5 py-3 font-bold text-slate-950 hover:bg-emerald-300">Enregistrer ma progression</button>
+                <button onClick={submit} disabled={saveState === 'saving'} className="mt-6 rounded-xl bg-emerald-400 px-5 py-3 font-bold text-slate-950 hover:bg-emerald-300 disabled:cursor-wait disabled:opacity-60">
+                  {saveState === 'saving' ? 'Enregistrement…' : saveState === 'saved' ? 'Progression enregistrée' : 'Enregistrer ma progression'}
+                </button>
+                {saveState === 'error' && <div role="alert" className="mt-4 rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200">{saveError} <button type="button" onClick={submit} className="ml-2 font-bold underline">Réessayer</button></div>}
                 {result && <div className="mt-5 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 p-5"><div className="text-sm text-emerald-200">Progression enregistrée</div><div className="mt-1 text-3xl font-black">{Math.round(result.accuracy * 100)}% · {result.score}/{result.maxScore}</div><div className="mt-1 text-sm text-slate-300">Maîtrise de compétence : {result.competencyGain}%</div></div>}
               </div>
             </> : <div className="flex min-h-[500px] items-center justify-center p-8 text-center text-slate-500">Sélectionnez une scène immersive.</div>}
