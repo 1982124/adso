@@ -54,11 +54,14 @@ export function VoiceAccess() {
   useEffect(() => {
     const speechWindow = window as SpeechWindow;
     setSupported(Boolean(speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition));
+    const handleToggle = () => toggle();
+    window.addEventListener('adso:voice-toggle', handleToggle);
     return () => {
+      window.removeEventListener('adso:voice-toggle', handleToggle);
       recognition.current?.stop();
       if (presentationTimer.current) window.clearTimeout(presentationTimer.current);
     };
-  }, []);
+  }, [listening]);
 
   const speak = (text: string, lang = document.documentElement.lang || "fr-FR") => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
@@ -69,9 +72,7 @@ export function VoiceAccess() {
     window.speechSynthesis.speak(utterance);
   };
 
-  const navigate = (view: AppModule) => {
-    useViewStore.getState().setView(view);
-  };
+  const navigate = (view: AppModule) => useViewStore.getState().setView(view);
 
   const presentADSO = (index = 0) => {
     if (presentationTimer.current) window.clearTimeout(presentationTimer.current);
@@ -87,111 +88,68 @@ export function VoiceAccess() {
 
   const executeCommand = (raw: string) => {
     const command = normalize(raw);
-
     if (command.includes("arrete") || command.includes("stop") || command.includes("tais-toi")) {
       window.speechSynthesis?.cancel();
       if (presentationTimer.current) window.clearTimeout(presentationTimer.current);
       return;
     }
-
     if (command.includes("presente moi adso") || command.includes("presente adso") || command.includes("visite adso") || command.includes("montre moi tout adso")) {
-      presentADSO();
-      return;
+      presentADSO(); return;
     }
-
     if (command.includes("lire") || command.includes("lis")) {
       const main = document.querySelector("main") || document.body;
-      const text = Array.from(main.querySelectorAll("h1,h2,h3,p,li,button"))
-        .map((node) => node.textContent?.trim())
-        .filter(Boolean)
-        .join(". ");
-      speak(text.slice(0, 12000));
-      return;
+      const text = Array.from(main.querySelectorAll("h1,h2,h3,p,li,button")).map((node) => node.textContent?.trim()).filter(Boolean).join(". ");
+      speak(text.slice(0, 12000)); return;
     }
-
     if (command.includes("augmenter") && command.includes("texte")) {
-      window.dispatchEvent(new CustomEvent("adso:zoom", { detail: "increase" }));
-      speak("Taille du texte augmentée.");
-      return;
+      window.dispatchEvent(new CustomEvent("adso:zoom", { detail: "increase" })); speak("Taille du texte augmentée."); return;
     }
-
     if (command.includes("reduire") && command.includes("texte")) {
-      window.dispatchEvent(new CustomEvent("adso:zoom", { detail: "decrease" }));
-      speak("Taille du texte réduite.");
-      return;
+      window.dispatchEvent(new CustomEvent("adso:zoom", { detail: "decrease" })); speak("Taille du texte réduite."); return;
     }
-
     const match = MODULE_ALIASES.find((entry) => entry.words.some((word) => command.includes(normalize(word))));
     if (match) {
       navigate(match.view);
-      const label = PRESENTATION.find((item) => item.view === match.view)?.text || `J'ouvre ${match.view}.`;
-      speak(label);
-      return;
+      speak(PRESENTATION.find((item) => item.view === match.view)?.text || `J'ouvre ${match.view}.`); return;
     }
-
     if (command.includes("anglais") || command.includes("english") || command.includes("i don't speak french") || command.includes("i dont speak french")) {
-      speak("Hello. I can help you use ADSO, explain its services and guide you through the platform. Say the name of a service, or say: present ADSO.", "en-US");
-      return;
+      speak("Hello. I can help you use ADSO, explain its services and guide you through the platform. Say the name of a service, or say: present ADSO.", "en-US"); return;
     }
-
     if (command.includes("espanol") || command.includes("español") || command.includes("podemos hablar") || command.includes("hablar espanol")) {
-      speak("Sí. Podemos hablar en español. Puedo explicarte ADSO y guiarte por sus servicios. Di el nombre del servicio que quieres abrir.", "es-ES");
-      return;
+      speak("Sí. Podemos hablar en español. Puedo explicarte ADSO y guiarte por sus servicios. Di el nombre del servicio que quieres abrir.", "es-ES"); return;
     }
-
     if (command.includes("arabe") || command.includes("arabic") || command.includes("العربية")) {
-      speak("نعم، يمكنني مساعدتك باللغة العربية في فهم خدمات ADSO والتنقل فيها.", "ar-SA");
-      return;
+      speak("نعم، يمكنني مساعدتك باللغة العربية في فهم خدمات ADSO والتنقل فيها.", "ar-SA"); return;
     }
-
     speak(`J'ai entendu : ${raw}. Vous pouvez me demander d'ouvrir Formation, Conducteur, Sécurité, Assurance, Flottes ou Établissements, ou dire : présente-moi ADSO.`);
   };
 
-  const toggle = () => {
+  function toggle() {
     const speechWindow = window as SpeechWindow;
     const Recognition = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
     if (!Recognition) {
-      speak("La commande vocale n'est pas disponible dans ce navigateur. Vous pouvez utiliser la lecture vocale ADSO.");
-      return;
+      speak("La commande vocale n'est pas disponible dans ce navigateur. Vous pouvez utiliser la lecture vocale ADSO."); return;
     }
     if (listening) {
-      recognition.current?.stop();
-      setListening(false);
-      return;
+      recognition.current?.stop(); setListening(false); return;
     }
     const instance = new Recognition();
-    instance.lang = "fr-FR";
-    instance.continuous = false;
-    instance.interimResults = false;
-    instance.onresult = (event) => {
-      const transcript = event.results[0]?.[0]?.transcript || "";
-      if (transcript) executeCommand(transcript);
-    };
-    instance.onerror = () => {
-      setListening(false);
-      speak("Je n'ai pas compris. Réessayez.");
-    };
+    instance.lang = "fr-FR"; instance.continuous = false; instance.interimResults = false;
+    instance.onresult = (event) => { const transcript = event.results[0]?.[0]?.transcript || ""; if (transcript) executeCommand(transcript); };
+    instance.onerror = () => { setListening(false); speak("Je n'ai pas compris. Réessayez."); };
     instance.onend = () => setListening(false);
-    recognition.current = instance;
-    setEnabled(true);
-    setListening(true);
-    speak("Commande vocale activée. Je vous écoute.");
-    instance.start();
-  };
+    recognition.current = instance; setEnabled(true); setListening(true);
+    speak("Commande vocale activée. Je vous écoute."); instance.start();
+  }
 
+  // Françoise is controlled from the single microphone in the ADSO header.
+  // Keep this controller mounted for voice functionality, but render no second floating microphone.
+  if (!enabled && !supported) return null;
   return (
-    <div className="fixed bottom-5 left-5 z-[80] flex items-center gap-2 print:hidden">
-      {enabled && (
-        <button type="button" onClick={() => speak("Dites le nom d'un service, présente-moi ADSO, lire, augmenter le texte ou réduire le texte.")} className="rounded-full border bg-background/95 px-3 py-2 text-xs shadow-lg backdrop-blur" aria-label="Lire les commandes vocales disponibles">
-          <Volume2 className="mr-1 inline h-4 w-4" aria-hidden="true" />
-          Commandes vocales
-        </button>
-      )}
-      <button type="button" onClick={toggle} className="flex h-12 w-12 items-center justify-center rounded-full border bg-background shadow-lg transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary" aria-label={listening ? "Arrêter la commande vocale" : "Activer la commande vocale"} title={listening ? "Arrêter la commande vocale" : "Commande vocale ADSO"}>
-        {listening ? <MicOff className="h-5 w-5" aria-hidden="true" /> : <Mic className="h-5 w-5" aria-hidden="true" />}
-        <span className="sr-only">{listening ? "Arrêter" : "Activer"} la commande vocale ADSO</span>
-      </button>
-      {!supported && <span className="sr-only">Reconnaissance vocale non disponible</span>}
+    <div className="sr-only" aria-live="polite">
+      {listening ? "Françoise écoute." : "Françoise est prête."}
+      {enabled && <span> Commandes vocales disponibles.</span>}
+      <span><Volume2 aria-hidden="true" /><Mic aria-hidden="true" /><MicOff aria-hidden="true" /></span>
     </div>
   );
 }
