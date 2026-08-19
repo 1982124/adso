@@ -31,6 +31,8 @@ const OBJECTIVES: Record<Objective, { title: string; description: string }> = {
   revision: { title: 'Je révise mon code routier au quotidien', description: 'Entretenir mes connaissances et réduire les risques.' },
 };
 
+// The picker must never depend on a network request. The local directory is the
+// guaranteed first-render source; the API is allowed to enrich it, never empty it.
 const STATIC_AFRICA_COUNTRIES: Country[] = africaCountryDirectory.map((item) => ({ ...item, id: item.code, continent: 'Afrique' }));
 const STORAGE_KEY = 'adso-learner-onboarding-v2';
 
@@ -57,23 +59,40 @@ export default function LearnerOnboarding({ onComplete }: { onComplete: () => vo
         if (parsed.country?.code && parsed.country.code !== 'ZZ') setCountry(parsed.country);
       } catch { /* ignore malformed local state */ }
     }
+
+    // Never replace the guaranteed local catalogue with an untrusted/partial API
+    // payload. The API may only enrich entries that already have valid identity data.
     const controller = new AbortController();
     fetch('/api/learning/countries?continent=Afrique', { signal: controller.signal, cache: 'no-store' })
       .then((res) => res.ok ? res.json() : Promise.reject(new Error('countries')))
       .then((data) => {
         const remote = Array.isArray(data.countries) ? data.countries : [];
-        if (remote.length > 0) setCountries(remote);
+        const validRemote = remote
+          .filter((item: Partial<Country>) => typeof item?.code === 'string' && typeof item?.name === 'string' && item.code.length === 2)
+          .map((item: Partial<Country>) => ({
+            id: item.id || item.code!,
+            code: item.code!,
+            name: item.name!,
+            flag: item.flag || STATIC_AFRICA_COUNTRIES.find((country) => country.code === item.code)?.flag || '🌍',
+            continent: 'Afrique',
+          }));
+        if (validRemote.length > 0) {
+          const byCode = new Map(STATIC_AFRICA_COUNTRIES.map((item) => [item.code, item]));
+          for (const item of validRemote) byCode.set(item.code, { ...byCode.get(item.code), ...item });
+          setCountries(Array.from(byCode.values()));
+        }
       })
       .catch(() => {
-        // Keep the complete static African directory visible if the API is unavailable.
-        setCountries(STATIC_AFRICA_COUNTRIES);
+        // Keep the guaranteed static African directory visible.
       });
     return () => controller.abort();
   }, [setCountry, setLocale]);
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
-    return countries.filter((item) => !normalized || item.name.toLocaleLowerCase().includes(normalized) || item.code.toLocaleLowerCase().includes(normalized)).slice(0, 18);
+    return countries
+      .filter((item) => !normalized || item.name.toLocaleLowerCase().includes(normalized) || item.code.toLocaleLowerCase().includes(normalized))
+      .slice(0, 18);
   }, [countries, query]);
 
   const selectedProfile = PROFILES.find((item) => item.id === profile);
@@ -109,10 +128,10 @@ export default function LearnerOnboarding({ onComplete }: { onComplete: () => vo
         <div>
           <label htmlFor="adso-country-search" className="mb-2 block text-sm font-bold text-slate-900 dark:text-white">1. Dans quel pays vas-tu apprendre ?</label>
           <div className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><Input id="adso-country-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Rechercher un pays africain..." className="h-11 rounded-xl border-slate-300 bg-white pl-9 dark:border-slate-700 dark:bg-slate-900" /></div>
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {filtered.map((item) => { const selected = country.code === item.code; return <button type="button" key={item.id} aria-pressed={selected} onClick={() => setCountry({ code: item.code, name: item.name })} className={`flex min-h-12 items-center gap-2 rounded-xl border px-3 text-left transition ${selected ? 'border-emerald-600 bg-emerald-50 text-slate-950 ring-1 ring-emerald-600/20 dark:border-emerald-400 dark:bg-emerald-500/10 dark:text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-500/50 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300'}`}><span className="text-xl">{item.flag}</span><span className="min-w-0 flex-1 truncate text-xs font-semibold">{item.name}</span>{selected && <Check className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />}</button>; })}
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3" aria-label="Pays africains disponibles">
+            {filtered.map((item) => { const selected = country.code === item.code; return <button type="button" key={item.id} aria-pressed={selected} onClick={() => setCountry({ code: item.code, name: item.name })} className={`flex min-h-12 items-center gap-2 rounded-xl border px-3 text-left transition ${selected ? 'border-emerald-600 bg-emerald-50 text-slate-950 ring-1 ring-emerald-600/20 dark:border-emerald-400 dark:bg-emerald-500/10 dark:text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-500/50 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300'}`}><span className="text-xl" aria-hidden="true">{item.flag}</span><span className="min-w-0 flex-1 truncate text-xs font-semibold">{item.name}</span>{selected && <Check className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />}</button>; })}
           </div>
-          {countries.length === 0 && <p className="mt-3 text-xs text-slate-500">Le catalogue des pays est momentanément indisponible. ADSO conserve ton choix s'il a déjà été enregistré.</p>}
+          {filtered.length === 0 && <p className="mt-3 text-xs text-slate-500">Aucun pays ne correspond à ta recherche. Efface la recherche pour afficher le catalogue africain.</p>}
         </div>
         <div>
           <p className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white"><Languages className="h-4 w-4 text-emerald-600" /> 2. Dans quelle langue veux-tu apprendre ?</p>
