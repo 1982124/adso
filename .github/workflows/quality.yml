@@ -10,17 +10,25 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/adso
+      NEXTAUTH_SECRET: ci-only-secret-not-used-in-production
+      NEXTAUTH_URL: http://localhost:3000
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node 24
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
+          cache: npm
 
       - name: Install dependencies
         run: npm install
+
+      - name: Prisma validate
+        run: npx prisma validate
 
       - name: Generate Prisma client
         run: npx prisma generate
