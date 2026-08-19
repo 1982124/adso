@@ -1,4 +1,5 @@
 import { del, put } from '@vercel/blob';
+import { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getSession, getUserRole } from '@/lib/auth';
@@ -30,14 +31,14 @@ export async function GET() {
   if ('error' in auth) return auth.error;
   try {
     const [books, sales] = await Promise.all([
-      db.$queryRaw<Array<Record<string, unknown>>>(`
+      db.$queryRaw<Array<Record<string, unknown>>>(Prisma.sql`
         SELECT e."id", e."slug", e."title", e."author", e."coverUrl", e."price", e."currency",
                e."isPublished", e."createdAt",
                COALESCE((SELECT COUNT(*) FROM "EbookOrder" o WHERE o."ebookId" = e."id" AND o."status" = 'paid'), 0) AS "sales",
                COALESCE((SELECT SUM(o."amount") FROM "EbookOrder" o WHERE o."ebookId" = e."id" AND o."status" = 'paid'), 0) AS "revenue"
         FROM "Ebook" e ORDER BY e."createdAt" DESC LIMIT 200
       `),
-      db.$queryRaw<Array<{ orders: bigint; revenue: number | null }>>(`
+      db.$queryRaw<Array<{ orders: bigint; revenue: number | null }>>(Prisma.sql`
         SELECT COUNT(*) AS orders, COALESCE(SUM("amount"), 0) AS revenue
         FROM "EbookOrder" WHERE "status" = 'paid'
       `),
@@ -82,7 +83,9 @@ export async function POST(request: Request) {
       if (cover.size > 5 * 1024 * 1024) return NextResponse.json({ error: 'Couverture trop volumineuse (5 Mo maximum)' }, { status: 400 });
     }
 
-    const existing = await db.$queryRaw<Array<{ id: string }>>('SELECT "id" FROM "Ebook" WHERE "slug"=$1 LIMIT 1', slug);
+    const existing = await db.$queryRaw<Array<{ id: string }>>(Prisma.sql`
+      SELECT "id" FROM "Ebook" WHERE "slug" = ${slug} LIMIT 1
+    `);
     if (existing[0]) return NextResponse.json({ error: 'Ce slug existe déjà' }, { status: 409 });
 
     const ebookId = crypto.randomUUID();
@@ -98,14 +101,14 @@ export async function POST(request: Request) {
     }
 
     await db.$transaction(async (tx) => {
-      await tx.$executeRawUnsafe(
-        `INSERT INTO "Ebook" ("id","slug","title","description","author","coverUrl","storageKey","price","currency","isPublished") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-        ebookId, slug, title, description, author, coverUrl, ebookBlob.pathname, price, currency, isPublished,
-      );
-      await tx.$executeRawUnsafe(
-        `INSERT INTO "EbookProduct" ("id","ebookId","kind","price","currency","isPublished") VALUES ($1,$2,'ebook',$3,$4,$5)`,
-        productId, ebookId, price, currency, isPublished,
-      );
+      await tx.$executeRaw(Prisma.sql`
+        INSERT INTO "Ebook" ("id","slug","title","description","author","coverUrl","storageKey","price","currency","isPublished")
+        VALUES (${ebookId}, ${slug}, ${title}, ${description}, ${author}, ${coverUrl}, ${ebookBlob.pathname}, ${price}, ${currency}, ${isPublished})
+      `);
+      await tx.$executeRaw(Prisma.sql`
+        INSERT INTO "EbookProduct" ("id","ebookId","kind","price","currency","isPublished")
+        VALUES (${productId}, ${ebookId}, 'ebook', ${price}, ${currency}, ${isPublished})
+      `);
     });
 
     return NextResponse.json({ ok: true, id: ebookId, slug, url: `/ebooks/${slug}` }, { status: 201 });
