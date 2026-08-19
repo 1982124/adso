@@ -13,7 +13,16 @@ import { hasMinRole, type ADSORole } from './rbac';
 export { getServerSession };
 
 export async function getSession() {
-  return getServerSession(authOptions);
+  // Keep public routes available when authentication configuration is absent.
+  // Protected routes still fail closed through requireAuth/requireRole.
+  const secret = process.env.NEXTAUTH_SECRET?.trim();
+  if (!secret || secret.length < 32) return null;
+  try {
+    return await getServerSession(authOptions);
+  } catch (error) {
+    console.error('[auth] session resolution failed', error);
+    return null;
+  }
 }
 
 export async function requireAuth() {
