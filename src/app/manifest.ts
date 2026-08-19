@@ -2,9 +2,9 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'ADSO — Auto Drive School Online',
+    name: 'ADSO — African Driving Safety & Orientation',
     short_name: 'ADSO',
-    description: "Plateforme internationale d'apprentissage de la mobilité, de la conduite et de la sécurité routière.",
+    description: "Plateforme d'éducation routière, de sécurité, de prévention et d'orientation pour une mobilité responsable.",
     start_url: '/',
     display: 'standalone',
     background_color: '#020617',
