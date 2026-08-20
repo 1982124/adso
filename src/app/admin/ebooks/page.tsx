@@ -15,29 +15,33 @@ export default function AdminEbooksPage() {
 
   const update = (key: keyof FormState, value: string) => setForm(prev => ({ ...prev, [key]: value }));
 
-  const analyze = async () => {
+  const analyze = async (): Promise<FormState> => {
     if (!file) throw new Error('Déposez d’abord le PDF ou EPUB.');
+    const fd = new FormData(); fd.append('file', file);
+    const response = await fetch('/api/admin/ebooks/ai-finalize', { method: 'POST', body: fd });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Analyse IA impossible');
+    const m = data.metadata || {};
+    const next = { ...form,
+      title: String(m.title || form.title), author: String(m.author || form.author), description: String(m.description || form.description),
+      slug: String(m.slug || form.slug), price: m.suggestedPriceXof != null ? String(m.suggestedPriceXof) : form.price,
+    };
+    setForm(next); setAiReady(true); return next;
+  };
+
+  const runAnalyze = async () => {
     setBusy(true); setMessage('ADSO AI analyse le livre et prépare sa fiche commerciale…');
-    try {
-      const fd = new FormData(); fd.append('file', file);
-      const response = await fetch('/api/admin/ebooks/ai-finalize', { method: 'POST', body: fd });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Analyse IA impossible');
-      const m = data.metadata || {};
-      setForm(prev => ({ ...prev,
-        title: String(m.title || prev.title), author: String(m.author || prev.author), description: String(m.description || prev.description),
-        slug: String(m.slug || prev.slug), price: m.suggestedPriceXof != null ? String(m.suggestedPriceXof) : prev.price,
-      }));
-      setAiReady(true); setMessage('ADSO AI a préparé la fiche. Vérifiez les informations commerciales et le moyen de paiement avant publication.');
-    } finally { setBusy(false); }
+    try { await analyze(); setMessage('ADSO AI a préparé la fiche. Ajoutez le lien de paiement, puis finalisez la publication.'); }
+    catch (error) { setMessage(error instanceof Error ? error.message : 'Analyse IA impossible'); }
+    finally { setBusy(false); }
   };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault(); setBusy(true); setMessage('');
     try {
       if (!file) throw new Error('Sélectionnez le PDF ou EPUB.');
-      if (!aiReady) await analyze();
-      const created = await fetch('/api/admin/ebooks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, price: Number(form.price), isPublished: false }) });
+      const nextForm = aiReady ? form : await analyze();
+      const created = await fetch('/api/admin/ebooks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...nextForm, price: Number(nextForm.price), isPublished: false }) });
       const createdData = await created.json();
       if (!created.ok) throw new Error(createdData.error ?? 'Création impossible');
       const pathname = `ebooks/${createdData.id}/${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
@@ -56,11 +60,11 @@ export default function AdminEbooksPage() {
       <div className="mx-auto max-w-4xl">
         <p className="text-sm font-medium text-primary">ADSO · Administration · AI Publishing</p>
         <h1 className="mt-2 text-3xl font-bold">Publier un eBook avec ADSO AI</h1>
-        <p className="mt-2 text-muted-foreground">Déposez simplement le PDF/EPUB. ADSO AI prépare les métadonnées commerciales ; le fichier reste privé. La publication exige ensuite un moyen de paiement configuré.</p>
+        <p className="mt-2 text-muted-foreground">Déposez simplement le PDF/EPUB. ADSO AI prépare les métadonnées commerciales ; le fichier reste privé. La publication exige un moyen de paiement configuré.</p>
         <div className="mt-6 rounded-2xl border p-5">
           <label className="text-sm font-medium">1. Déposer le livre</label>
           <input type="file" accept="application/pdf,application/epub+zip,.pdf,.epub" onChange={e => { setFile(e.target.files?.[0] ?? null); setAiReady(false); }} className="mt-3 w-full rounded-xl border p-3" />
-          <button type="button" disabled={!file || busy} onClick={() => analyze().catch(e => setMessage(e.message))} className="mt-3 rounded-xl border px-5 py-3 font-medium disabled:opacity-50">{busy ? 'ADSO AI travaille…' : '✨ Analyser avec ADSO AI'}</button>
+          <button type="button" disabled={!file || busy} onClick={runAnalyze} className="mt-3 rounded-xl border px-5 py-3 font-medium disabled:opacity-50">{busy ? 'ADSO AI travaille…' : '✨ Analyser avec ADSO AI'}</button>
         </div>
         <form onSubmit={submit} className="mt-6 space-y-5 rounded-2xl border p-6">
           <p className="text-sm font-medium">2. Fiche commerciale générée par l’IA — modifiable avant publication</p>
