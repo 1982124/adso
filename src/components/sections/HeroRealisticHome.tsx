@@ -10,6 +10,10 @@ import { useState } from 'react';
 // The photo contains real people, vehicles and an actual road-accident context.
 const HERO_IMAGE = 'https://commons.wikimedia.org/wiki/Special:FilePath/Police_b%C3%A9ninoise_constat_d%27accident_de_v%C3%A9hicules_a_Cotonou_au_B%C3%A9nin.jpg';
 
+// Real photograph of Beninese motorcycle taxis in front of a primary school.
+// Wikimedia Commons, CC BY-SA 4.0, author ShirleyDoss.
+const SCHOOL_MOTO_IMAGE = 'https://commons.wikimedia.org/wiki/Special:FilePath/Taxi_moto_%C3%A0_l%27%C3%A9cole_Notre_Dame_Cotonou.jpg';
+
 export default function HeroRealisticHome() {
   const setView = useViewStore((state) => state.setView);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -65,7 +69,22 @@ export default function HeroRealisticHome() {
           </div>
         </div>
 
-        <div className="mx-auto max-w-4xl rounded-2xl border border-amber-300/15 bg-white/[0.04] p-5 text-center sm:p-6">
+        <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+          <div className="overflow-hidden rounded-2xl border border-white/10 bg-black shadow-xl">
+            <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-900">
+              <img src={SCHOOL_MOTO_IMAGE} alt="Taxi-motos béninois devant l'école primaire Notre Dame à Cotonou" className="h-full w-full object-cover" loading="lazy" decoding="async" />
+            </div>
+            <p className="border-t border-white/10 bg-slate-950 px-4 py-2 text-[10px] leading-4 text-slate-500">Cotonou · taxi-motos devant une école · ShirleyDoss / Wikimedia Commons · CC BY-SA 4.0</p>
+          </div>
+          <div className="rounded-2xl border border-emerald-300/15 bg-white/[0.04] p-6 sm:p-7">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-300">Apprendre avant le danger</p>
+            <h2 className="mt-3 text-2xl font-black tracking-tight text-white sm:text-3xl">L'école est le premier terrain de sécurité routière.</h2>
+            <p className="mt-4 text-sm leading-7 text-slate-300">ADSO relie les situations réelles aux compétences à acquérir : observer, anticiper, décider, protéger les piétons et partager la route avec les deux-roues.</p>
+            <button type="button" onClick={() => navigate('learning')} className="mt-5 inline-flex min-h-12 items-center rounded-xl bg-white/10 px-5 text-sm font-extrabold text-white transition hover:bg-white/15">Voir les scènes immersives<ArrowRight className="ml-2 size-4" /></button>
+          </div>
+        </div>
+
+        <div className="mx-auto mt-6 max-w-4xl rounded-2xl border border-amber-300/15 bg-white/[0.04] p-5 text-center sm:p-6">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-200">Un chiffre qui doit nous alerter</p>
           <p className="mt-3 text-base font-bold leading-7 text-white">L'Afrique affiche le taux de mortalité routière le plus élevé au monde.</p>
           <p className="mt-2 text-sm leading-6 text-slate-300"><strong className="text-white">225 482 décès sur les routes en 2021</strong>, soit environ <strong className="text-white">19,4 décès pour 100 000 habitants</strong>.</p>
