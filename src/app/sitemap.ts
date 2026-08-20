@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = (process.env.NEXTAUTH_URL || 'https://adso-ai-driving.vercel.app').replace(/\/$/, '');
+  const baseUrl = (process.env.NEXTAUTH_URL || 'https://adso-safety.vercel.app').replace(/\/$/, '');
   const now = new Date();
 
   return [
