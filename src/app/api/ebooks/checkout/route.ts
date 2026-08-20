@@ -28,8 +28,9 @@ export async function POST(request: NextRequest) {
     }
     if (!PROVIDERS.has(provider)) return NextResponse.json({ error: 'Moyen de paiement non pris en charge' }, { status: 400 });
 
-    const books = await db.$queryRaw<Array<{ id: string; price: number; currency: string; checkoutUrl: string | null; isPublished: boolean }>>(Prisma.sql`
-      SELECT "id","price","currency","checkoutUrl","isPublished" FROM "Ebook" WHERE "slug"=${slug} LIMIT 1
+    const books = await db.$queryRaw<Array<{ id: string; price: number; currency: string; checkoutUrl: string | null; chariowCheckoutUrl: string | null; maketouCheckoutUrl: string | null; isPublished: boolean }>>(Prisma.sql`
+      SELECT "id","price","currency","checkoutUrl","chariowCheckoutUrl","maketouCheckoutUrl","isPublished"
+      FROM "Ebook" WHERE "slug"=${slug} LIMIT 1
     `);
     const ebook = books[0];
     if (!ebook || !ebook.isPublished) return NextResponse.json({ error: 'eBook indisponible' }, { status: 404 });
@@ -44,27 +45,22 @@ export async function POST(request: NextRequest) {
     `);
     if (existing[0]) return NextResponse.json({ order: existing[0] }, { status: 200 });
 
-    if (!ebook.checkoutUrl) {
-      return NextResponse.json({ error: 'Le lien de paiement de cet eBook n’est pas encore configuré.' }, { status: 409 });
-    }
+    const checkoutUrl = provider === 'chariow'
+      ? ebook.chariowCheckoutUrl
+      : provider === 'maketou'
+        ? ebook.maketouCheckoutUrl
+        : ebook.checkoutUrl;
+
+    if (!checkoutUrl) return NextResponse.json({ error: `Le paiement ${provider} n’est pas encore configuré pour cet eBook.` }, { status: 409 });
 
     const id = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
     await db.$executeRaw(Prisma.sql`
       INSERT INTO "EbookOrder" ("id","ebookId","userId","currency","amountMinor","provider","status","idempotencyKey","checkoutUrl","expiresAt")
-      VALUES (${id},${ebook.id},${userId},${ebook.currency},${amountMinor(ebook.price, ebook.currency)},${provider},'PENDING',${idempotencyKey},${ebook.checkoutUrl},${expiresAt})
+      VALUES (${id},${ebook.id},${userId},${ebook.currency},${amountMinor(ebook.price, ebook.currency)},${provider},'PENDING',${idempotencyKey},${checkoutUrl},${expiresAt})
     `);
 
-    return NextResponse.json({
-      order: {
-        id,
-        status: 'PENDING',
-        amountMinor: amountMinor(ebook.price, ebook.currency),
-        currency: ebook.currency,
-        provider,
-        checkoutUrl: ebook.checkoutUrl,
-      },
-    }, { status: 201 });
+    return NextResponse.json({ order: { id, status: 'PENDING', amountMinor: amountMinor(ebook.price, ebook.currency), currency: ebook.currency, provider, checkoutUrl } }, { status: 201 });
   } catch (error) {
     console.error('[POST /api/ebooks/checkout]', error);
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Erreur de checkout eBook' }, { status: 400 });
