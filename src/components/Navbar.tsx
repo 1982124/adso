@@ -11,7 +11,7 @@ import { useViewStore, type AppModule, mainModules, moduleLabels } from '@/store
 const homeNavLinks = [
   { label: 'Pourquoi ADSO ?', href: '#stats' }, { label: 'ADSO Immersif', href: '#ai-features' },
   { label: 'Éducation routière', href: '#ecosystem' }, { label: 'ADSO Communauté', href: '/communaute' },
-  { label: 'Tarifs', href: '#pricing' }, { label: 'Afrique First', href: '#international' }, { label: 'Roadmap', href: '#roadmap' },
+  { label: 'Tarifs', href: '#pricing' }, { label: 'Afrique', href: '#international' }, { label: 'Roadmap', href: '#roadmap' },
 ];
 const moduleIcons: Record<string, React.ComponentType<{ className?: string }>> = { Home, GraduationCap, Car, Shield, Truck, Building2 };
 
