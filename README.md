@@ -40,3 +40,5 @@ Les pull requests vers `main` exécutent ESLint puis le build avec Node.js 20 et
 ## Déploiement
 
 Le déploiement de production est géré par Vercel. Les secrets et variables d'environnement doivent être configurés dans le projet Vercel, jamais committés dans le dépôt.
+
+Domaine de production canonique : `https://adso-safety.vercel.app`.
