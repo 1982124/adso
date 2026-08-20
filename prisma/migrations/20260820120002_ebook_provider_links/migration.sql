@@ -1,0 +1,2 @@
+ALTER TABLE "Ebook" ADD COLUMN IF NOT EXISTS "chariowCheckoutUrl" TEXT;
+ALTER TABLE "Ebook" ADD COLUMN IF NOT EXISTS "maketouCheckoutUrl" TEXT;
