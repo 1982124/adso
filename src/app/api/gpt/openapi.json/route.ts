@@ -7,7 +7,7 @@ const schema = {
     version: '1.0.0',
     description: 'Secure bridge between GPT Actions and Françoise, ADSO AI Executive.',
   },
-  servers: [{ url: 'https://adso-ai-driving.vercel.app' }],
+  servers: [{ url: process.env.NEXTAUTH_URL || 'https://adso-safety.vercel.app' }],
   paths: {
     '/api/gpt/v1/status': {
       get: {
