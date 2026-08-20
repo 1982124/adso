@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/button';
 import { useViewStore } from '@/stores/view-store';
 import { useState } from 'react';
 
-// Real photograph from Cotonou, Benin. CC BY-SA 4.0, author Adoscam.
-// The photo contains real people, vehicles and an actual road-accident context.
-const HERO_IMAGE = 'https://commons.wikimedia.org/wiki/Special:FilePath/Police_b%C3%A9ninoise_constat_d%27accident_de_v%C3%A9hicules_a_Cotonou_au_B%C3%A9nin.jpg';
+// Original ADSO editorial illustration. It is intentionally self-contained,
+// fast to load and independent of third-party image availability/licensing.
+const HERO_IMAGE = '/visuals/adso-home-school-safety.svg';
 
-// Real photograph of Beninese motorcycle taxis in front of a primary school.
-// Wikimedia Commons, CC BY-SA 4.0, author ShirleyDoss.
+// Optional contextual photograph. Attribution remains visible because this is
+// third-party material; it is never presented as an ADSO-created image.
 const SCHOOL_MOTO_IMAGE = 'https://commons.wikimedia.org/wiki/Special:FilePath/Taxi_moto_%C3%A0_l%27%C3%A9cole_Notre_Dame_Cotonou.jpg';
 
 export default function HeroRealisticHome() {
@@ -54,9 +54,9 @@ export default function HeroRealisticHome() {
       <div className="mx-auto w-full max-w-7xl px-4 pb-12 pt-4 sm:px-6 sm:pt-6 lg:px-8">
         <div className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-black shadow-2xl shadow-black/40">
           <div className="relative aspect-[16/9] min-h-[300px] w-full overflow-hidden bg-slate-900 sm:min-h-[480px] lg:min-h-[640px]">
-            <img src={HERO_IMAGE} alt="Constat d'un accident de véhicules à Cotonou, au Bénin — personnes, véhicules et route réels" className="absolute inset-0 h-full w-full object-cover object-center" loading="eager" fetchPriority="high" decoding="async" />
+            <img src={HERO_IMAGE} alt="Illustration ADSO : élève près d'une école, taxi-moto, véhicule et signalisation de sécurité routière" className="absolute inset-0 h-full w-full object-cover object-center" loading="eager" fetchPriority="high" decoding="async" />
           </div>
-          <p className="border-t border-white/10 bg-slate-950 px-4 py-2 text-[10px] leading-4 text-slate-500 sm:px-6">Photo réelle prise à Cotonou, Bénin · Adoscam / Wikimedia Commons · CC BY-SA 4.0</p>
+          <p className="border-t border-white/10 bg-slate-950 px-4 py-2 text-[10px] leading-4 text-slate-500 sm:px-6">Illustration originale ADSO · scène pédagogique de sécurité routière</p>
         </div>
 
         <div className="mx-auto max-w-4xl py-10 text-center sm:py-14">
@@ -74,12 +74,12 @@ export default function HeroRealisticHome() {
             <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-900">
               <img src={SCHOOL_MOTO_IMAGE} alt="Taxi-motos béninois devant l'école primaire Notre Dame à Cotonou" className="h-full w-full object-cover" loading="lazy" decoding="async" />
             </div>
-            <p className="border-t border-white/10 bg-slate-950 px-4 py-2 text-[10px] leading-4 text-slate-500">Cotonou · taxi-motos devant une école · ShirleyDoss / Wikimedia Commons · CC BY-SA 4.0</p>
+            <p className="border-t border-white/10 bg-slate-950 px-4 py-2 text-[10px] leading-4 text-slate-500">Image contextuelle · Cotonou · taxi-motos devant une école · ShirleyDoss / Wikimedia Commons · CC BY-SA 4.0</p>
           </div>
           <div className="rounded-2xl border border-emerald-300/15 bg-white/[0.04] p-6 sm:p-7">
             <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-300">Apprendre avant le danger</p>
             <h2 className="mt-3 text-2xl font-black tracking-tight text-white sm:text-3xl">L'école est le premier terrain de sécurité routière.</h2>
-            <p className="mt-4 text-sm leading-7 text-slate-300">ADSO relie les situations réelles aux compétences à acquérir : observer, anticiper, décider, protéger les piétons et partager la route avec les deux-roues.</p>
+            <p className="mt-4 text-sm leading-7 text-slate-300">ADSO relie les situations concrètes aux compétences à acquérir : observer, anticiper, décider, protéger les piétons et partager la route avec les deux-roues.</p>
             <button type="button" onClick={() => navigate('learning')} className="mt-5 inline-flex min-h-12 items-center rounded-xl bg-white/10 px-5 text-sm font-extrabold text-white transition hover:bg-white/15">Voir les scènes immersives<ArrowRight className="ml-2 size-4" /></button>
           </div>
         </div>
