@@ -48,14 +48,19 @@ export async function POST(request: NextRequest) {
           UPDATE "EbookOrder" SET "status"='PAID',"providerReference"=${body.providerReference ?? null},"paidAt"=CURRENT_TIMESTAMP,"updatedAt"=CURRENT_TIMESTAMP WHERE "id"=${body.orderId}
         `);
         await tx.$executeRaw(Prisma.sql`
-          INSERT INTO "EbookEntitlement" ("id","ebookId","userId","source","orderId")
-          VALUES (${crypto.randomUUID()},${order.ebookId},${order.userId},'purchase',${order.id})
+          INSERT INTO "EbookEntitlement" ("id","ebookId","userId","source","orderId","kind")
+          VALUES (${crypto.randomUUID()},${order.ebookId},${order.userId},'purchase',${order.id},'ebook')
           ON CONFLICT ("ebookId","userId") DO NOTHING
         `);
       } else {
         await tx.$executeRaw(Prisma.sql`
           UPDATE "EbookOrder" SET "status"=${body.status},"providerReference"=${body.providerReference ?? null},"updatedAt"=CURRENT_TIMESTAMP WHERE "id"=${body.orderId}
         `);
+        if (body.status === 'REFUNDED') {
+          await tx.$executeRaw(Prisma.sql`
+            DELETE FROM "EbookEntitlement" WHERE "ebookId"=${order.ebookId} AND "userId"=${order.userId} AND "orderId"=${order.id}
+          `);
+        }
       }
 
       await tx.$executeRaw(Prisma.sql`

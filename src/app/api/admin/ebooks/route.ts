@@ -34,10 +34,18 @@ export async function POST(request: NextRequest) {
     if (!/^[A-Z]{3}$/.test(currency)) return NextResponse.json({ error: 'Devise invalide' }, { status: 400 });
 
     const id = crypto.randomUUID();
-    await db.$executeRaw(Prisma.sql`
-      INSERT INTO "Ebook" ("id","slug","title","description","author","coverUrl","price","currency","checkoutUrl","chariowCheckoutUrl","maketouCheckoutUrl","isPublished")
-      VALUES (${id},${slug},${title},${description},${author},${coverUrl},${price},${currency},${checkoutUrl},${chariowCheckoutUrl},${maketouCheckoutUrl},${isPublished})
-    `);
+    const storageKey = `ebooks/${id}`;
+    await db.$transaction(async (tx) => {
+      await tx.$executeRaw(Prisma.sql`
+        INSERT INTO "Ebook" ("id","slug","title","description","author","coverUrl","storageKey","price","currency","checkoutUrl","chariowCheckoutUrl","maketouCheckoutUrl","isPublished")
+        VALUES (${id},${slug},${title},${description},${author},${coverUrl},${storageKey},${price},${currency},${checkoutUrl},${chariowCheckoutUrl},${maketouCheckoutUrl},${isPublished})
+      `);
+      await tx.$executeRaw(Prisma.sql`
+        INSERT INTO "EbookProduct" ("id","ebookId","kind","price","currency","isPublished")
+        VALUES (${crypto.randomUUID()},${id},'ebook',${price},${currency},${isPublished})
+        ON CONFLICT ("ebookId","kind") DO UPDATE SET "price"=EXCLUDED."price","currency"=EXCLUDED."currency","isPublished"=EXCLUDED."isPublished","updatedAt"=CURRENT_TIMESTAMP
+      `);
+    });
 
     return NextResponse.json({ id, slug, createdBy: getUserId(session) }, { status: 201 });
   } catch (error) {
