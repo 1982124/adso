@@ -1,4 +1,4 @@
-import { handleUpload } from '@vercel/blob/client';
+import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { Prisma } from '@prisma/client';
@@ -20,7 +20,9 @@ export async function POST(request: Request) {
   if (!canManage((session.user as Record<string, unknown>).role)) return NextResponse.json({ error: 'Droits administrateur requis' }, { status: 403 });
 
   try {
+    const body = (await request.json()) as HandleUploadBody;
     const result = await handleUpload({
+      body,
       request,
       onBeforeGenerateToken: async (_pathname, clientPayload) => {
         let payload: { ebookId?: string; mimeType?: string; sizeBytes?: number; filename?: string } = {};
