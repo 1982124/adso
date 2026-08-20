@@ -13,9 +13,7 @@ function canManage(role: unknown) {
 export async function POST(request: NextRequest) {
   const { error, session } = await requireAuth();
   if (error) return error;
-  if (!canManage((session?.user as Record<string, unknown> | undefined)?.role)) {
-    return NextResponse.json({ error: 'Droits administrateur requis' }, { status: 403 });
-  }
+  if (!canManage((session?.user as Record<string, unknown> | undefined)?.role)) return NextResponse.json({ error: 'Droits administrateur requis' }, { status: 403 });
 
   try {
     const body = await request.json();
@@ -26,6 +24,8 @@ export async function POST(request: NextRequest) {
     const price = Number(body?.price);
     const currency = String(body?.currency ?? 'XOF').trim().toUpperCase();
     const checkoutUrl = body?.checkoutUrl ? String(body.checkoutUrl).trim() : null;
+    const chariowCheckoutUrl = body?.chariowCheckoutUrl ? String(body.chariowCheckoutUrl).trim() : null;
+    const maketouCheckoutUrl = body?.maketouCheckoutUrl ? String(body.maketouCheckoutUrl).trim() : null;
     const coverUrl = body?.coverUrl ? String(body.coverUrl).trim() : null;
     const isPublished = Boolean(body?.isPublished ?? false);
 
@@ -35,8 +35,8 @@ export async function POST(request: NextRequest) {
 
     const id = crypto.randomUUID();
     await db.$executeRaw(Prisma.sql`
-      INSERT INTO "Ebook" ("id","slug","title","description","author","coverUrl","price","currency","checkoutUrl","isPublished")
-      VALUES (${id},${slug},${title},${description},${author},${coverUrl},${price},${currency},${checkoutUrl},${isPublished})
+      INSERT INTO "Ebook" ("id","slug","title","description","author","coverUrl","price","currency","checkoutUrl","chariowCheckoutUrl","maketouCheckoutUrl","isPublished")
+      VALUES (${id},${slug},${title},${description},${author},${coverUrl},${price},${currency},${checkoutUrl},${chariowCheckoutUrl},${maketouCheckoutUrl},${isPublished})
     `);
 
     return NextResponse.json({ id, slug, createdBy: getUserId(session) }, { status: 201 });
