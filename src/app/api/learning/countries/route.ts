@@ -14,7 +14,7 @@ function fromStaticCountry(country: (typeof staticCountries)[number]): CountryRe
 }
 
 function fromDirectoryCountry(country: (typeof africaCountryDirectory)[number]): CountryResponse {
-  return { id: country.code, code: country.code, name: country.name, flag: country.flag, continent: 'Afrique', capital: '', languages: [], currency: null, drivingSide: country.drivingSide, authority: '', emergencyPhone: '', minAge: null, speedUrban: null, speedRural: null, speedHighway: null, bloodAlcohol: null, requiredDocuments: [], requiredEquipment: [], specialFeatures: ['Contexte routier disponible ; réglementation nationale à valider avant publication.'], licenseCategories: [], commonInfractions: [], sanctions: [] };
+  return { id: country.code, code: country.code, name: country.name, flag: country.flag, continent: 'Afrique', capital: '', languages: [], currency: null, drivingSide: country.drivingSide, authority: '', emergencyPhone: '', minAge: null, speedUrban: null, speedRural: null, speedHighway: null, bloodAlcohol: null, requiredDocuments: [], requiredEquipment: [], specialFeatures: ['Profil pays disponible pour le parcours ADSO ; les détails réglementaires peuvent être enrichis progressivement.'], licenseCategories: [], commonInfractions: [], sanctions: [] };
 }
 
 function filterCatalogue(search: string, continent: string | null): CountryResponse[] {
@@ -27,10 +27,10 @@ function filterCatalogue(search: string, continent: string | null): CountryRespo
 }
 
 function mergeAfricanDirectory(databaseResults: CountryResponse[]): CountryResponse[] {
-  const validated = new Map(databaseResults.map((country) => [String(country.code), country]));
-  const merged = africaCountryDirectory.map((entry) => validated.get(entry.code) ?? fromDirectoryCountry(entry));
-  const extraValidated = databaseResults.filter((country) => !africaCountryDirectory.some((entry) => entry.code === country.code));
-  return [...merged, ...extraValidated].sort((a, b) => String(a.name).localeCompare(String(b.name), 'fr'));
+  const databaseByCode = new Map(databaseResults.map((country) => [String(country.code), country]));
+  const merged = africaCountryDirectory.map((entry) => databaseByCode.get(entry.code) ?? fromDirectoryCountry(entry));
+  const extraDatabaseCountries = databaseResults.filter((country) => !africaCountryDirectory.some((entry) => entry.code === country.code));
+  return [...merged, ...extraDatabaseCountries].sort((a, b) => String(a.name).localeCompare(String(b.name), 'fr'));
 }
 
 export async function GET(request: NextRequest) {
@@ -48,6 +48,8 @@ export async function GET(request: NextRequest) {
     let results: CountryResponse[];
     let source: string;
     if (continent === 'Afrique') {
+      // The complete African directory is always the presentation baseline.
+      // Database content enriches a country when available; it never removes it.
       results = mergeAfricanDirectory(dbParsed);
       source = 'database+africa-directory';
     } else if (dbParsed.length > 0) {
@@ -62,11 +64,11 @@ export async function GET(request: NextRequest) {
       results = results.filter((country) => [country.name, country.code, country.capital].filter(Boolean).map((value) => normalize(String(value))).some((value) => value.includes(normalizedSearch)));
     }
 
-    return NextResponse.json({ countries: results, total: results.length, searched: search || null, source }, { headers: { 'Cache-Control': 'no-store' } });
+    return NextResponse.json({ countries: results, total: results.length, africaTotal: africaCountryDirectory.length, searched: search || null, source }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     console.error('[GET /api/learning/countries] Error:', error);
     const fallback = filterCatalogue(search, continent);
-    return NextResponse.json({ countries: fallback, total: fallback.length, searched: search || null, source: 'catalogue-fallback' }, { status: 200, headers: { 'Cache-Control': 'no-store' } });
+    return NextResponse.json({ countries: fallback, total: fallback.length, africaTotal: africaCountryDirectory.length, searched: search || null, source: 'catalogue-fallback' }, { status: 200, headers: { 'Cache-Control': 'no-store' } });
   }
 }
 

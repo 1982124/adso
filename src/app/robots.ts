@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXTAUTH_URL || 'https://adso-ai-driving.vercel.app';
+  const baseUrl = (process.env.NEXTAUTH_URL || 'https://adso-safety.vercel.app').replace(/\/$/, '');
 
   return {
     rules: {
@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/api/', '/dashboard/', '/admin/'],
     },
-    sitemap: `${baseUrl.replace(/\/$/, '')}/sitemap.xml`,
+    sitemap: `${baseUrl}/sitemap.xml`,
   };
 }
