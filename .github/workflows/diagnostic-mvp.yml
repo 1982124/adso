@@ -1,0 +1,46 @@
+name: ADSO CI Diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install 2>&1 | tee /tmp/install.log
+
+      - name: Prisma generate
+        if: always()
+        run: npx prisma generate 2>&1 | tee /tmp/prisma.log
+
+      - name: Typecheck
+        if: always()
+        run: npx tsc --noEmit 2>&1 | tee /tmp/typecheck.log
+
+      - name: Lint
+        if: always()
+        run: npm run lint 2>&1 | tee /tmp/lint.log
+
+      - name: Production build
+        if: always()
+        run: npm run build 2>&1 | tee /tmp/build.log
+
+      - name: Upload diagnostic logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: adso-ci-diagnostics-${{ github.run_id }}
+          path: /tmp/*.log
+          if-no-files-found: warn
