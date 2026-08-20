@@ -54,13 +54,15 @@ export async function POST(request: NextRequest) {
     if (!checkoutUrl) return NextResponse.json({ error: `Le paiement ${provider} n’est pas encore configuré pour cet eBook.` }, { status: 409 });
 
     const id = crypto.randomUUID();
+    const amount = ebook.price;
+    const amountMinorValue = amountMinor(amount, ebook.currency);
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
     await db.$executeRaw(Prisma.sql`
-      INSERT INTO "EbookOrder" ("id","ebookId","userId","currency","amountMinor","provider","status","idempotencyKey","checkoutUrl","expiresAt")
-      VALUES (${id},${ebook.id},${userId},${ebook.currency},${amountMinor(ebook.price, ebook.currency)},${provider},'PENDING',${idempotencyKey},${checkoutUrl},${expiresAt})
+      INSERT INTO "EbookOrder" ("id","ebookId","userId","amount","currency","provider","status","productKind","amountMinor","idempotencyKey","checkoutUrl","expiresAt")
+      VALUES (${id},${ebook.id},${userId},${amount},${ebook.currency},${provider},'PENDING','ebook',${amountMinorValue},${idempotencyKey},${checkoutUrl},${expiresAt})
     `);
 
-    return NextResponse.json({ order: { id, status: 'PENDING', amountMinor: amountMinor(ebook.price, ebook.currency), currency: ebook.currency, provider, checkoutUrl } }, { status: 201 });
+    return NextResponse.json({ order: { id, status: 'PENDING', amount, amountMinor: amountMinorValue, currency: ebook.currency, provider, checkoutUrl } }, { status: 201 });
   } catch (error) {
     console.error('[POST /api/ebooks/checkout]', error);
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Erreur de checkout eBook' }, { status: 400 });
