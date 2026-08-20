@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { COMMERCIAL_OFFERS, type CommercialOffer } from '@/lib/commercial-offers';
 
 export interface Plan {
   id: string;
@@ -9,62 +10,13 @@ export interface Plan {
   features: string[];
 }
 
-const DEFAULT_PLANS: Plan[] = [
-  {
-    id: 'free',
-    name: 'Gratuit',
-    price: 0,
-    currency: 'EUR',
-    features: [
-      'Accès aux cours de base',
-      '3 quiz par jour',
-      'Profil étudiant',
-      'Support communautaire',
-    ],
-  },
-  {
-    id: 'starter',
-    name: 'Starter',
-    price: 9.99,
-    currency: 'EUR',
-    features: [
-      'Tous les cours de théorie',
-      'Quiz illimités',
-      'Simulations de base',
-      'Suivi de progression',
-      'Support par email',
-    ],
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    price: 19.99,
-    currency: 'EUR',
-    features: [
-      'Tout le contenu Starter',
-      'Simulations avancées',
-      'Examens blancs illimités',
-      'Coach IA personnel',
-      'Moniteur en ligne',
-      'Support prioritaire',
-    ],
-  },
-  {
-    id: 'premium',
-    name: 'Premium',
-    price: 39.99,
-    currency: 'EUR',
-    features: [
-      'Tout le contenu Pro',
-      'Certification officielle',
-      'Neuro-pédagogie avancée',
-      'Tablette moniteur incluse',
-      'API marketplace',
-      'Support dédié 24/7',
-      'Accès multi-appareils',
-    ],
-  },
-];
+const DEFAULT_PLANS: Plan[] = COMMERCIAL_OFFERS.map((offer: CommercialOffer) => ({
+  id: offer.id,
+  name: offer.name,
+  price: offer.monthly ?? offer.yearly ?? 0,
+  currency: offer.currency,
+  features: offer.features,
+}));
 
 type BillingPeriod = 'monthly' | 'yearly';
 
@@ -81,24 +33,29 @@ interface SubscriptionState {
   reactivateSubscription: () => void;
 }
 
+function getExpiry(period: BillingPeriod): string {
+  const expires = new Date();
+  if (period === 'yearly') expires.setFullYear(expires.getFullYear() + 1);
+  else expires.setMonth(expires.getMonth() + 1);
+  return expires.toISOString();
+}
+
 export const useSubscriptionStore = create<SubscriptionState>()(
   persist(
-    (set) => ({
-      plan: 'free',
+    (set, get) => ({
+      plan: 'jeune',
       plans: DEFAULT_PLANS,
       billingPeriod: 'monthly',
       isActive: true,
       expiresAt: null,
 
       setPlan: (planId) => {
-        const isPaidPlan = planId !== 'free';
-        const now = new Date();
-        const expires = new Date(now);
-        expires.setMonth(expires.getMonth() + 1);
+        const isKnownPlan = DEFAULT_PLANS.some((plan) => plan.id === planId);
+        if (!isKnownPlan) return;
         set({
           plan: planId,
           isActive: true,
-          expiresAt: isPaidPlan ? expires.toISOString() : null,
+          expiresAt: getExpiry(get().billingPeriod),
         });
       },
 
@@ -106,16 +63,11 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
       cancelSubscription: () => set({ isActive: false }),
 
-      reactivateSubscription: () => {
-        const now = new Date();
-        const expires = new Date(now);
-        expires.setMonth(expires.getMonth() + 1);
-        set({
-          isActive: true,
-          expiresAt: expires.toISOString(),
-        });
-      },
+      reactivateSubscription: () => set({
+        isActive: true,
+        expiresAt: getExpiry(get().billingPeriod),
+      }),
     }),
-    { name: 'adso-subscription-store' }
-  )
+    { name: 'adso-subscription-store' },
+  ),
 );
