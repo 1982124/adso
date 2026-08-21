@@ -6,14 +6,20 @@ import Link from 'next/link';
 interface Book { id: string; slug: string; title: string; description: string; author: string; coverUrl?: string | null; price: number; currency: string; }
 interface Collection { title: string; description: string; coverUrl?: string | null; targetAudience?: string | null; language: string; items: Book[]; contributors: { name: string; email?: string | null; role: string }[]; }
 
-export default function CollectionPage({ params }: { params: { slug: string } }) {
+export default function CollectionPage({ params }: { params: Promise<{ slug: string }> }) {
   const [collection, setCollection] = useState<Collection | null>(null);
   const [error, setError] = useState('');
   useEffect(() => {
-    fetch(`/api/ebooks/collections?slug=${encodeURIComponent(params.slug)}`)
-      .then(async r => { const data = await r.json(); if (!r.ok) throw new Error(data.error || 'Collection introuvable'); return data.collection; })
-      .then(setCollection).catch(e => setError(e.message));
-  }, [params.slug]);
+    let cancelled = false;
+    params.then(({ slug }) => {
+      if (cancelled) return;
+      fetch(`/api/ebooks/collections?slug=${encodeURIComponent(slug)}`)
+        .then(async r => { const data = await r.json(); if (!r.ok) throw new Error(data.error || 'Collection introuvable'); return data.collection; })
+        .then(data => { if (!cancelled) setCollection(data); })
+        .catch(e => { if (!cancelled) setError(e instanceof Error ? e.message : 'Collection introuvable'); });
+    });
+    return () => { cancelled = true; };
+  }, [params]);
   if (error) return <main className="min-h-screen p-8"><p>{error}</p><Link href="/ebooks">Retour à la bibliothèque</Link></main>;
   if (!collection) return <main className="min-h-screen p-8"><p>Chargement de la collection…</p></main>;
   return <main className="min-h-screen bg-slate-950 text-white px-6 py-10">
