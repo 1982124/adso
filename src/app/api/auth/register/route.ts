@@ -4,6 +4,8 @@ import { hashPassword, validatePassword } from '@/lib/password';
 
 export const dynamic = 'force-dynamic';
 
+const RESERVED_ADMIN_EMAIL = 'neodigitalstartupacademy@gmail.com';
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -15,8 +17,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Nom, email et mot de passe sont requis.' }, { status: 400 });
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
       return NextResponse.json({ error: 'Adresse email invalide.' }, { status: 400 });
+    }
+
+    if (email === RESERVED_ADMIN_EMAIL) {
+      return NextResponse.json({ error: 'Cette adresse est réservée à l’administration ADSO.' }, { status: 403 });
     }
 
     const passwordError = validatePassword(password);
