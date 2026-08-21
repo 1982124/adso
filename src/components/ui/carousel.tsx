@@ -100,7 +100,8 @@ function Carousel({
     api.on("select", onSelect)
 
     return () => {
-      api?.off("select", onSelect)
+      api.off("reInit", onSelect)
+      api.off("select", onSelect)
     }
   }, [api, onSelect])
 
@@ -182,21 +183,25 @@ function CarouselPrevious({
   return (
     <Button
       data-slot="carousel-previous"
+      type="button"
       variant={variant}
       size={size}
+      aria-label="Afficher l'élément précédent"
       className={cn(
-        "absolute size-8 rounded-full",
+        "absolute z-20 size-11 rounded-full shadow-lg",
+        "bg-white/95 text-slate-900 hover:bg-white disabled:opacity-40",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2",
         orientation === "horizontal"
-          ? "top-1/2 -left-12 -translate-y-1/2"
-          : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
+          ? "left-2 top-1/2 -translate-y-1/2 sm:left-3"
+          : "left-1/2 top-2 -translate-x-1/2 rotate-90 sm:top-3",
         className
       )}
       disabled={!canScrollPrev}
       onClick={scrollPrev}
       {...props}
     >
-      <ArrowLeft />
-      <span className="sr-only">Previous slide</span>
+      <ArrowLeft aria-hidden="true" />
+      <span className="sr-only">Élément précédent</span>
     </Button>
   )
 }
@@ -212,21 +217,25 @@ function CarouselNext({
   return (
     <Button
       data-slot="carousel-next"
+      type="button"
       variant={variant}
       size={size}
+      aria-label="Afficher l'élément suivant"
       className={cn(
-        "absolute size-8 rounded-full",
+        "absolute z-20 size-11 rounded-full shadow-lg",
+        "bg-white/95 text-slate-900 hover:bg-white disabled:opacity-40",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2",
         orientation === "horizontal"
-          ? "top-1/2 -right-12 -translate-y-1/2"
-          : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",
+          ? "right-2 top-1/2 -translate-y-1/2 sm:right-3"
+          : "bottom-2 left-1/2 -translate-x-1/2 rotate-90 sm:bottom-3",
         className
       )}
       disabled={!canScrollNext}
       onClick={scrollNext}
       {...props}
     >
-      <ArrowRight />
-      <span className="sr-only">Next slide</span>
+      <ArrowRight aria-hidden="true" />
+      <span className="sr-only">Élément suivant</span>
     </Button>
   )
 }
