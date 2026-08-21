@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 
 const campaignCopy: Record<string, { title: string; intro: string }> = {
   'accident-eleve': {
@@ -16,15 +16,21 @@ const campaignCopy: Record<string, { title: string; intro: string }> = {
 
 type Message = { role: 'user' | 'assistant'; content: string };
 
-export default function SmartLinkPage({ params }: { params: Promise<{ slug: string }> }) {
+type Props = { params: Promise<{ slug: string }> };
+
+export default function SmartLinkPage({ params }: Props) {
   const [slug, setSlug] = useState('adso');
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [started, setStarted] = useState(false);
 
-  useMemo(() => {
-    params.then((value) => setSlug(value.slug || 'adso'));
+  useEffect(() => {
+    let active = true;
+    params.then((value) => {
+      if (active) setSlug(value.slug || 'adso');
+    });
+    return () => { active = false; };
   }, [params]);
 
   const copy = campaignCopy[slug] || {
@@ -52,6 +58,8 @@ export default function SmartLinkPage({ params }: { params: Promise<{ slug: stri
         role: 'assistant',
         content: data.reply || data.fallback || 'Je peux vous guider vers ADSO. Commencez par me dire ce que vous souhaitez apprendre ou protéger.',
       }]);
+    } catch {
+      setMessages([...nextMessages, { role: 'assistant', content: 'La conversation est momentanément indisponible. Vous pouvez tout de même découvrir ADSO et créer votre compte pour commencer votre parcours.' }]);
     } finally {
       setLoading(false);
     }
@@ -73,7 +81,7 @@ export default function SmartLinkPage({ params }: { params: Promise<{ slug: stri
               <p className="mt-2 text-sm leading-6 text-white/75">Posez-moi une question sur ADSO, l’éducation routière, les conducteurs responsables, les apprentis de tous secteurs, les écoles ou la prévention.</p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {['Pourquoi ADSO ?', 'Je veux protéger les élèves', 'Je veux apprendre', 'Je veux devenir conducteur responsable'].map((prompt) => (
-                  <button key={prompt} type="button" onClick={() => { setInput(prompt); }} className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/85 hover:bg-white/10">{prompt}</button>
+                  <button key={prompt} type="button" onClick={() => setInput(prompt)} className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/85 hover:bg-white/10">{prompt}</button>
                 ))}
               </div>
             </div>
