@@ -25,8 +25,6 @@ export const authOptions: NextAuthOptions = {
 
         const userCount = await db.user.count();
 
-        // One-time first-admin bootstrap: only the designated ADSO admin email
-        // can create the very first account, and the password is hashed before storage.
         if (userCount === 0 && email === BOOTSTRAP_ADMIN_EMAIL) {
           const passwordHash = await hashPassword(password);
           const user = await db.$transaction(async (tx) => {
@@ -61,7 +59,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         const user = await db.user.findUnique({ where: { email } });
-        if (!user || !['admin', 'super_admin'].includes(user.role)) return null;
+        if (!user) return null;
 
         const rows = await db.$queryRaw<Array<{ passwordHash: string }>>`
           SELECT "passwordHash" FROM "UserCredential" WHERE "userId" = ${user.id} LIMIT 1
@@ -94,7 +92,7 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
-  pages: { signIn: '/', error: '/' },
+  pages: { signIn: '/connexion', error: '/connexion' },
   session: { strategy: 'jwt', maxAge: 24 * 60 * 60 },
   jwt: { maxAge: 24 * 60 * 60 },
   secret: nextAuthSecret,
