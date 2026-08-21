@@ -36,9 +36,19 @@ function filterCatalogue(search: string, continent: string | null): CountryRespo
   });
 }
 
+function isUnverifiedCountryRecord(country: CountryResponse): boolean {
+  const specialFeatures = country.specialFeatures;
+  return typeof specialFeatures === 'string' && specialFeatures.includes('Country Pack créé — données réglementaires à vérifier');
+}
+
 function mergeAfricanDirectory(databaseResults: CountryResponse[]): CountryResponse[] {
   const databaseByCode = new Map(databaseResults.map((country) => [String(country.code), country]));
-  const merged = africaCountryDirectory.map((entry) => withRoadSafety(databaseByCode.get(entry.code) ?? fromDirectoryCountry(entry)));
+  const merged = africaCountryDirectory.map((entry) => {
+    const databaseCountry = databaseByCode.get(entry.code);
+    // An incomplete database record must never surface zero/placeholder regulatory values.
+    // Keep the country visible, but use the neutral directory profile until its pack is verified.
+    return withRoadSafety(databaseCountry && !isUnverifiedCountryRecord(databaseCountry) ? databaseCountry : fromDirectoryCountry(entry));
+  });
   const extraDatabaseCountries = databaseResults.filter((country) => !africaCountryDirectory.some((entry) => entry.code === country.code)).map(withRoadSafety);
   return [...merged, ...extraDatabaseCountries].sort((a, b) => String(a.name).localeCompare(String(b.name), 'fr'));
 }
