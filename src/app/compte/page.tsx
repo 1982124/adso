@@ -20,7 +20,7 @@ export default async function ComptePage() {
             <p className="font-bold text-emerald-900">Mon parcours</p>
             <p className="mt-1 text-sm text-emerald-800/70">Continuer l'apprentissage ADSO.</p>
           </Link>
-          <Link href="/marketplace/ebooks" className="rounded-2xl border border-slate-200 p-5 transition hover:border-emerald-300 hover:bg-slate-50">
+          <Link href="/ebooks" className="rounded-2xl border border-slate-200 p-5 transition hover:border-emerald-300 hover:bg-slate-50">
             <p className="font-bold">Marketplace eBook</p>
             <p className="mt-1 text-sm text-slate-500">Découvrir les publications disponibles.</p>
           </Link>
