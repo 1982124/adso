@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import { openSourceFrancoiseFallback } from '@/lib/francoise-open-source'
 
 type ChatMessage = {
   role: 'system' | 'user' | 'assistant'
@@ -74,14 +75,18 @@ export async function aiChat(
       if (!payload.output_text) throw new Error('OpenAI returned an empty response')
       return payload.output_text
     }
+  }
 
-    // Do not let a provider-side outage or exhausted OpenAI balance make
-    // Françoise unavailable when a separately configured gateway exists.
-    if (!gatewayToken) {
-      throw new Error(`OpenAI ${response.status}: ${payload.error?.message || 'request failed'}`)
+  if (gatewayToken) {
+    try {
+      return await callGateway(gatewayToken, messages, options)
+    } catch {
+      // Continue to the open-source fallback rather than making Françoise fail.
     }
   }
 
-  if (!gatewayToken) throw new Error('AI authentication is not configured')
-  return callGateway(gatewayToken, messages, options)
+  const openSourceReply = await openSourceFrancoiseFallback(request, messages, options)
+  if (openSourceReply) return openSourceReply
+
+  throw new Error('AI authentication is not configured')
 }
