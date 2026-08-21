@@ -16,6 +16,7 @@ interface ViewState {
   learningTab: LearningTab;
   setView: (view: AppModule) => void;
   setLearningTab: (tab: LearningTab) => void;
+  openLearningTab: (tab: LearningTab) => void;
 }
 
 export const useViewStore = create<ViewState>((set) => ({
@@ -26,6 +27,12 @@ export const useViewStore = create<ViewState>((set) => ({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   },
   setLearningTab: (tab) => set({ learningTab: tab }),
+  // Atomic transition used by quick actions so the selected tab cannot be
+  // lost while switching from another module into the learning workspace.
+  openLearningTab: (tab) => {
+    set({ currentView: 'learning', learningTab: tab });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  },
 }));
 
 export const moduleLabels: Record<AppModule, { label: string; icon: string; description: string }> = {
