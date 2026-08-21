@@ -4,9 +4,11 @@ import { FormEvent, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
+const ADMIN_EMAIL = "neodigitalstartupacademy@gmail.com";
+
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(ADMIN_EMAIL);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -46,7 +48,7 @@ export default function AdminLoginPage() {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label htmlFor="admin-email" className="mb-2 block text-sm font-semibold text-slate-200">Email</label>
-            <input id="admin-email" name="email" type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition placeholder:text-slate-600 focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/20" placeholder="admin@adso..." />
+            <input id="admin-email" name="email" type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition placeholder:text-slate-600 focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/20" />
           </div>
           <div>
             <label htmlFor="admin-password" className="mb-2 block text-sm font-semibold text-slate-200">Mot de passe</label>
@@ -71,7 +73,7 @@ export default function AdminLoginPage() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-xs leading-5 text-slate-500">Les secrets du coffre-fort ne sont jamais demandés ni exposés sur cette page.</p>
+        <p className="mt-6 text-center text-xs leading-5 text-slate-500">Lors de la toute première connexion, ce compte crée le premier administrateur ADSO. Le mot de passe est haché et n'est jamais exposé.</p>
       </section>
     </main>
   );
