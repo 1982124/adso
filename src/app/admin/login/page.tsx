@@ -19,21 +19,26 @@ export default function AdminLoginPage() {
     setError("");
     setLoading(true);
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-      callbackUrl: "/admin",
-    });
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+        callbackUrl: "/admin",
+      });
 
-    if (!result?.ok) {
-      setError("Identifiants invalides ou accès administrateur non autorisé.");
+      if (!result?.ok) {
+        setError("Identifiants invalides ou accès administrateur non autorisé.");
+        return;
+      }
+
+      router.replace("/admin");
+      router.refresh();
+    } catch {
+      setError("Impossible de vérifier la connexion pour le moment.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    router.replace("/admin");
-    router.refresh();
   }
 
   return (
@@ -45,6 +50,11 @@ export default function AdminLoginPage() {
           <p className="mt-3 text-sm leading-6 text-slate-400">Cette entrée est réservée aux comptes ADSO autorisés à accéder au Cockpit Direction.</p>
         </div>
 
+        <div className="mb-6 rounded-2xl border border-emerald-400/15 bg-emerald-400/[0.06] p-4">
+          <p className="text-sm font-bold text-emerald-200">Premier accès administrateur</p>
+          <p className="mt-1 text-xs leading-5 text-slate-400">La base ADSO crée automatiquement le premier compte administrateur avec l'adresse officielle lorsque celle-ci n'existe encore dans aucun compte. Tu n'as donc pas à créer un compte utilisateur séparé avec cette adresse.</p>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label htmlFor="admin-email" className="mb-2 block text-sm font-semibold text-slate-200">Email</label>
@@ -54,13 +64,7 @@ export default function AdminLoginPage() {
             <label htmlFor="admin-password" className="mb-2 block text-sm font-semibold text-slate-200">Mot de passe</label>
             <div className="relative">
               <input id="admin-password" name="password" type={showPassword ? "text" : "password"} autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 pr-24 text-white outline-none transition placeholder:text-slate-600 focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/20" />
-              <button
-                type="button"
-                onClick={() => setShowPassword((visible) => !visible)}
-                aria-pressed={showPassword}
-                aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-3 py-2 text-xs font-bold text-slate-300 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/40"
-              >
+              <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-pressed={showPassword} aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-3 py-2 text-xs font-bold text-slate-300 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/40">
                 {showPassword ? "Masquer" : "Afficher"}
               </button>
             </div>
@@ -73,7 +77,7 @@ export default function AdminLoginPage() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-xs leading-5 text-slate-500">Lors de la toute première connexion, ce compte crée le premier administrateur ADSO. Le mot de passe est haché et n'est jamais exposé.</p>
+        <p className="mt-6 text-center text-xs leading-5 text-slate-500">Le mot de passe est haché côté serveur et n'est jamais exposé. Une fois le premier compte créé, tout accès administrateur dépend du rôle serveur enregistré pour ce compte.</p>
       </section>
     </main>
   );
