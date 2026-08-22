@@ -38,6 +38,10 @@ const FILES: Record<string, string> = {
   'Chutes de pierres': 'Falling rocks sign.svg',
   'Croisement de routes': 'Crossroads sign.svg',
   'Danger général': 'Warning sign.svg',
+  'Allumage des feux obligatoire': 'France road sign B29.svg',
+  'Bande cyclable obligatoire': 'France road sign B22a.svg',
+  'Piste cyclable obligatoire': 'France road sign B22a.svg',
+  'Chaînes à neige obligatoires': 'France road sign B26.svg',
 };
 
 function sourceUrl(name: string) {
@@ -62,7 +66,7 @@ function SignVisual({ sign }: { sign: Sign }) {
     return <img src={src} alt={`Panneau ${sign.name}`} className="max-h-full max-w-full object-contain" loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} />;
   }
 
-  // Universal local fallback: every catalog entry remains visual even when a remote SVG is unavailable.
+  // Keep the catalogue usable without inventing a fake regulatory image.
   return (
     <svg viewBox="0 0 300 300" className="h-full w-full max-h-[260px]" role="img" aria-label={`Illustration du panneau ${sign.name}`}>
       <defs><filter id="shadow"><feDropShadow dx="0" dy="5" stdDeviation="6" floodOpacity=".28" /></filter></defs>
@@ -86,8 +90,8 @@ export default function ADSOSignLibrary({ signs }: { signs: Sign[] }) {
     <section aria-label="Bibliothèque complète de panneaux ADSO" className="space-y-6">
       <div className="rounded-3xl border border-emerald-300/10 bg-emerald-400/[0.04] p-5 sm:p-6">
         <p className="text-xs font-bold uppercase tracking-[.22em] text-emerald-300">ADSO · bibliothèque signalisation</p>
-        <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">Tous les panneaux du corpus disponible</h2>
-        <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-400">Un catalogue visuel unique, filtrable par famille et recherche. Les visuels ouverts de référence sont utilisés lorsqu’ils sont disponibles ; sinon ADSO conserve une représentation locale de secours afin qu’aucun panneau ne disparaisse de l’expérience.</p>
+        <h2 className="mt-2 text-2xl font-black text-white sm:text-3xl">Bibliothèque complète du corpus disponible</h2>
+        <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-400">Les visuels de référence open-source sont utilisés directement depuis Wikimedia Commons lorsqu’un panneau est référencé. Le catalogue ne supprime jamais un panneau parce qu’un visuel externe est momentanément indisponible.</p>
         <div className="mt-5 flex flex-col gap-3 sm:flex-row">
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Rechercher un panneau…" aria-label="Rechercher un panneau" className="min-h-11 flex-1 rounded-xl border border-white/10 bg-slate-950 px-4 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500" />
           <span className="flex min-h-11 items-center justify-center rounded-xl bg-white/[0.05] px-4 text-sm font-bold text-emerald-200">{filtered.length} panneaux</span>
