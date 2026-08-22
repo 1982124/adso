@@ -45,6 +45,10 @@ const REAL_SIGN_FILES: Record<string, string> = {
   'Chutes de pierres': 'Falling rocks sign.svg',
   'Croisement de routes': 'Crossroads sign.svg',
   'Danger général': 'Warning sign.svg',
+  'Allumage des feux obligatoire': 'France road sign B29.svg',
+  'Bande cyclable obligatoire': 'France road sign B22a.svg',
+  'Piste cyclable obligatoire': 'France road sign B22a.svg',
+  'Chaînes à neige obligatoires': 'France road sign B26.svg',
 };
 
 const signImage = (name: string) => {
@@ -84,14 +88,14 @@ function SignGraphic({ sign }: { sign: Sign }) {
   if (image && !failed) {
     return (
       <div className="relative mx-auto flex aspect-square w-full max-w-[300px] items-center justify-center overflow-hidden rounded-[2rem] border border-white/10 bg-white p-6 shadow-2xl">
-        <img src={image} alt={`${sign.name} — visuel réel de référence`} className="max-h-full max-w-full object-contain" onError={() => setFailed(true)} />
-        <div className="absolute bottom-3 left-3 rounded-full border border-emerald-700/20 bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-800">Visuel réel · Wikimedia Commons</div>
+        <img src={image} alt={`${sign.name} — visuel open-source de référence`} className="max-h-full max-w-full object-contain" onError={() => setFailed(true)} />
+        <div className="absolute bottom-3 left-3 rounded-full border border-emerald-700/20 bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-800">Visuel open-source · Wikimedia Commons</div>
       </div>
     );
   }
   return (
-    <div className="relative mx-auto flex aspect-square w-full max-w-[300px] items-center justify-center overflow-hidden rounded-[2rem] border border-amber-300/10 bg-slate-950 p-6 text-center">
-      <div><p className="text-sm font-bold text-amber-200">Visuel officiel à valider</p><p className="mt-2 text-xs leading-5 text-slate-400">Ce panneau est conservé dans le catalogue, mais ADSO ne fabrique pas une fausse illustration. Une source photographique ou réglementaire vérifiée doit être attachée avant publication.</p></div>
+    <div className="relative mx-auto flex aspect-square w-full max-w-[300px] items-center justify-center overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950 p-6 text-center">
+      <div><p className="text-sm font-bold text-white">{sign.name}</p><p className="mt-2 text-xs leading-5 text-slate-400">Illustration à rattacher au référentiel visuel correspondant. Le catalogue reste disponible sans bloquer l’apprentissage.</p></div>
     </div>
   );
 }
