@@ -18,6 +18,7 @@ import SecuritySection from '@/components/sections/SecuritySection';
 import AboutSection from '@/components/sections/AboutSection';
 import ADSOExperienceSection from '@/components/ADSOExperienceSection';
 import LearningPlatform from '@/components/modules/learning/LearningPlatform';
+import RealWorldScenes from '@/components/modules/learning/RealWorldScenes';
 
 const AIDrivingModule = dynamic(() => import('@/components/modules/v41/AIDrivingModule'), { ssr: false, loading: () => <ModuleLoader label="Conduite IA" /> });
 const InsuranceModule = dynamic(() => import('@/components/modules/v41/InsuranceModule'), { ssr: false, loading: () => <ModuleLoader label="Assurance IA" /> });
@@ -59,7 +60,24 @@ export default function Home() {
 }
 
 function HomeView() {
-  return <><HeroRealisticHome /><ADSOExperienceSection /><AboutSection /><StatsSection /><EcosystemSection /><AIFeaturesSection /><QuizSection /><AIChatSection /><PricingSection /><RoadmapSection /><SecuritySection /></>;
+  return <>
+    <HeroRealisticHome />
+    <ADSOExperienceSection />
+    <section id="scenes-reelles" className="bg-slate-950 px-4 py-16 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        <RealWorldScenes />
+      </div>
+    </section>
+    <AboutSection />
+    <StatsSection />
+    <EcosystemSection />
+    <AIFeaturesSection />
+    <QuizSection />
+    <AIChatSection />
+    <PricingSection />
+    <RoadmapSection />
+    <SecuritySection />
+  </>;
 }
 
 function SecurityModuleView() { return <SecuritySection />; }
