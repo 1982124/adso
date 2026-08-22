@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button';
 import { useViewStore } from '@/stores/view-store';
 import { useState } from 'react';
 
-const ADSO_HOME_SCENE = '/visuals/adso-home-school-safety.svg';
+// Open-source real-world photo used as the production-safe interim visual until
+// the dedicated ADSO photorealistic accident scene is available.
+const ADSO_HOME_SCENE = "https://commons.wikimedia.org/wiki/Special:Redirect/file/Taxi_moto_%C3%A0_l'%C3%A9cole_Notre_Dame_Cotonou.jpg?width=1400";
 
 export default function HeroRealisticHome() {
   const setView = useViewStore((state) => state.setView);
@@ -67,11 +69,12 @@ export default function HeroRealisticHome() {
           </div>
 
           <div className="relative min-h-[430px] overflow-hidden rounded-[2rem] border border-white/10 bg-black shadow-2xl shadow-black/50 sm:min-h-[560px] lg:min-h-[680px]">
-            <img src={ADSO_HOME_SCENE} alt="Scène pédagogique ADSO : devant une école, un élève est au sol après avoir été renversé par un taxi-moto, avec une signalisation de prudence visible." className="absolute inset-0 h-full w-full object-cover object-center" loading="eager" fetchPriority="high" decoding="async" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" aria-hidden="true" />
-            <div className="absolute bottom-5 left-5 right-5 rounded-2xl border border-white/15 bg-black/45 p-4 backdrop-blur-sm">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-200">Scène pédagogique</p>
-              <p className="mt-1 text-sm font-bold text-white sm:text-base">Un danger réel peut commencer en quelques secondes devant une école.</p>
+            <img src={ADSO_HOME_SCENE} alt="Photo réelle à Cotonou : taxis-motos devant l'école primaire Notre Dame, illustrant le contexte africain de mobilité et de sécurité routière." className="absolute inset-0 h-full w-full object-cover object-center" loading="eager" fetchPriority="high" decoding="async" referrerPolicy="no-referrer" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" aria-hidden="true" />
+            <div className="absolute bottom-5 left-5 right-5 rounded-2xl border border-white/15 bg-black/50 p-4 backdrop-blur-sm">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-200">Photo réelle · Cotonou, Bénin</p>
+              <p className="mt-1 text-sm font-bold text-white sm:text-base">Taxis-motos devant l’école primaire Notre Dame — contexte réel de mobilité africaine.</p>
+              <p className="mt-2 text-xs leading-5 text-white/70">ShirleyDoss / Wikimedia Commons · CC BY-SA 4.0</p>
             </div>
           </div>
         </div>
