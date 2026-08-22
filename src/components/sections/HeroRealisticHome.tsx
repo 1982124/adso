@@ -48,10 +48,16 @@ export default function HeroRealisticHome() {
       </header>
 
       <div className="mx-auto max-w-7xl px-4 pb-14 pt-6 sm:px-6 sm:pt-8 lg:px-8 lg:pb-20">
+        <div className="mb-8 max-w-4xl">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-300 sm:text-sm">Pensé pour l’Afrique. Conçu pour l’avenir.</p>
+          <h1 className="mt-3 text-4xl font-black tracking-[-0.045em] sm:text-5xl">Voir. Décider. Comprendre. Progresser.</h1>
+          <p className="mt-3 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">Des situations routières concrètes pour apprendre avant que le danger n’arrive.</p>
+        </div>
+
         <div className="grid items-stretch gap-6 lg:grid-cols-[1.02fr_.98fr]">
-          <div className="flex flex-col justify-center py-6 lg:py-12">
+          <div className="flex flex-col justify-center py-2 lg:py-8">
             <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-300 sm:text-sm">Éducation routière · mobilité sûre · prévention</p>
-            <h1 className="mt-5 max-w-3xl text-5xl font-black leading-[0.98] tracking-[-0.055em] sm:text-6xl lg:text-7xl">Éduquer aujourd’hui pour <span className="text-emerald-300">sauver des vies demain.</span></h1>
+            <h2 className="mt-5 max-w-3xl text-5xl font-black leading-[0.98] tracking-[-0.055em] sm:text-6xl lg:text-7xl">Éduquer aujourd’hui pour <span className="text-emerald-300">sauver des vies demain.</span></h2>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300 sm:text-xl">De l’école au <strong className="text-white">conducteur responsable</strong>, ADSO apprend à mieux partager la route grâce à des expériences visuelles, interactives et immersives.</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button asChild size="lg" className="min-h-14 rounded-2xl bg-emerald-400 px-7 text-base font-extrabold text-slate-950 hover:bg-emerald-300">
@@ -61,24 +67,19 @@ export default function HeroRealisticHome() {
                 <PlayCircle className="mr-2 size-5 text-emerald-300" />Découvrir ADSO Immersif
               </Button>
             </div>
-            <div className="mt-9 grid max-w-xl grid-cols-3 gap-3 border-t border-white/10 pt-6 text-sm">
-              <div><p className="font-extrabold text-white">Élève</p><p className="mt-1 text-slate-400">Comprendre</p></div>
-              <div><p className="font-extrabold text-white">Conducteur</p><p className="mt-1 text-slate-400">Anticiper</p></div>
-              <div><p className="font-extrabold text-white">Responsable</p><p className="mt-1 text-slate-400">Protéger</p></div>
-            </div>
           </div>
 
           <div className="relative min-h-[430px] overflow-hidden rounded-[2rem] border border-white/10 bg-black shadow-2xl shadow-black/50 sm:min-h-[560px] lg:min-h-[680px]">
             <img src={heroSrc} alt="Scène réelle de mobilité et de sécurité routière devant une école à Cotonou, au Bénin" className="absolute inset-0 h-full w-full object-cover object-center" loading="eager" fetchPriority="high" decoding="async" onError={() => setHeroSrc(ADSO_FALLBACK_SCENE)} />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent" aria-hidden="true" />
-            <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7">
-              <div className="max-w-lg rounded-2xl border border-white/10 bg-black/45 p-4 backdrop-blur-md sm:p-5">
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-200">Pensé pour l’Afrique. Conçu pour l’avenir.</p>
-                <p className="mt-2 text-lg font-extrabold leading-7 text-white">Voir. Décider. Comprendre. Progresser.</p>
-                <p className="mt-1 text-sm leading-6 text-slate-300">Des situations routières concrètes pour apprendre avant que le danger n'arrive.</p>
-              </div>
-            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" aria-hidden="true" />
           </div>
+        </div>
+
+        <div className="mt-8 rounded-3xl border border-amber-200/20 bg-amber-50/[0.06] p-6 sm:p-8">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-200">Selon l’OMS</p>
+          <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">1,16 million de vies perdues chaque année.</h2>
+          <p className="mt-4 max-w-4xl text-base leading-7 text-slate-200"><strong className="text-white">225 482 décès</strong> ont été estimés en 2021 dans la Région africaine de l’OMS, soit <strong className="text-white">19 % du bilan mondial</strong> cette année-là.</p>
+          <p className="mt-5 text-lg font-extrabold text-emerald-300">Rejoignez ADSO pour contribuer à réduire ces chiffres.</p>
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-3">
