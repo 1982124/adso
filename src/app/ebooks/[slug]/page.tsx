@@ -12,6 +12,18 @@ function makeKey(slug: string) {
   return `${slug}-${Date.now()}-${Math.random().toString(36).slice(2)}-checkout`;
 }
 
+function track(ebookId: string, eventType: string) {
+  const params = new URLSearchParams(window.location.search);
+  const sessionIdKey = 'adso_ebook_session';
+  let sessionId = sessionStorage.getItem(sessionIdKey);
+  if (!sessionId) { sessionId = crypto.randomUUID(); sessionStorage.setItem(sessionIdKey, sessionId); }
+  void fetch('/api/ebooks/track', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    keepalive: true,
+    body: JSON.stringify({ ebookId, eventType, sessionId, source: params.get('utm_source'), campaign: params.get('utm_campaign'), metadata: { path: window.location.pathname } }),
+  }).catch(() => undefined);
+}
+
 export default function EbookProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const [ebook, setEbook] = useState<Ebook | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,6 +36,7 @@ export default function EbookProductPage({ params }: { params: Promise<{ slug: s
         const data = await response.json();
         if (!response.ok) throw new Error(data.error ?? 'eBook introuvable');
         setEbook(data.ebook);
+        track(data.ebook.id, 'ebook_viewed');
       })
       .catch(err => setError(err instanceof Error ? err.message : 'Impossible de charger cet eBook'))
       .finally(() => setLoading(false));
@@ -32,15 +45,16 @@ export default function EbookProductPage({ params }: { params: Promise<{ slug: s
   const buy = async (provider: 'chariow' | 'maketou') => {
     if (!ebook) return;
     setBuying(provider); setError('');
+    track(ebook.id, 'checkout_started');
     try {
       const response = await fetch('/api/ebooks/checkout', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slug: ebook.slug, provider, idempotencyKey: makeKey(ebook.slug) }),
       });
       const data = await response.json();
-      if (response.status === 401) { window.location.href = '/api/auth/signin'; return; }
-      if (!response.ok) throw new Error(data.error ?? 'Checkout indisponible');
-      if (!data.order?.checkoutUrl) throw new Error('Lien de paiement indisponible');
+      if (response.status === 401) { track(ebook.id, 'checkout_abandoned'); window.location.href = '/api/auth/signin'; return; }
+      if (!response.ok) { track(ebook.id, 'payment_failed'); throw new Error(data.error ?? 'Checkout indisponible'); }
+      if (!data.order?.checkoutUrl) { track(ebook.id, 'payment_failed'); throw new Error('Lien de paiement indisponible'); }
       window.location.href = data.order.checkoutUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Impossible de démarrer le paiement');
