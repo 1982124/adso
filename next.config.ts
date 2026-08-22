@@ -10,10 +10,20 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  // Public HTML can be prerendered by Next/Vercel. API responses remain
-  // uncached because they may contain personalized learning state.
+  // Keep the canonical Home HTML synchronized with the active deployment.
+  // This prevents a stale cached document from referencing JS chunks from an
+  // older deployment after a production release.
   async headers() {
     return [
+      {
+        source: "/",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store, max-age=0, must-revalidate",
+          },
+        ],
+      },
       {
         source: "/api/:path*",
         headers: [
