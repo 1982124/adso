@@ -6,14 +6,11 @@ import { Button } from '@/components/ui/button';
 import { useViewStore } from '@/stores/view-store';
 import { useState } from 'react';
 
-const REAL_AFRICAN_SCHOOL_SCENE =
-  'https://commons.wikimedia.org/wiki/Special:FilePath/Taxi_moto_%C3%A0_l%27%C3%A9cole_Notre_Dame_Cotonou.jpg';
-const ADSO_FALLBACK_SCENE = '/visuals/adso-home-school-safety.svg';
+const ADSO_HOME_SCENE = '/visuals/adso-home-school-safety.svg';
 
 export default function HeroRealisticHome() {
   const setView = useViewStore((state) => state.setView);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [heroSrc, setHeroSrc] = useState(REAL_AFRICAN_SCHOOL_SCENE);
 
   const navigate = (view: Parameters<typeof setView>[0]) => {
     setView(view);
@@ -70,8 +67,12 @@ export default function HeroRealisticHome() {
           </div>
 
           <div className="relative min-h-[430px] overflow-hidden rounded-[2rem] border border-white/10 bg-black shadow-2xl shadow-black/50 sm:min-h-[560px] lg:min-h-[680px]">
-            <img src={heroSrc} alt="Scène réelle de mobilité et de sécurité routière devant une école à Cotonou, au Bénin" className="absolute inset-0 h-full w-full object-cover object-center" loading="eager" fetchPriority="high" decoding="async" onError={() => setHeroSrc(ADSO_FALLBACK_SCENE)} />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" aria-hidden="true" />
+            <img src={ADSO_HOME_SCENE} alt="Scène pédagogique ADSO : devant une école, un élève est au sol après avoir été renversé par un taxi-moto, avec une signalisation de prudence visible." className="absolute inset-0 h-full w-full object-cover object-center" loading="eager" fetchPriority="high" decoding="async" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" aria-hidden="true" />
+            <div className="absolute bottom-5 left-5 right-5 rounded-2xl border border-white/15 bg-black/45 p-4 backdrop-blur-sm">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-200">Scène pédagogique</p>
+              <p className="mt-1 text-sm font-bold text-white sm:text-base">Un danger réel peut commencer en quelques secondes devant une école.</p>
+            </div>
           </div>
         </div>
 
@@ -80,12 +81,6 @@ export default function HeroRealisticHome() {
           <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">1,16 million de vies perdues chaque année.</h2>
           <p className="mt-4 max-w-4xl text-base leading-7 text-slate-200"><strong className="text-white">225 482 décès</strong> ont été estimés en 2021 dans la Région africaine de l’OMS, soit <strong className="text-white">19 % du bilan mondial</strong> cette année-là.</p>
           <p className="mt-5 text-lg font-extrabold text-emerald-300">Rejoignez ADSO pour contribuer à réduire ces chiffres.</p>
-        </div>
-
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5"><p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-300">01 · Voir</p><h2 className="mt-2 text-xl font-black">Des scènes qui ressemblent à la vraie route.</h2><p className="mt-2 text-sm leading-6 text-slate-400">Images, signalisation, motos, véhicules, piétons et situations africaines.</p></div>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5"><p className="text-xs font-black uppercase tracking-[0.16em] text-amber-200">02 · Décider</p><h2 className="mt-2 text-xl font-black">Des choix qui ont une conséquence.</h2><p className="mt-2 text-sm leading-6 text-slate-400">L'apprenant observe, choisit et découvre immédiatement ce qui peut arriver.</p></div>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5"><p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-300">03 · Progresser</p><h2 className="mt-2 text-xl font-black">Une compétence visible dans le temps.</h2><p className="mt-2 text-sm leading-6 text-slate-400">Cours, scènes, exercices, score et progression réunis dans un même parcours.</p></div>
         </div>
       </div>
     </section>
