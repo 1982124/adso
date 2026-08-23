@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Car, ShieldCheck, GraduationCap, Shield, Truck, Building2, ArrowRight, MapPin, Sparkles } from 'lucide-react';
+import { Car, Shield, GraduationCap, Building2, ArrowRight, MapPin, Sparkles } from 'lucide-react';
 import { useViewStore, type AppModule, type LearningTab } from '@/stores/view-store';
 import { useLocaleStore } from '@/stores/locale-store';
 import CountryExplorer from './CountryExplorer';
@@ -24,8 +24,6 @@ function TabLoader() { return <div className="flex items-center justify-center p
 const OFFERS: { id: AppModule; icon: React.ElementType; title: string; description: string }[] = [
   { id: 'driving', icon: Car, title: 'Conducteur', description: 'Préparation au permis et accompagnement progressif vers une conduite responsable.' },
   { id: 'security', icon: Shield, title: 'Sécurité routière', description: 'Prévention, culture du risque et apprentissage des bons réflexes.' },
-  { id: 'insurance', icon: ShieldCheck, title: 'Prévention & assurance', description: 'Programmes de prévention et partenariats autour de la sécurité.' },
-  { id: 'fleet', icon: Truck, title: 'Conducteurs professionnels & flottes', description: 'Formation, prévention et pilotage des équipes de mobilité professionnelle.' },
   { id: 'enterprise', icon: Building2, title: 'Écoles, universités & entreprises', description: 'Déploiement de programmes ADSO à l’échelle d’un établissement ou d’une organisation.' },
 ];
 
