@@ -1,0 +1,37 @@
+app = "adso-omniroute-gateway"
+primary_region = "jnb"
+
+[build]
+  image = "diegosouzapw/omniroute:latest"
+
+[env]
+  HOST = "0.0.0.0"
+  BIND = "0.0.0.0"
+  PORT = "20128"
+  DATA_DIR = "/data"
+  NODE_ENV = "production"
+
+[[mounts]]
+  source = "omniroute_data"
+  destination = "/data"
+  initial_size = "20gb"
+  snapshot_retention = 14
+
+[http_service]
+  internal_port = 20128
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "10s"
+    grace_period = "30s"
+    method = "GET"
+    path = "/api/health"
+
+[[vm]]
+  memory = "1024mb"
+  cpu_kind = "shared"
+  cpus = 1
