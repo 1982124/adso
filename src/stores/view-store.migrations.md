@@ -1,0 +1,1 @@
+The canonical module registry cleanup is tracked in cto/mvp-focus-cleanup-20260823. Legacy insurance/fleet modules are quarantined pending dependency verification.
