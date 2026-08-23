@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Car, Home, GraduationCap, Shield, Truck, Building2, LayoutDashboard, Globe2, Users } from 'lucide-react';
+import { Menu, X, Car, Home, GraduationCap, Shield, Building2, LayoutDashboard, Globe2, Users } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { FrancoiseAssistant } from '@/components/FrancoiseAssistant';
@@ -13,7 +13,7 @@ const homeNavLinks = [
   { label: 'Éducation routière', href: '#ecosystem' }, { label: 'ADSO Communauté', href: '/communaute' },
   { label: 'Tarifs', href: '#pricing' }, { label: 'Afrique', href: '#international' }, { label: 'Roadmap', href: '#roadmap' },
 ];
-const moduleIcons: Record<string, React.ComponentType<{ className?: string }>> = { Home, GraduationCap, Car, Shield, Truck, Building2 };
+const moduleIcons: Record<string, React.ComponentType<{ className?: string }>> = { Home, GraduationCap, Car, Shield, Building2 };
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false), [isMobileOpen, setIsMobileOpen] = useState(false), [activeSection, setActiveSection] = useState('hero');
@@ -23,7 +23,7 @@ export default function Navbar() {
   const handleModuleClick = (module: AppModule) => { setIsMobileOpen(false); setView(module); };
   const navBg = isScrolled ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-slate-200' : 'bg-transparent';
   const textPrimary = isScrolled ? 'text-slate-900' : 'text-white', textSecondary = isScrolled ? 'text-slate-600' : 'text-white/80', hoverBg = isScrolled ? 'hover:text-slate-900 hover:bg-slate-100' : 'hover:text-white hover:bg-white/10';
-  const coreDesktopMods: AppModule[] = ['home','learning','driving','security','fleet','enterprise'];
+  const coreDesktopMods: AppModule[] = ['home','learning','driving','security','enterprise'];
   return <>
     <motion.nav initial={{y:-100}} animate={{y:0}} transition={{duration:.6,ease:'easeOut'}} className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${navBg}`}>
       <div className="mx-auto w-full max-w-[1400px] px-3 sm:px-4 lg:px-6"><div className="flex h-14 items-center justify-between lg:h-16">
@@ -35,7 +35,7 @@ export default function Navbar() {
     <AnimatePresence>{isMobileOpen && <motion.div initial={{opacity:0,y:-12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-12}} className="fixed inset-0 z-40 lg:hidden"><div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileOpen(false)}/><div className="absolute left-0 right-0 top-14 max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-b border-slate-200 bg-white shadow-xl"><div className="space-y-1 px-4 py-3">
       <Link href="/admin" onClick={() => setIsMobileOpen(false)} className="flex w-full items-center gap-3 rounded-xl border border-amber-400/30 bg-amber-400/[0.08] px-4 py-3 text-sm font-bold text-amber-700"><LayoutDashboard className="h-5 w-5"/><span>Cockpit Admin</span><span className="ml-auto text-xs font-normal text-amber-600">Direction</span></Link>
       <Link href="/communaute" onClick={() => setIsMobileOpen(false)} className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-50"><Users className="h-5 w-5"/><span>ADSO Communauté</span></Link>
-      {mainModules.filter(mod=>mod!=='insurance').map(mod=>{const Icon=moduleIcons[moduleLabels[mod]?.icon||'Home'],isActive=currentView===mod;return <button type="button" key={mod} onClick={()=>handleModuleClick(mod)} className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium ${isActive?'bg-emerald-50 text-emerald-700':'text-slate-700 hover:bg-slate-100'}`}><Icon className="h-5 w-5"/><span>{moduleLabels[mod]?.label}</span></button>;})}
+      {mainModules.map(mod=>{const Icon=moduleIcons[moduleLabels[mod]?.icon||'Home'],isActive=currentView===mod;return <button type="button" key={mod} onClick={()=>handleModuleClick(mod)} className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium ${isActive?'bg-emerald-50 text-emerald-700':'text-slate-700 hover:bg-slate-100'}`}><Icon className="h-5 w-5"/><span>{moduleLabels[mod]?.label}</span></button>;})}
       {isHome && <><div className="mt-2 border-t border-slate-100 pt-2"><p className="px-4 py-1 text-xs font-semibold uppercase tracking-wider text-slate-400">Explorer ADSO</p></div>{homeNavLinks.map(link=>link.href.startsWith('/') ? <Link key={link.href} href={link.href} onClick={()=>setIsMobileOpen(false)} className="block w-full rounded-lg px-4 py-2.5 pl-8 text-left text-sm text-slate-600 hover:bg-slate-100">{link.label}</Link> : <button type="button" key={link.href} onClick={()=>handleNavClick(link.href)} className={`w-full rounded-lg px-4 py-2.5 pl-8 text-left text-sm ${activeSection===link.href.replace('#','')?'bg-emerald-50 text-emerald-700':'text-slate-600 hover:bg-slate-100'}`}>{link.label}</button>)}<div className="mt-2 border-t border-slate-100 pt-2"><Button type="button" className="w-full bg-emerald-600 text-white hover:bg-emerald-700" onClick={()=>handleModuleClick('learning')}>Commencer la formation</Button></div></>}
     </div></div></motion.div>}</AnimatePresence>
   </>;
