@@ -22,6 +22,8 @@ They must not appear in the public home experience, primary navigation, principa
 
 Existing code and database structures for these domains are **not automatically deleted**. They must first be dependency-mapped, deactivated from the product experience, and migrated/archived safely where appropriate.
 
+The general marketplace route and its public API surface have now been retired from the main product experience. Database models remain subject to a later dependency-safe migration rather than destructive deletion.
+
 ## Target navigation
 
 - Accueil
