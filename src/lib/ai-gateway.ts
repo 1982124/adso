@@ -20,9 +20,19 @@ type AiOptions = {
 }
 
 const DEFAULT_TIMEOUT_MS = 20_000
+const DEFAULT_VERCEL_MODEL = 'openai/gpt-5.4'
+const DEFAULT_OPENAI_MODEL = 'gpt-5.4'
 
-function selectedModel(options: AiOptions) {
-  return options.model || process.env.ADSO_AI_MODEL || process.env.OMNIROUTE_MODEL || 'auto'
+function omniRouteModel(options: AiOptions) {
+  return options.model || process.env.OMNIROUTE_MODEL || process.env.ADSO_AI_MODEL || 'auto'
+}
+
+function managedGatewayModel(options: AiOptions) {
+  return options.model || process.env.ADSO_AI_MODEL || DEFAULT_VERCEL_MODEL
+}
+
+function directOpenAIModel(options: AiOptions) {
+  return options.model || process.env.ADSO_OPENAI_MODEL || process.env.ADSO_AI_MODEL || DEFAULT_OPENAI_MODEL
 }
 
 async function fetchJson(url: string, init: RequestInit, timeoutMs = DEFAULT_TIMEOUT_MS) {
@@ -35,10 +45,7 @@ async function fetchJson(url: string, init: RequestInit, timeoutMs = DEFAULT_TIM
   }
 }
 
-async function callOmniRoute(
-  messages: ChatMessage[],
-  options: AiOptions,
-) {
+async function callOmniRoute(messages: ChatMessage[], options: AiOptions) {
   const baseUrl = process.env.OMNIROUTE_BASE_URL?.replace(/\/$/, '')
   const token = process.env.OMNIROUTE_API_KEY
   if (!baseUrl || !token) throw new Error('OmniRoute is not configured')
@@ -51,7 +58,7 @@ async function callOmniRoute(
       'X-ADSO-Agent': options.agent || 'unknown',
     },
     body: JSON.stringify({
-      model: selectedModel(options),
+      model: omniRouteModel(options),
       messages,
       temperature: options.temperature ?? 0.7,
       max_tokens: options.maxTokens ?? 500,
@@ -66,11 +73,7 @@ async function callOmniRoute(
   return content
 }
 
-async function callVercelGateway(
-  gatewayToken: string,
-  messages: ChatMessage[],
-  options: AiOptions,
-) {
+async function callVercelGateway(gatewayToken: string, messages: ChatMessage[], options: AiOptions) {
   const response = await fetchJson('https://ai-gateway.vercel.sh/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -78,7 +81,7 @@ async function callVercelGateway(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: selectedModel(options),
+      model: managedGatewayModel(options),
       messages,
       temperature: options.temperature ?? 0.7,
       max_tokens: options.maxTokens ?? 500,
@@ -93,11 +96,7 @@ async function callVercelGateway(
   return content
 }
 
-async function callOpenAI(
-  openAiKey: string,
-  messages: ChatMessage[],
-  options: AiOptions,
-) {
+async function callOpenAI(openAiKey: string, messages: ChatMessage[], options: AiOptions) {
   const response = await fetchJson('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: {
@@ -105,7 +104,7 @@ async function callOpenAI(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: selectedModel(options),
+      model: directOpenAIModel(options),
       input: messages,
       max_output_tokens: options.maxTokens ?? 500,
     }),
@@ -117,11 +116,7 @@ async function callOpenAI(
   return payload.output_text
 }
 
-export async function aiChat(
-  request: NextRequest,
-  messages: ChatMessage[],
-  options: AiOptions = {},
-) {
+export async function aiChat(request: NextRequest, messages: ChatMessage[], options: AiOptions = {}) {
   const gatewayToken = process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN
   const failures: string[] = []
 
@@ -134,7 +129,7 @@ export async function aiChat(
     }
   }
 
-  // 2. Vercel AI Gateway: managed provider routing/failover.
+  // 2. Vercel AI Gateway: managed routing/failover.
   if (gatewayToken) {
     try {
       return await callVercelGateway(gatewayToken, messages, options)
