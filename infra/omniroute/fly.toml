@@ -1,9 +1,10 @@
 app = "adso-omniroute-gateway"
 primary_region = "jnb"
 
-# Pin production to a known OmniRoute release. Upgrade deliberately after smoke tests.
+# Pin production to a known stable OmniRoute release.
+# Upgrade deliberately after smoke tests; do not use :latest in production.
 [build]
-  image = "diegosouzapw/omniroute:3.8.40"
+  image = "diegosouzapw/omniroute:3.8.50"
 
 [env]
   HOST = "0.0.0.0"
@@ -11,9 +12,14 @@ primary_region = "jnb"
   PORT = "20128"
   DATA_DIR = "/data"
   NODE_ENV = "production"
+  NEXT_PUBLIC_BASE_URL = "https://adso-omniroute-gateway.fly.dev"
+  APP_LOG_TO_FILE = "true"
+  DISABLE_SQLITE_AUTO_BACKUP = "false"
+  AUTH_COOKIE_SECURE = "true"
+  OMNIROUTE_MEMORY_MB = "768"
 
-# Persistent OmniRoute state: credentials, provider configuration, endpoint keys
-# and SQLite data must survive machine restarts/redeploys.
+# Persistent OmniRoute state: provider configuration, endpoint keys,
+# settings, SQLite database, usage and logs survive redeploy/restart.
 [[mounts]]
   source = "omniroute_data"
   destination = "/data"
@@ -40,5 +46,5 @@ primary_region = "jnb"
   cpu_kind = "shared"
   cpus = 1
 
-# Keep one always-on machine for the MVP. Do not scale to zero: ADSO requires
-# a stable gateway endpoint and persistent SQLite state.
+# MVP policy: one always-on Machine. Scale horizontally only after
+# production telemetry demonstrates the need.
