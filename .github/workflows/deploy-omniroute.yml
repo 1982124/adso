@@ -1,0 +1,43 @@
+name: Deploy OmniRoute Gateway
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "infra/omniroute/**"
+      - ".github/workflows/deploy-omniroute.yml"
+
+concurrency:
+  group: omniroute-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy persistent OmniRoute
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/omniroute
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Validate Fly configuration
+        run: flyctl config validate --config fly.toml
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Deploy OmniRoute
+        run: flyctl deploy --config fly.toml --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Verify deployment status
+        run: flyctl status --app adso-omniroute-gateway --json
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
