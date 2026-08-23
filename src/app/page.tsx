@@ -32,7 +32,6 @@ export default function Home() {
 
   useLayoutEffect(() => {
     if (currentView !== 'home') setView('home');
-
     const previous = window.history.scrollRestoration;
     window.history.scrollRestoration = 'manual';
     const reset = () => window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
@@ -40,15 +39,13 @@ export default function Home() {
     const frame = window.requestAnimationFrame(reset);
     const timer = window.setTimeout(reset, 120);
     window.addEventListener('pageshow', reset);
-    if (window.location.hash) window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+    if (window.location.hash && !['#ebooks', '#pricing', '#tarifs'].includes(window.location.hash)) window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
     return () => {
       window.cancelAnimationFrame(frame);
       window.clearTimeout(timer);
       window.removeEventListener('pageshow', reset);
       window.history.scrollRestoration = previous;
     };
-    // Intentionally run only on root mount: module navigation must remain usable.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return <><ChunkLoadRecovery /><main role="main" aria-label="ADSO — formation à la mobilité et éducation routière"><ViewErrorBoundary key={currentView}>{currentView === 'home' && <HomeView />}{currentView === 'learning' && <LearningPlatform />}{currentView === 'driving' && <AIDrivingModule />}{currentView === 'security' && <SecurityModuleView />}{currentView === 'enterprise' && <EnterpriseModule />}</ViewErrorBoundary></main><Footer /></>;
@@ -59,9 +56,7 @@ function HomeView() {
     <HeroRealisticHome />
     <ADSOExperienceSection />
     <section id="scenes-reelles" className="bg-slate-950 px-4 py-16 text-white sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <RealWorldScenes />
-      </div>
+      <div className="mx-auto max-w-7xl"><RealWorldScenes /></div>
     </section>
     <AboutSection />
     <StatsSection />
@@ -69,15 +64,15 @@ function HomeView() {
     <AIFeaturesSection />
     <QuizSection />
     <AIChatSection />
-    <section id="ebooks" className="px-4 py-16 sm:px-6 lg:px-8">
+    <section id="ebooks" className="scroll-mt-20 px-4 py-16 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">ADSO E-books</p>
         <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">Apprendre, lire et progresser</h2>
-        <p className="mx-auto mt-4 max-w-2xl text-slate-600 dark:text-slate-300">Découvrez des contenus éducatifs numériques consacrés à la mobilité, à la prévention et à la sécurité routière.</p>
-        <a href="/ebooks" className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-emerald-600 px-6 py-3 font-semibold text-white transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">Découvrir les e-books</a>
+        <p className="mx-auto mt-4 max-w-2xl text-slate-600 dark:text-slate-300">Des contenus éducatifs numériques consacrés à la mobilité, à la prévention et à la sécurité routière.</p>
+        <a href="#ebooks" aria-current="page" className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-emerald-600 px-6 py-3 font-semibold text-white transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">Explorer les e-books</a>
       </div>
     </section>
-    <PricingSection />
+    <div id="tarifs" className="scroll-mt-20"><PricingSection /></div>
     <RoadmapSection />
     <SecuritySection />
   </>;
