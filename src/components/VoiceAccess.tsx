@@ -25,8 +25,6 @@ const PRESENTATION: Array<{ view: AppModule; text: string }> = [
   { view: "learning", text: "Voici Formation, le cœur de la plateforme : éducation routière, signalisation, réglementations, permis, examens et progression." },
   { view: "driving", text: "Voici Conducteur, pour apprendre et améliorer sa conduite avec un accompagnement intelligent." },
   { view: "security", text: "Voici Sécurité, dédiée à la prévention et à la culture de sécurité routière." },
-  { view: "insurance", text: "Voici Assurance, pour les usages de prévention autour de l'assurance automobile." },
-  { view: "fleet", text: "Voici Flottes, pour former et piloter les conducteurs professionnels." },
   { view: "enterprise", text: "Voici Établissements et entreprises, pour les écoles, entreprises et opérateurs de mobilité." },
 ];
 
@@ -35,8 +33,6 @@ const MODULE_ALIASES: Array<{ view: AppModule; words: string[] }> = [
   { view: "learning", words: ["formation", "cours", "apprentissage", "signalisation", "permis", "examens"] },
   { view: "driving", words: ["conduite ia", "conduite", "moniteur ia", "conducteur"] },
   { view: "security", words: ["sécurité", "securite", "prévention routière", "prevention routiere"] },
-  { view: "insurance", words: ["assurance", "assurance ia", "assureur"] },
-  { view: "fleet", words: ["flotte", "flottes", "gestion de flotte", "véhicules professionnels"] },
   { view: "enterprise", words: ["entreprise", "établissement", "établissements", "municipalité", "municipalite", "école", "ecole"] },
 ];
 
@@ -116,12 +112,12 @@ export function VoiceAccess() {
       speak("Hello. I can help you use ADSO, explain its services and guide you through the platform. Say the name of a service, or say: present ADSO.", "en-US"); return;
     }
     if (command.includes("espanol") || command.includes("español") || command.includes("podemos hablar") || command.includes("hablar espanol")) {
-      speak("Sí. Podemos hablar en español. Puedo explicarte ADSO y guiarte por sus servicios. Di el nombre del servicio que quieres abrir.", "es-ES"); return;
+      speak("Sí. Podemos hablar en español. Puedo explicarte ADSO y guiarte por sus services. Di el nombre del service que quieres abrir.", "es-ES"); return;
     }
     if (command.includes("arabe") || command.includes("arabic") || command.includes("العربية")) {
       speak("نعم، يمكنني مساعدتك باللغة العربية في فهم خدمات ADSO والتنقل فيها.", "ar-SA"); return;
     }
-    speak(`J'ai entendu : ${raw}. Vous pouvez me demander d'ouvrir Formation, Conducteur, Sécurité, Assurance, Flottes ou Établissements, ou dire : présente-moi ADSO.`);
+    speak(`J'ai entendu : ${raw}. Vous pouvez me demander d'ouvrir Formation, Conducteur, Sécurité ou Établissements, ou dire : présente-moi ADSO.`);
   };
 
   function toggle() {
