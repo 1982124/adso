@@ -1,8 +1,9 @@
 app = "adso-omniroute-gateway"
 primary_region = "jnb"
 
+# Pin production to a known OmniRoute release. Upgrade deliberately after smoke tests.
 [build]
-  image = "diegosouzapw/omniroute:latest"
+  image = "diegosouzapw/omniroute:3.8.40"
 
 [env]
   HOST = "0.0.0.0"
@@ -11,6 +12,8 @@ primary_region = "jnb"
   DATA_DIR = "/data"
   NODE_ENV = "production"
 
+# Persistent OmniRoute state: credentials, provider configuration, endpoint keys
+# and SQLite data must survive machine restarts/redeploys.
 [[mounts]]
   source = "omniroute_data"
   destination = "/data"
@@ -23,11 +26,12 @@ primary_region = "jnb"
   auto_stop_machines = false
   auto_start_machines = true
   min_machines_running = 1
+  processes = ["app"]
 
   [[http_service.checks]]
     interval = "30s"
     timeout = "10s"
-    grace_period = "30s"
+    grace_period = "45s"
     method = "GET"
     path = "/api/monitoring/health"
 
@@ -35,3 +39,6 @@ primary_region = "jnb"
   memory = "1024mb"
   cpu_kind = "shared"
   cpus = 1
+
+# Keep one always-on machine for the MVP. Do not scale to zero: ADSO requires
+# a stable gateway endpoint and persistent SQLite state.
