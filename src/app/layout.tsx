@@ -17,20 +17,21 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ADSO — African Driving Safety & Orientation",
+  title: "ADSO — Formation à la mobilité et éducation routière",
   description:
-    "ADSO — African Driving Safety & Orientation. Plateforme d'éducation routière, de sécurité, de prévention et d'orientation pour une mobilité responsable en Afrique et à l'international.",
+    "ADSO est une plateforme de formation à la mobilité, de prévention, d'éducation routière et de contenus éducatifs numériques, pensée pour les réalités africaines.",
   keywords: [
     "ADSO",
-    "African Driving Safety & Orientation",
-    "sécurité routière en Afrique",
+    "formation à la mobilité",
     "éducation routière",
+    "sécurité routière",
     "prévention routière",
-    "conduite responsable",
-    "mobilité sûre",
-    "code de la route",
+    "mobilité responsable",
     "formation conducteur",
-    "orientation routière",
+    "ADSO Immersif",
+    "e-books sécurité routière",
+    "e-books mobilité",
+    "Afrique",
   ],
   authors: [{ name: "ADSO" }],
   icons: {
@@ -38,9 +39,9 @@ export const metadata: Metadata = {
   },
   manifest: "/manifest.webmanifest",
   openGraph: {
-    title: "ADSO — African Driving Safety & Orientation",
+    title: "ADSO — Formation à la mobilité et éducation routière",
     description:
-      "Apprendre à mieux partager la route. Éducation routière, sécurité, prévention et orientation pour une mobilité responsable.",
+      "Apprendre à mieux se déplacer, comprendre les risques, développer les bons réflexes et accéder à des contenus éducatifs numériques.",
     type: "website",
   },
 };
