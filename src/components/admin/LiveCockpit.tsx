@@ -12,6 +12,8 @@ type Data = {
   recentEvents: { id: string; eventType: string; metadata: string; createdAt: string }[];
 };
 
+type Bar = readonly [label: string, value: number];
+
 const labels: Record<keyof Data["totals"], string> = {
   users: "Utilisateurs", courses: "Cours", countries: "Pays", enrollments: "Inscriptions", certifications: "Certifications", auditLogs: "Journal sécurité",
 };
@@ -42,13 +44,13 @@ export default function LiveCockpit() {
     return () => window.clearInterval(timer);
   }, [load]);
 
-  const bars = useMemo(() => data ? [
+  const bars = useMemo<Bar[]>(() => data ? [
     ["Nouveaux utilisateurs", data.activity.newUsers],
     ["Nouvelles inscriptions", data.activity.newEnrollments],
     ["Certifications", data.activity.newCertifications],
     ["Tentatives d'examen", data.activity.attempts],
     ["Activités enregistrées", data.activity.events],
-  ] as const : [], [data]);
+  ] : [], [data]);
   const max = Math.max(...bars.map(([, value]) => value), 1);
 
   return (
