@@ -2,13 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Badge } from '@/components/ui/badge'
-import {
-  Server,
-  CreditCard,
-  BrainCircuit,
-  Store,
-  Globe2,
-} from 'lucide-react'
+import { Server, BookOpen, BrainCircuit, Globe2, ShieldCheck } from 'lucide-react'
 
 type Status = 'done' | 'active' | 'planned'
 
@@ -23,70 +17,72 @@ interface Phase {
 
 const phases: Phase[] = [
   {
-    title: 'Phase 1 : Fondation',
-    duration: 'Mois 1–6',
+    title: 'Phase 1 : Fondation produit',
+    duration: 'Priorité P0',
     icon: <Server className="h-5 w-5" />,
-    description: 'Infrastructure et premiers modules',
+    description: 'Stabiliser le cœur ADSO et supprimer la complexité hors mission.',
     items: [
-      'Infrastructure cloud scalable',
-      'Authentification & gestion utilisateurs',
-      'App élève MVP',
-      'Cours théoriques complets',
-      'Examens basiques',
+      'Accueil stable et mobile-first',
+      'Formation et progression',
+      'ADSO Immersif',
+      'Authentification et données',
+      'Navigation recentrée',
     ],
     status: 'done',
   },
   {
-    title: 'Phase 2 : SaaS & Paiement',
-    duration: 'Mois 7–12',
-    icon: <CreditCard className="h-5 w-5" />,
-    description: 'Monétisation et outils professionnels',
+    title: 'Phase 2 : E-books & monétisation',
+    duration: 'Priorité P0',
+    icon: <BookOpen className="h-5 w-5" />,
+    description: 'Faire des contenus éducatifs numériques un véritable deuxième pilier.',
     items: [
-      'Plateforme auto-école complète',
-      'CRM & planning intégré',
-      'Facturation Stripe',
-      'App moniteur',
-      'Système de notifications',
+      'Catalogue e-books',
+      'Fiches et aperçus',
+      'Bibliothèque personnelle',
+      'Achats et abonnements',
+      'Offres établissements',
     ],
     status: 'active',
   },
   {
-    title: 'Phase 3 : IA Avancée',
-    duration: 'Mois 13–24',
+    title: 'Phase 3 : IA pédagogique',
+    duration: 'Priorité P1',
     icon: <BrainCircuit className="h-5 w-5" />,
-    description: "Intelligence artificielle de pointe",
+    description: 'Utiliser l’IA pour améliorer réellement l’apprentissage et le contenu.',
     items: [
-      'AI Coach personnalisé',
-      'AI Examinateur adaptatif',
-      'Examens adaptatifs',
-      'AI Simulator de conduite',
-      'Analytics avancés',
+      'AI Coach',
+      'AI Teacher',
+      'AI Examiner',
+      'Assistant de création de contenu',
+      'Personnalisation progressive',
     ],
     status: 'planned',
   },
   {
-    title: 'Phase 4 : Marketplace',
-    duration: 'Mois 25–36',
-    icon: <Store className="h-5 w-5" />,
-    description: 'Écosystème et partenariats',
-    items: [
-      'Marketplace leçons pratiques',
-      'Partenariats assureurs/constructeurs',
-      'Programme de certification',
-      'SDK & API ouvertes',
-    ],
-    status: 'planned',
-  },
-  {
-    title: 'Phase 5 : Expansion Mondiale',
-    duration: 'Mois 37–48',
+    title: 'Phase 4 : Afrique & qualité',
+    duration: 'Priorité P1',
     icon: <Globe2 className="h-5 w-5" />,
-    description: 'Déploiement international',
+    description: 'Déployer des Country Packs traçables sans inventer les réglementations.',
     items: [
-      '120+ pays couverts',
-      'Certifications blockchain',
-      'Intégration véhicules connectés',
-      'Bourse ADSO',
+      '54 pays africains',
+      'Sources et dates de vérification',
+      'Mali prioritaire',
+      'Statuts de complétude des données',
+      'Accessibilité et faible débit',
+    ],
+    status: 'planned',
+  },
+  {
+    title: 'Phase 5 : Confiance & échelle',
+    duration: 'Priorité P2',
+    icon: <ShieldCheck className="h-5 w-5" />,
+    description: 'Renforcer la confiance avant d’ajouter de la complexité.',
+    items: [
+      'Certification ADSO clairement distinguée des permis officiels',
+      'Offline progressif',
+      'Observabilité avancée',
+      'Tests E2E et smoke production',
+      'Expansion internationale maîtrisée',
     ],
     status: 'planned',
   },
@@ -134,15 +130,12 @@ export default function RoadmapSection() {
             Notre feuille de route
           </h2>
           <p className="text-slate-500 text-lg max-w-2xl mx-auto">
-            48 mois pour révolutionner l&rsquo;éducation automobile mondiale
+            Construire une plateforme claire de formation à la mobilité et de contenus éducatifs numériques.
           </p>
         </motion.div>
 
-        {/* Desktop: centered timeline with alternating cards */}
         <div className="relative">
-          {/* Vertical line - hidden on mobile, centered on desktop */}
           <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-0.5 bg-slate-200 -translate-x-1/2" />
-          {/* Vertical line - visible on mobile, left-aligned */}
           <div className="md:hidden absolute left-5 top-0 bottom-0 w-0.5 bg-slate-200" />
 
           <div className="space-y-12">
@@ -160,39 +153,26 @@ export default function RoadmapSection() {
                   viewport={{ once: true, amount: 0.3 }}
                   className="relative"
                 >
-                  {/* Desktop layout */}
                   <div className="hidden md:grid md:grid-cols-2 md:gap-8 items-center">
-                    {/* Left side */}
                     <div className={isLeft ? 'text-right pr-8' : ''}>
                       {isLeft && <PhaseCard phase={phase} cfg={cfg} align="right" />}
                     </div>
-
-                    {/* Center dot */}
                     <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center z-10">
-                      <div
-                        className={`w-10 h-10 rounded-full ${cfg.dotClass} flex items-center justify-center text-white`}
-                      >
+                      <div className={`w-10 h-10 rounded-full ${cfg.dotClass} flex items-center justify-center text-white`}>
                         {phase.icon}
                       </div>
                     </div>
-
-                    {/* Right side */}
                     <div className={!isLeft ? 'pl-8' : ''}>
                       {!isLeft && <PhaseCard phase={phase} cfg={cfg} align="left" />}
                     </div>
                   </div>
 
-                  {/* Mobile layout - always left-aligned */}
                   <div className="md:hidden flex gap-4 pl-1">
-                    {/* Dot */}
                     <div className="flex flex-col items-center shrink-0">
-                      <div
-                        className={`w-10 h-10 rounded-full ${cfg.dotClass} flex items-center justify-center text-white mt-1`}
-                      >
+                      <div className={`w-10 h-10 rounded-full ${cfg.dotClass} flex items-center justify-center text-white mt-1`}>
                         {phase.icon}
                       </div>
                     </div>
-                    {/* Card */}
                     <div className="flex-1 pb-2">
                       <PhaseCard phase={phase} cfg={cfg} align="left" />
                     </div>
@@ -217,29 +197,16 @@ function PhaseCard({
   align: 'left' | 'right'
 }) {
   return (
-    <div
-      className={`bg-white rounded-xl border border-slate-200 p-5 shadow-sm ${
-        align === 'right' ? 'ml-auto max-w-sm' : 'mr-auto max-w-sm'
-      }`}
-    >
-      <div
-        className={`flex items-center gap-2 mb-2 ${
-          align === 'right' ? 'justify-end' : ''
-        }`}
-      >
-        <Badge variant="outline" className={cfg.className}>
-          {cfg.label}
-        </Badge>
+    <div className={`bg-white rounded-xl border border-slate-200 p-5 shadow-sm ${align === 'right' ? 'ml-auto max-w-sm' : 'mr-auto max-w-sm'}`}>
+      <div className={`flex items-center gap-2 mb-2 ${align === 'right' ? 'justify-end' : ''}`}>
+        <Badge variant="outline" className={cfg.className}>{cfg.label}</Badge>
         <span className="text-xs text-slate-400 font-medium">{phase.duration}</span>
       </div>
       <h3 className="font-semibold text-slate-900 mb-1">{phase.title}</h3>
       <p className="text-sm text-slate-500 mb-3">{phase.description}</p>
       <ul className="space-y-1.5">
         {phase.items.map((item) => (
-          <li
-            key={item}
-            className="text-sm text-slate-600 flex items-start gap-2"
-          >
+          <li key={item} className="text-sm text-slate-600 flex items-start gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-slate-300 mt-1.5 shrink-0" />
             {item}
           </li>
