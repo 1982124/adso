@@ -23,6 +23,10 @@ AI-SCOS owns business orchestration. OmniRoute owns model/provider routing. Agen
 - Global-by-design requirements for language, localization, international distribution, payments, SEO and country availability.
 - Human approval gates for public publication, paid spend, scaled customer messaging, regulatory content, claims/testimonials and irreversible deletion.
 - Server-side secret policy and production environment template.
+- Explicit MVP production contract.
+- GitHub Actions quality gate on pull requests and main pushes: dependency install, Prisma generation, ESLint and TypeScript checks on Node 20 and 22.
+- Home media upload/publish/restore flow backed by persistent Vercel Blob storage and database state.
+- Production health endpoint with database connectivity check.
 
 ## Production gates still requiring external credentials or infrastructure
 
@@ -57,6 +61,7 @@ Prefer a genuinely persistent Linux/Docker host. Test an Always Free option firs
 - Home image upload → persistent storage → preview → publication → Home rendering → restore is verified.
 - Cockpit metrics are sourced from real data or explicitly marked demo data.
 - E-book generation pipeline is tested at least through canonical manuscript → export → QA for every claimed production format.
+- CI quality checks remain green.
 
 ## Non-negotiable truthfulness rule
 
