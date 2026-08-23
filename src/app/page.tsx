@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useLayoutEffect } from 'react';
+import Link from 'next/link';
 import { useViewStore } from '@/stores/view-store';
 import Footer from '@/components/Footer';
 import ViewErrorBoundary from '@/components/ViewErrorBoundary';
@@ -69,7 +70,7 @@ function HomeView() {
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">ADSO E-books</p>
         <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">Apprendre, lire et progresser</h2>
         <p className="mx-auto mt-4 max-w-2xl text-slate-600 dark:text-slate-300">Des contenus éducatifs numériques consacrés à la mobilité, à la prévention et à la sécurité routière.</p>
-        <a href="#ebooks" aria-current="page" className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-emerald-600 px-6 py-3 font-semibold text-white transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">Explorer les e-books</a>
+        <Link href="/ebooks" className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-emerald-600 px-6 py-3 font-semibold text-white transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">Explorer les e-books</Link>
       </div>
     </section>
     <div id="tarifs" className="scroll-mt-20"><PricingSection /></div>
