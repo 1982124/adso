@@ -27,6 +27,12 @@ export async function POST(request: Request) {
   if (!isAdmin((session.user as Record<string, unknown>).role)) return NextResponse.json({ error: 'Droits administrateur requis' }, { status: 403 });
   const userId = getUserId(session);
   if (!userId) return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 401 });
+
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    console.error('[POST /api/admin/home-media] BLOB_READ_WRITE_TOKEN is not configured');
+    return NextResponse.json({ error: 'Le service d’import d’images est temporairement indisponible. Veuillez réessayer plus tard.' }, { status: 503 });
+  }
+
   try {
     const body = (await request.json()) as HandleUploadBody;
     const result = await handleUpload({
@@ -40,8 +46,12 @@ export async function POST(request: Request) {
         if (!ALLOWED_TYPES.includes(mimeType)) throw new Error('Format image non autorisé');
         if (!Number.isFinite(sizeBytes) || sizeBytes <= 0 || sizeBytes > MAX_BYTES) throw new Error('Image trop volumineuse (12 Mo maximum)');
         const safeName = String(payload.filename ?? 'home').replace(/[^a-zA-Z0-9._-]/g, '_');
-        const pathname = `home/${crypto.randomUUID()}-${safeName}`;
-        return { allowedContentTypes: ALLOWED_TYPES, maximumSizeInBytes: MAX_BYTES, addRandomSuffix: false, tokenPayload: JSON.stringify({ userId, mimeType, sizeBytes, alt: String(payload.alt ?? '').slice(0, 300) }) };
+        return {
+          allowedContentTypes: ALLOWED_TYPES,
+          maximumSizeInBytes: MAX_BYTES,
+          addRandomSuffix: false,
+          tokenPayload: JSON.stringify({ userId, mimeType, sizeBytes, alt: String(payload.alt ?? '').slice(0, 300) }),
+        };
       },
       onUploadCompleted: async ({ blob, tokenPayload }) => {
         const payload = JSON.parse(tokenPayload ?? '{}') as { userId?: string; mimeType?: string; sizeBytes?: number; alt?: string };
@@ -52,6 +62,6 @@ export async function POST(request: Request) {
     return NextResponse.json(result);
   } catch (error) {
     console.error('[POST /api/admin/home-media]', error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Upload impossible' }, { status: 400 });
+    return NextResponse.json({ error: 'Impossible d’importer cette image pour le moment. Veuillez réessayer.' }, { status: 503 });
   }
 }
