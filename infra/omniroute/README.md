@@ -2,52 +2,68 @@
 
 OmniRoute is deployed as a separate persistent service. ADSO/Vercel remains the application layer and calls OmniRoute over HTTPS.
 
-## Why this topology
+## Production topology
 
-OmniRoute keeps provider connections, keys, aliases, routing settings, usage state and SQLite-backed application state. Its documentation explicitly recommends persistent storage for SQLite deployments. Fly Volumes provide persistent storage across restarts and deployments.
+`ADSO (Vercel) → HTTPS → OmniRoute (Fly.io) → providers`
 
-The included `fly.toml` uses the official OmniRoute Docker image, mounts a 20 GB persistent volume at `/data`, keeps one machine running, forces HTTPS, and uses `/api/monitoring/health` for health checks.
+OmniRoute keeps provider connections, endpoint keys, routing settings, usage state and SQLite-backed application state. The Fly Volume is mounted at `/data` so the state survives machine restarts and deployments.
 
-## One-time deployment
+## Current production target
 
-Prerequisites:
+- Fly App: `adso-omniroute-gateway`
+- Region: `jnb`
+- OmniRoute image: `diegosouzapw/omniroute:3.8.50` (pinned; never `latest` in production)
+- Port: `20128`
+- Persistent volume: `20 GB` at `/data`
+- Snapshots: `14` days
+- Machines: `1` always running for MVP
+- HTTPS: forced
+- Health: `/api/monitoring/health`
 
-1. A Fly.io account.
-2. `flyctl` installed and authenticated.
-3. The Fly app name in `fly.toml` must be globally available. If it is already taken, change `app` before launch.
+## Security model
 
-From this directory:
+Never commit provider credentials, OmniRoute JWT secrets, API-key secrets, initial passwords or ADSO API keys.
 
-```bash
-fly launch --no-deploy --copy-config
-fly volumes create omniroute_data --region jnb --size 20
-fly secrets set REQUIRE_API_KEY=true
-fly secrets set OMNIROUTE_API_KEY=<generate-a-long-random-server-key>
-fly deploy
-```
+Production secrets belong in Fly secrets. ADSO's OmniRoute API key belongs only in Vercel server-side environment variables. It must never be exposed to browser/client code.
 
-Do not commit the real key.
-
-## Configure OmniRoute providers
-
-After the service is online, open its HTTPS dashboard and configure only the providers ADSO needs. A strong starting policy is:
-
-- one economical/free provider for resilience;
-- one fast provider for support and simple tasks;
-- one high-quality provider for complex reasoning/content;
-- image providers for Home/content creation;
-- video providers only after a live test;
-- TTS/STT for Françoise and accessibility.
-
-Use `model: auto` where appropriate so OmniRoute can route according to its configured policy. OmniRoute supports chat, embeddings, image generation, image edits, video generation, audio, moderation and reranking through its OpenAI-compatible API surface.
-
-## ADSO connection
-
-Set these as Vercel server-side environment variables:
+Recommended first-run Fly secrets:
 
 ```text
-OMNIROUTE_BASE_URL=https://<your-omniroute-host>
-OMNIROUTE_API_KEY=<ADSO-scoped-key>
+JWT_SECRET=<long-random-secret>
+API_KEY_SECRET=<different-long-random-secret>
+INITIAL_PASSWORD=<strong-one-time-admin-password>
+REQUIRE_API_KEY=true
+AUTH_COOKIE_SECURE=true
+```
+
+The initial password must be changed/rotated immediately after the first authenticated dashboard login.
+
+## Deployment automation
+
+`.github/workflows/deploy-omniroute.yml` deploys only `infra/omniroute` when that directory changes. It uses a least-privilege Fly deploy token stored in the GitHub Actions secret `FLY_API_TOKEN`.
+
+Fly's current documentation recommends deploy-scoped tokens for CI/CD instead of an all-powerful personal token. The token should be created only after the Fly App exists and should use a practical expiry.
+
+## Provider policy for ADSO MVP
+
+Do not configure dozens of providers merely because OmniRoute lists them. Start with a small, tested resilience chain:
+
+1. economical/free provider for routine tasks;
+2. fast provider for support and simple generation;
+3. high-quality provider for complex reasoning/content;
+4. image provider(s);
+5. TTS/STT provider(s);
+6. video provider only after a real generation test.
+
+Every production model must pass a live request test. Catalog presence is not proof of operational availability.
+
+## ADSO server-side connection
+
+Vercel should receive these server-side variables after the Fly endpoint is live:
+
+```text
+OMNIROUTE_BASE_URL=https://adso-omniroute-gateway.fly.dev
+OMNIROUTE_API_KEY=<endpoint-key-created-in-OmniRoute>
 OMNIROUTE_MODEL=auto
 OMNIROUTE_IMAGE_MODEL=auto
 OMNIROUTE_IMAGE_EDIT_MODEL=auto
@@ -57,23 +73,22 @@ OMNIROUTE_STT_MODEL=auto
 OMNIROUTE_MODERATION_MODEL=auto
 ```
 
-Then redeploy ADSO and verify:
+Only `OMNIROUTE_BASE_URL` and the required server-side API key need to be present for the initial text smoke test; modality-specific variables are enabled only after their providers are actually verified.
 
-1. `GET /v1/models`
-2. chat completion
-3. image generation
-4. image edit
-5. TTS/STT
-6. moderation
-7. video job submission and polling
-8. provider failure → fallback
-9. OmniRoute restart → persistent configuration remains
-10. ADSO fallback when OmniRoute is unavailable
+## Production verification sequence
 
-## Important video note
-
-Video generation is asynchronous and provider support varies. ADSO must not assume every model works merely because it appears in a catalog. Perform a live generation test for every provider/model selected for production. OmniRoute's current documentation exposes `/v1/videos/generations`, but provider-specific failures can occur and must be covered by fallback/health policies.
+1. Fly Machine is `started`.
+2. HTTPS health check is green.
+3. `GET /v1/models` succeeds with the ADSO endpoint key.
+4. Real text completion succeeds.
+5. Provider failure triggers a tested fallback.
+6. Image generation succeeds, if an image provider is configured.
+7. Image edit succeeds, if supported by the selected provider.
+8. TTS/STT succeeds, if configured.
+9. Video generation is submitted and polled successfully, if configured.
+10. OmniRoute restart preserves provider/routing/key state.
+11. ADSO falls back safely when OmniRoute is unavailable.
 
 ## Scaling rule
 
-Start with one machine because the SQLite state is volume-backed and Fly Volumes are attached to individual machines. Do not horizontally scale OmniRoute to multiple machines until its state synchronization strategy is explicitly configured and tested. This prevents divergent provider/key/routing state.
+Keep one Machine for the MVP. Fly Volumes are attached to individual Machines; horizontal scaling must not be enabled until OmniRoute state synchronization is explicitly designed and tested. This prevents divergent SQLite/provider/routing state.
