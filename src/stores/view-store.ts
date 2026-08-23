@@ -2,14 +2,7 @@ import { create } from 'zustand';
 
 export type LearningTab = 'explorer' | 'cours' | 'programme' | 'signalisation' | 'reglementations' | 'permis' | 'examens' | 'exercices' | 'progression';
 
-export type AppModule =
-  | 'home'
-  | 'learning'
-  | 'driving'
-  | 'security'
-  | 'insurance'
-  | 'fleet'
-  | 'enterprise';
+export type AppModule = 'home' | 'learning' | 'driving' | 'security' | 'enterprise';
 
 interface ViewState {
   currentView: AppModule;
@@ -27,8 +20,6 @@ export const useViewStore = create<ViewState>((set) => ({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   },
   setLearningTab: (tab) => set({ learningTab: tab }),
-  // Atomic transition used by quick actions so the selected tab cannot be
-  // lost while switching from another module into the learning workspace.
   openLearningTab: (tab) => {
     set({ currentView: 'learning', learningTab: tab });
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -37,16 +28,11 @@ export const useViewStore = create<ViewState>((set) => ({
 
 export const moduleLabels: Record<AppModule, { label: string; icon: string; description: string }> = {
   home: { label: 'Accueil', icon: 'Home', description: "Page d'accueil ADSO" },
-  learning: { label: 'Éducation routière', icon: 'GraduationCap', description: "Parcours de l'école au futur conducteur" },
-  driving: { label: 'Conducteur', icon: 'Car', description: 'Préparation et accompagnement du conducteur' },
+  learning: { label: 'Formation', icon: 'GraduationCap', description: 'Parcours de formation à la mobilité' },
+  driving: { label: 'Conducteur', icon: 'Car', description: 'Accompagnement du conducteur responsable' },
   security: { label: 'Sécurité', icon: 'Shield', description: 'Prévention et culture de sécurité routière' },
-  insurance: { label: 'Assurance', icon: 'ShieldCheck', description: "Services de prévention autour de l'assurance" },
-  fleet: { label: 'Flottes', icon: 'Truck', description: 'Formation et pilotage des conducteurs professionnels' },
-  enterprise: { label: 'Établissements & entreprises', icon: 'Building2', description: 'Solutions ADSO pour écoles, entreprises et opérateurs de mobilité' },
+  enterprise: { label: 'Établissements', icon: 'Building2', description: 'Solutions ADSO pour écoles et organisations de formation' },
 };
 
-export const mainModules: AppModule[] = [
-  'home', 'learning', 'driving', 'security', 'insurance', 'fleet', 'enterprise',
-];
-
-export const v41Modules: AppModule[] = ['driving', 'insurance', 'fleet', 'enterprise'];
+export const mainModules: AppModule[] = ['home', 'learning', 'driving', 'security', 'enterprise'];
+export const v41Modules: AppModule[] = ['driving', 'enterprise'];
