@@ -6,87 +6,155 @@ type ChatMessage = {
   content: string
 }
 
-type OpenAIResponse = {
+type GatewayResponse = {
+  choices?: Array<{ message?: { content?: string } }>
   output_text?: string
   error?: { message?: string }
 }
 
-type GatewayResponse = {
-  choices?: Array<{ message?: { content?: string } }>
-  error?: { message?: string }
+type AiOptions = {
+  maxTokens?: number
+  temperature?: number
+  model?: string
+  agent?: string
 }
 
-async function callGateway(
+const DEFAULT_TIMEOUT_MS = 20_000
+
+function selectedModel(options: AiOptions) {
+  return options.model || process.env.ADSO_AI_MODEL || process.env.OMNIROUTE_MODEL || 'auto'
+}
+
+async function fetchJson(url: string, init: RequestInit, timeoutMs = DEFAULT_TIMEOUT_MS) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(url, { ...init, signal: controller.signal, cache: 'no-store' })
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+async function callOmniRoute(
+  messages: ChatMessage[],
+  options: AiOptions,
+) {
+  const baseUrl = process.env.OMNIROUTE_BASE_URL?.replace(/\/$/, '')
+  const token = process.env.OMNIROUTE_API_KEY
+  if (!baseUrl || !token) throw new Error('OmniRoute is not configured')
+
+  const response = await fetchJson(`${baseUrl}/v1/chat/completions`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'X-ADSO-Agent': options.agent || 'unknown',
+    },
+    body: JSON.stringify({
+      model: selectedModel(options),
+      messages,
+      temperature: options.temperature ?? 0.7,
+      max_tokens: options.maxTokens ?? 500,
+      stream: false,
+    }),
+  })
+
+  const payload = await response.json().catch(() => ({})) as GatewayResponse
+  if (!response.ok) throw new Error(`OmniRoute ${response.status}: ${payload.error?.message || 'request failed'}`)
+  const content = payload.choices?.[0]?.message?.content
+  if (!content) throw new Error('OmniRoute returned an empty response')
+  return content
+}
+
+async function callVercelGateway(
   gatewayToken: string,
   messages: ChatMessage[],
-  options: { maxTokens?: number; temperature?: number; model?: string },
+  options: AiOptions,
 ) {
-  const response = await fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
+  const response = await fetchJson('https://ai-gateway.vercel.sh/v1/chat/completions', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${gatewayToken}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: options.model || process.env.ADSO_AI_MODEL || 'openai/gpt-5.6',
+      model: selectedModel(options),
       messages,
       temperature: options.temperature ?? 0.7,
       max_tokens: options.maxTokens ?? 500,
       stream: false,
     }),
-    cache: 'no-store',
   })
 
   const payload = await response.json().catch(() => ({})) as GatewayResponse
   if (!response.ok) throw new Error(`AI Gateway ${response.status}: ${payload.error?.message || 'request failed'}`)
-  const content = payload.choices?.[0]?.message?.content
+  const content = payload.choices?.[0]?.message?.content || payload.output_text
   if (!content) throw new Error('AI Gateway returned an empty response')
   return content
+}
+
+async function callOpenAI(
+  openAiKey: string,
+  messages: ChatMessage[],
+  options: AiOptions,
+) {
+  const response = await fetchJson('https://api.openai.com/v1/responses', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${openAiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: selectedModel(options),
+      input: messages,
+      max_output_tokens: options.maxTokens ?? 500,
+    }),
+  })
+
+  const payload = await response.json().catch(() => ({})) as GatewayResponse
+  if (!response.ok) throw new Error(`OpenAI ${response.status}: ${payload.error?.message || 'request failed'}`)
+  if (!payload.output_text) throw new Error('OpenAI returned an empty response')
+  return payload.output_text
 }
 
 export async function aiChat(
   request: NextRequest,
   messages: ChatMessage[],
-  options: { maxTokens?: number; temperature?: number; model?: string } = {},
+  options: AiOptions = {},
 ) {
-  const openAiKey = process.env.OPENAI_API_KEY
-  const gatewayToken =
-    process.env.AI_GATEWAY_API_KEY ||
-    request.headers.get('x-vercel-oidc-token') ||
-    process.env.VERCEL_OIDC_TOKEN
+  const gatewayToken = process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN
+  const failures: string[] = []
 
-  if (openAiKey) {
-    const response = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${openAiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: options.model || process.env.ADSO_AI_MODEL || 'gpt-5.6',
-        input: messages,
-        max_output_tokens: options.maxTokens ?? 500,
-      }),
-      cache: 'no-store',
-    })
-
-    const payload = await response.json().catch(() => ({})) as OpenAIResponse
-    if (response.ok) {
-      if (!payload.output_text) throw new Error('OpenAI returned an empty response')
-      return payload.output_text
+  // 1. OmniRoute: preferred ADSO multi-provider gateway when configured.
+  if (process.env.OMNIROUTE_BASE_URL && process.env.OMNIROUTE_API_KEY) {
+    try {
+      return await callOmniRoute(messages, options)
+    } catch (error) {
+      failures.push(error instanceof Error ? error.message : 'OmniRoute failed')
     }
   }
 
+  // 2. Vercel AI Gateway: managed provider routing/failover.
   if (gatewayToken) {
     try {
-      return await callGateway(gatewayToken, messages, options)
-    } catch {
-      // Continue to the open-source fallback rather than making Françoise fail.
+      return await callVercelGateway(gatewayToken, messages, options)
+    } catch (error) {
+      failures.push(error instanceof Error ? error.message : 'Vercel AI Gateway failed')
     }
   }
 
+  // 3. Direct OpenAI fallback for environments where a gateway is unavailable.
+  if (process.env.OPENAI_API_KEY) {
+    try {
+      return await callOpenAI(process.env.OPENAI_API_KEY, messages, options)
+    } catch (error) {
+      failures.push(error instanceof Error ? error.message : 'OpenAI failed')
+    }
+  }
+
+  // 4. Existing local/open-source Françoise fallback.
   const openSourceReply = await openSourceFrancoiseFallback(request, messages, options)
   if (openSourceReply) return openSourceReply
 
-  throw new Error('AI authentication is not configured')
+  throw new Error(`All AI routes failed: ${failures.join(' | ') || 'no AI provider configured'}`)
 }
