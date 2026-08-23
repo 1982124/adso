@@ -20,10 +20,8 @@ import ADSOExperienceSection from '@/components/ADSOExperienceSection';
 import LearningPlatform from '@/components/modules/learning/LearningPlatform';
 import RealWorldScenes from '@/components/modules/learning/RealWorldScenes';
 
-const AIDrivingModule = dynamic(() => import('@/components/modules/v41/AIDrivingModule'), { ssr: false, loading: () => <ModuleLoader label="Conduite IA" /> });
-const InsuranceModule = dynamic(() => import('@/components/modules/v41/InsuranceModule'), { ssr: false, loading: () => <ModuleLoader label="Assurance IA" /> });
-const FleetModule = dynamic(() => import('@/components/modules/v41/FleetModule'), { ssr: false, loading: () => <ModuleLoader label="Gestion de Flotte" /> });
-const EnterpriseModule = dynamic(() => import('@/components/modules/v41/EnterpriseModule'), { ssr: false, loading: () => <ModuleLoader label="Entreprise" /> });
+const AIDrivingModule = dynamic(() => import('@/components/modules/v41/AIDrivingModule'), { ssr: false, loading: () => <ModuleLoader label="Formation mobilité" /> });
+const EnterpriseModule = dynamic(() => import('@/components/modules/v41/EnterpriseModule'), { ssr: false, loading: () => <ModuleLoader label="Établissements" /> });
 
 function ModuleLoader({ label }: { label: string }) {
   return <div className="min-h-[60vh] flex items-center justify-center"><div className="text-center space-y-3"><div className="w-10 h-10 border-3 border-emerald-600 border-t-transparent rounded-full mx-auto animate-spin" /><p className="text-slate-500 text-sm">Chargement {label}...</p></div></div>;
@@ -32,9 +30,6 @@ function ModuleLoader({ label }: { label: string }) {
 export default function Home() {
   const { currentView, setView } = useViewStore();
 
-  // The public root is always the canonical ADSO landing page. Zustand is a
-  // client-side singleton, so returning to / after visiting another module can
-  // otherwise reuse the previous module state. Reset that state before paint.
   useLayoutEffect(() => {
     if (currentView !== 'home') setView('home');
 
@@ -56,7 +51,7 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return <><ChunkLoadRecovery /><main role="main" aria-label="ADSO — éducation routière et mobilité sûre"><ViewErrorBoundary key={currentView}>{currentView === 'home' && <HomeView />}{currentView === 'learning' && <LearningPlatform />}{currentView === 'driving' && <AIDrivingModule />}{currentView === 'security' && <SecurityModuleView />}{currentView === 'insurance' && <InsuranceModule />}{currentView === 'fleet' && <FleetModule />}{currentView === 'enterprise' && <EnterpriseModule />}</ViewErrorBoundary></main><Footer /></>;
+  return <><ChunkLoadRecovery /><main role="main" aria-label="ADSO — formation à la mobilité et éducation routière"><ViewErrorBoundary key={currentView}>{currentView === 'home' && <HomeView />}{currentView === 'learning' && <LearningPlatform />}{currentView === 'driving' && <AIDrivingModule />}{currentView === 'security' && <SecurityModuleView />}{currentView === 'enterprise' && <EnterpriseModule />}</ViewErrorBoundary></main><Footer /></>;
 }
 
 function HomeView() {
@@ -74,6 +69,14 @@ function HomeView() {
     <AIFeaturesSection />
     <QuizSection />
     <AIChatSection />
+    <section id="ebooks" className="px-4 py-16 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">ADSO E-books</p>
+        <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">Apprendre, lire et progresser</h2>
+        <p className="mx-auto mt-4 max-w-2xl text-slate-600 dark:text-slate-300">Découvrez des contenus éducatifs numériques consacrés à la mobilité, à la prévention et à la sécurité routière.</p>
+        <a href="/ebooks" className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-emerald-600 px-6 py-3 font-semibold text-white transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">Découvrir les e-books</a>
+      </div>
+    </section>
     <PricingSection />
     <RoadmapSection />
     <SecuritySection />
