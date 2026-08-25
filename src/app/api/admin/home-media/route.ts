@@ -7,7 +7,8 @@ import { getSession, getUserId } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 const MAX_BYTES = 12 * 1024 * 1024;
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+// SVG is supported because the ADSO Home master artwork is SVG.
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
 const isAdmin = (role: unknown) => ['admin', 'super_admin'].includes(String(role ?? ''));
 
 export async function GET() {
@@ -45,7 +46,6 @@ export async function POST(request: Request) {
         const sizeBytes = Number(payload.sizeBytes ?? 0);
         if (!ALLOWED_TYPES.includes(mimeType)) throw new Error('Format image non autorisé');
         if (!Number.isFinite(sizeBytes) || sizeBytes <= 0 || sizeBytes > MAX_BYTES) throw new Error('Image trop volumineuse (12 Mo maximum)');
-        const safeName = String(payload.filename ?? 'home').replace(/[^a-zA-Z0-9._-]/g, '_');
         return {
           allowedContentTypes: ALLOWED_TYPES,
           maximumSizeInBytes: MAX_BYTES,
