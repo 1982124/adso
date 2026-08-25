@@ -4,9 +4,7 @@
 
 **ADSO est un produit de Neo Digital Startup Academy (NDSA).**
 
-ADSO s'inscrit dans le portefeuille de produits numériques de NDSA. Le premier produit de NDSA est **GMBCore-OS — Global Marketing Business Core Optimization System**, une application d'automatisation de la présentation des produits et de l'opportunité MLM/NeoLife.
-
-GMBCore-OS fournit notamment un **Smart Link personnalisé à chaque distributeur**, conçu pour renforcer sa présence numérique et faciliter la présentation internationale de son activité, sans limite de frontière ni barrière linguistique. Exemple de Smart Link : https://gmbcoreos.com/s/coachjose/
+ADSO s'inscrit dans le portefeuille de produits numériques de NDSA.
 
 ## Signature
 
@@ -18,9 +16,11 @@ GMBCore-OS fournit notamment un **Smart Link personnalisé à chaque distributeu
 
 ## Positionnement
 
-ADSO est une plateforme numérique mondiale dédiée à l'éducation à la mobilité, à la sécurité routière, à la formation, à la certification et à l'aide à la décision fondée sur les données.
+ADSO est une plateforme technologique mondiale dédiée à **l'éducation routière, à la formation, à la prévention, à la simulation et à l'évaluation et reconnaissance des compétences acquises**.
 
-Elle s'adresse simultanément aux apprenants, familles, écoles et auto-écoles, entreprises et gestionnaires de flottes, assureurs, collectivités, administrations et institutions engagées dans la prévention des accidents, l'éducation et la mobilité sûre.
+ADSO fournit des outils numériques et pédagogiques complémentaires aux apprenants, familles, écoles, auto-écoles, entreprises et institutions engagées dans une mobilité plus sûre.
+
+ADSO ne se substitue ni aux autorités nationales ni aux organismes habilités. Il ne revendique aucune autorité réglementaire et ne délivre pas, par défaut, de permis de conduire ou de qualification d'État.
 
 ## Principes institutionnels
 
@@ -30,7 +30,7 @@ Elle s'adresse simultanément aux apprenants, familles, écoles et auto-écoles,
 - Une règle strictement nationale doit rester rattachée à sa juridiction.
 - Les indicateurs doivent distinguer observation, estimation et interprétation.
 - Les recommandations de l'IA doivent être traçables et soumises à validation humaine lorsqu'elles entraînent une action sensible.
-- ADSO ne se substitue ni aux autorités nationales ni aux organismes internationaux : il fournit des outils numériques, pédagogiques et analytiques complémentaires.
+- Les résultats pédagogiques doivent distinguer apprentissage, évaluation, reconnaissance et éventuelle qualification réglementaire.
 
 ## Offre institutionnelle cible
 
@@ -38,21 +38,17 @@ Elle s'adresse simultanément aux apprenants, familles, écoles et auto-écoles,
 
 Parcours visuels et interactifs, sensibilisation des jeunes, formation des conducteurs, simulations de situations à risque et contenus adaptés aux publics.
 
+### Évaluation et reconnaissance des compétences
+
+Évaluations traçables, progression, scores, niveaux, badges, réussites, félicitations et attestations de parcours lorsque la fonctionnalité est réellement disponible et juridiquement appropriée.
+
 ### Data & observatoire
 
 Indicateurs de sécurité routière par pays, séries temporelles, tendances, groupes d'âge lorsque les données officielles le permettent, méthodologie et sources affichées.
 
-### Pilotage territorial
-
-Cockpits pour suivre formation, participation, incidents déclarés, campagnes, populations ciblées et indicateurs de prévention.
-
 ### Recherche et expérimentation
 
 ADSO LAB pour tester des contenus pédagogiques, scénarios visuels, expériences de prévention et outils d'analyse.
-
-### Certification
-
-Parcours et évaluations traçables avec pays, juridiction, date et critères explicites.
 
 ## Positionnement international
 
