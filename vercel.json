@@ -17,6 +17,10 @@
     {
       "path": "/api/official-updates/sync",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/intelligence/pulse",
+      "schedule": "30 3 * * *"
     }
   ]
 }
