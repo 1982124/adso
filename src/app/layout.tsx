@@ -17,31 +17,31 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ADSO — Formation à la mobilité et éducation routière",
+  title: "ADSO AFRICA — Mobilité plus sûre et plus responsable",
   description:
-    "ADSO est une plateforme de formation à la mobilité, de prévention, d'éducation routière et de contenus éducatifs numériques, pensée pour les réalités africaines.",
+    "ADSO AFRICA est la plateforme africaine d’éducation routière, de formation à la mobilité, de prévention, de simulation et d’évaluation et reconnaissance des compétences acquises.",
   keywords: [
+    "ADSO AFRICA",
     "ADSO",
-    "formation à la mobilité",
     "éducation routière",
+    "formation à la mobilité",
     "sécurité routière",
     "prévention routière",
     "mobilité responsable",
-    "formation conducteur",
+    "usagers vulnérables",
     "ADSO Immersif",
-    "e-books sécurité routière",
-    "e-books mobilité",
     "Afrique",
+    "54 pays africains",
   ],
-  authors: [{ name: "ADSO" }],
+  authors: [{ name: "Neo Digital Startup Academy (NDSA)" }],
   icons: {
     icon: "/icon.svg",
   },
   manifest: "/manifest.webmanifest",
   openGraph: {
-    title: "ADSO — Formation à la mobilité et éducation routière",
+    title: "ADSO AFRICA — Mobilité plus sûre et plus responsable",
     description:
-      "Apprendre à mieux se déplacer, comprendre les risques, développer les bons réflexes et accéder à des contenus éducatifs numériques.",
+      "Éduquer, former et responsabiliser chaque usager de la route.",
     type: "website",
   },
 };
