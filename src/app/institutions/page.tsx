@@ -1,25 +1,25 @@
 import Link from 'next/link';
 
 const pillars = [
-  { title: 'Éduquer', text: 'Parcours de mobilité et de sécurité routière adaptés à l’âge, au contexte et au niveau de l’apprenant.' },
-  { title: 'Prévenir', text: 'Scénarios visuels, comportements à risque, sensibilisation des jeunes et outils de prévention.' },
-  { title: 'Mesurer', text: 'Indicateurs par pays et par année, sources, méthodologie, tendances et limites clairement documentées.' },
-  { title: 'Certifier', text: 'Évaluations et certifications traçables, avec juridiction et critères explicites.' },
-  { title: 'Innover', text: 'ADSO LAB, IA, simulations et expérimentations pédagogiques évaluables.' },
+  { title: 'Éduquer', text: 'Parcours de mobilité et de sécurité routière adaptés à l’âge, au contexte, au métier et au profil de mobilité de l’apprenant.' },
+  { title: 'Prévenir', text: 'Scénarios visuels, comportements à risque, sensibilisation des jeunes, apprentis et usagers vulnérables.' },
+  { title: 'Mesurer', text: 'Indicateurs pédagogiques par pays, programme et année, avec sources, méthodologie, tendances et limites clairement documentées.' },
+  { title: 'Évaluer & reconnaître', text: 'Évaluation et reconnaissance des compétences acquises, avec critères, contexte et juridiction explicitement distingués. ADSO ne se substitue pas aux certifications officielles des États.' },
+  { title: 'Innover', text: 'ADSO LAB, IA, simulations et expérimentations pédagogiques évaluables dans un cadre responsable.' },
 ];
 
-const audiences = ['Administrations publiques', 'Collectivités et territoires', 'Établissements scolaires et organismes de formation', 'Entreprises et gestionnaires de flottes', 'Assureurs et acteurs de la prévention', 'Universités, chercheurs et programmes internationaux'];
+const audiences = ['Administrations publiques', 'Collectivités et territoires', 'Établissements scolaires et organismes de formation', 'Entreprises et organisations', 'Acteurs de la prévention et de la mobilité', 'Universités, chercheurs et programmes internationaux'];
 
 export default function InstitutionsPage() {
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <section className="border-b border-white/10 bg-gradient-to-b from-emerald-950 to-slate-950 px-5 pb-20 pt-28 sm:px-8">
         <div className="mx-auto max-w-6xl">
-          <p className="text-sm font-bold uppercase tracking-[0.24em] text-emerald-300">ADSO · Institutional</p>
-          <h1 className="mt-5 max-w-4xl text-4xl font-black tracking-tight sm:text-6xl">Éduquer. Prévenir. Mesurer. Agir.</h1>
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-emerald-50/80">ADSO — La responsabilité au service de la vie. Une plateforme numérique complémentaire pour la mobilité sûre, l’éducation, la prévention, la donnée et l’innovation.</p>
+          <p className="text-sm font-bold uppercase tracking-[0.24em] text-emerald-300">ADSO AFRICA · Institutionnel</p>
+          <h1 className="mt-5 max-w-4xl text-4xl font-black tracking-tight sm:text-6xl">Éduquer. Prévenir. Évaluer. Agir.</h1>
+          <p className="mt-6 max-w-3xl text-lg leading-8 text-emerald-50/80">Une infrastructure numérique complémentaire pour l’éducation routière, la formation à la mobilité, la prévention, la simulation et l’évaluation et reconnaissance des compétences acquises.</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/" className="rounded-xl bg-emerald-500 px-5 py-3 font-semibold text-slate-950">Découvrir ADSO</Link>
+            <Link href="/" className="rounded-xl bg-emerald-500 px-5 py-3 font-semibold text-slate-950">Découvrir ADSO AFRICA</Link>
             <Link href="/admin" className="rounded-xl border border-white/15 bg-white/5 px-5 py-3 font-semibold">Cockpit sécurisé</Link>
           </div>
         </div>
