@@ -70,9 +70,9 @@ export default function HeroRealisticHome() {
       <div className="mx-auto max-w-7xl px-4 pb-16 pt-10 sm:px-6 sm:pt-14 lg:px-8 lg:pb-20">
         <div className="grid items-center gap-10 lg:grid-cols-[0.96fr_1.04fr] lg:gap-14">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-[#D7B45A] sm:text-sm">Pensé pour l’Afrique · conçu pour l’avenir</p>
-            <h1 className="mt-4 max-w-3xl text-4xl font-black leading-[1.02] tracking-[-0.045em] sm:text-5xl lg:text-[4.25rem]">Une infrastructure numérique pour apprendre la mobilité sûre.</h1>
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-200 sm:text-xl"><strong className="font-extrabold text-white">ADSO AFRICA</strong> accompagne les usagers de la route, de l’école à la vie professionnelle, par l’éducation, la prévention, la simulation et le développement des compétences.</p>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[#D7B45A] sm:text-sm">Une ambition africaine · un impact humain</p>
+            <h1 className="mt-4 max-w-3xl text-4xl font-black leading-[1.02] tracking-[-0.045em] sm:text-5xl lg:text-[4.25rem]">Construire en Afrique une infrastructure numérique pour faire progresser les compétences de mobilité sûre tout au long de la vie.</h1>
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-200 sm:text-xl"><strong className="font-extrabold text-white">ADSO AFRICA</strong> accompagne chaque personne, de l’école à la vie professionnelle, par l’éducation, la prévention, la simulation et le développement des compétences — avec l’ambition de contribuer, pays après pays et dans toutes les langues, à réduire les accidents, les blessures et les décès sur les routes africaines.</p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Button type="button" size="lg" onClick={() => navigate('learning')} className="min-h-14 rounded-xl bg-[#D7B45A] px-7 text-base font-extrabold text-[#0B1F33] shadow-lg shadow-black/20 hover:bg-[#E4C878] focus-visible:ring-2 focus-visible:ring-[#F1DFA7]">Découvrir mon parcours <ArrowRight className="ml-2 size-5" /></Button>
