@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, Bike, Car, GraduationCap, HardHat, School2, University } from 'lucide-react';
+import { ArrowRight, Bike, Car, GraduationCap, HardHat, School2, University, Users } from 'lucide-react';
 
 const pathways = [
   {
@@ -15,28 +15,33 @@ const pathways = [
   },
   {
     group: 'Lycée', icon: GraduationCap, tone: 'cyan',
-    titles: ['Je prépare ma mobilité', 'Premiers réflexes du futur conducteur', 'Vitesse, distance et anticipation', 'Alcool, fatigue et distraction', 'Citoyen mobile et responsable'],
-    visual: '8 visuels : jeune conducteur, route urbaine, route interurbaine, nuit, pluie, téléphone, fatigue et décision.',
+    titles: ['Je prépare ma mobilité', 'Premiers réflexes de mobilité sûre', 'Vitesse, distance et anticipation', 'Alcool, fatigue et distraction', 'Citoyen mobile et responsable'],
+    visual: '8 visuels : jeune usager, route urbaine, route interurbaine, nuit, pluie, téléphone, fatigue et décision.',
   },
   {
-    group: 'Apprentis', icon: HardHat, tone: 'amber',
-    titles: ['Apprenti conducteur : observer, anticiper, décider', 'Maîtriser les manœuvres essentielles', 'Conduire avec les autres', 'Identifier les risques du métier', 'Adopter les bons réflexes chaque jour'],
-    visual: '8 visuels : apprentissage, manœuvre, stationnement, angle mort, chantier, passager, incident évité et évaluation.',
+    group: 'Apprentis de tous secteurs', icon: HardHat, tone: 'amber',
+    titles: ['Je travaille et je me déplace en sécurité', 'Identifier les risques de mon trajet et de mon métier', 'Être visible et protéger les autres', 'Réagir face aux situations dangereuses', 'Adopter les bons réflexes chaque jour'],
+    visual: '8 visuels : apprenti en situation professionnelle, trajet, traversée, deux-roues, passager, chantier, incident évité et évaluation.',
   },
   {
     group: 'Universitaires', icon: University, tone: 'violet',
-    titles: ['Mobilité sûre sur le campus', 'Analyse des risques routiers', 'Conduite responsable et citoyenneté', 'Mobilité durable et partagée', 'Leadership sécurité'],
+    titles: ['Mobilité sûre sur le campus', 'Analyse des risques routiers', 'Conduite et déplacement responsables', 'Mobilité durable et partagée', 'Leadership sécurité'],
     visual: '6 visuels : campus, transport collectif, mobilité douce, analyse de situation, sécurité et leadership.',
   },
   {
-    group: 'Taxi-moto', icon: Bike, tone: 'orange',
-    titles: ['Pilote taxi-moto sûr', 'Casque, passager et équipement', 'Positionnement, anticipation et distance', 'Conduire dans le trafic urbain', 'Fatigue, vitesse et prise de risque', 'Une course sûre du départ à l’arrivée'],
-    visual: '8 visuels : taxi-moto africain, casque, passager, carrefour, dépassement, pluie, nuit et situation immersive.',
+    group: 'Deux-roues & taxi-moto', icon: Bike, tone: 'orange',
+    titles: ['Usager deux-roues sûr', 'Casque, passager et équipement', 'Positionnement, anticipation et distance', 'Conduire dans le trafic urbain', 'Fatigue, vitesse et prise de risque', 'Un déplacement sûr du départ à l’arrivée'],
+    visual: '8 visuels : deux-roues africain, casque, passager, carrefour, dépassement, pluie, nuit et situation immersive.',
   },
   {
-    group: 'Taxi & voiture', icon: Car, tone: 'blue',
-    titles: ['Conducteur taxi : sécurité avant service', 'Accueil et protection du passager', 'Conduite souple et anticipation', 'Ville, interurbain et conditions difficiles', 'Fatigue, distraction et vigilance', 'Une course sûre du départ à l’arrivée'],
+    group: 'Taxi, voiture & professionnels', icon: Car, tone: 'blue',
+    titles: ['Conducteur : sécurité avant service', 'Accueil et protection du passager', 'Conduite souple et anticipation', 'Ville, interurbain et conditions difficiles', 'Fatigue, distraction et vigilance', 'Un trajet sûr du départ à l’arrivée'],
     visual: '8 visuels : taxi, passager, conduite urbaine, route interurbaine, nuit, pluie, arrêt sûr et décision.',
+  },
+  {
+    group: 'Tous les usagers', icon: Users, tone: 'slate',
+    titles: ['Je comprends ma vulnérabilité', 'Je partage la voie', 'Je protège les plus vulnérables', 'Je reconnais les dangers', 'Je contribue à une mobilité responsable'],
+    visual: '8 visuels : piéton, passager, cycliste, moto, véhicule, enfant, transport collectif et scène collective.',
   },
 ];
 
@@ -45,9 +50,9 @@ export default function AudienceCurriculumSection() {
     <section id="parcours" className="bg-slate-950 px-5 py-16 text-white sm:px-8 lg:py-20" aria-labelledby="parcours-heading">
       <div className="mx-auto max-w-7xl">
         <div className="max-w-3xl">
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-300">Le cœur pédagogique d’ADSO</p>
-          <h2 id="parcours-heading" className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Un parcours adapté à chaque âge, chaque métier et chaque niveau de mobilité.</h2>
-          <p className="mt-4 text-base leading-7 text-slate-300 sm:text-lg">ADSO ne donne pas le même cours à un enfant, à un étudiant ou à un conducteur de taxi-moto. Le socle commun reste la sécurité, puis le niveau, le contexte et les situations vécues deviennent progressivement plus exigeants.</p>
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-300">Le cœur pédagogique d’ADSO Africa</p>
+          <h2 id="parcours-heading" className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Un parcours adapté à chaque âge, chaque métier et chaque situation de mobilité.</h2>
+          <p className="mt-4 text-base leading-7 text-slate-300 sm:text-lg">ADSO Africa ne réduit pas la sécurité routière à l’apprentissage de la conduite. Un enfant, un étudiant, un apprenti de n’importe quel secteur, un piéton, un passager, un cycliste, un motocycliste ou un conducteur peuvent tous être exposés aux risques de la circulation. Le socle commun est la capacité à comprendre, anticiper, décider et agir en sécurité.</p>
         </div>
         <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {pathways.map(({ group, icon: Icon, titles, visual }) => (
