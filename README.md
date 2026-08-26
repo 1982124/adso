@@ -1,6 +1,48 @@
-# ADSO — Formation à la mobilité et éducation routière
+# ADSO AFRICA
 
-ADSO est une plateforme de formation, de prévention et de contenus éducatifs numériques autour de la mobilité, avec une priorité donnée aux usages africains.
+**La plateforme africaine pour une mobilité plus sûre et plus responsable.**
+
+ADSO AFRICA est une plateforme technologique dédiée à l'éducation routière, à la formation à la mobilité, à la prévention, à la simulation et à l'évaluation et reconnaissance des compétences acquises.
+
+## Architecture de marque
+
+- **LÉGENDE VISION** — la vision humaine du fondateur : contribuer à améliorer positivement la vie des citoyens du continent africain.
+- **Neo Digital Startup Academy (NDSA)** — l'entreprise porteuse qui conçoit, développe et exploite ADSO AFRICA.
+- **ADSO AFRICA** — la plateforme continentale.
+
+## Mobilité-first
+
+ADSO AFRICA ne se limite pas aux futurs conducteurs. Un usager peut cumuler plusieurs situations de mobilité : élève, apprenti, piéton, passager, cycliste, motocycliste, usager de taxi-moto, conducteur ou professionnel.
+
+**Apprenti** signifie apprenti de tout domaine d'activité, pas « apprenti conducteur ». Les parcours doivent prendre en compte cette réalité et les vulnérabilités propres à chaque contexte.
+
+## Pédagogie
+
+`VOIR → DÉCIDER → CONSÉQUENCE → COMPRENDRE → EXERCER → PROGRESSER`
+
+Le moteur pédagogique suit :
+
+`MODULE → LEÇON → SCÈNE → QUESTION → DÉCISION → CONSÉQUENCE → EXPLICATION → EXERCICE → SCORE → COMPÉTENCE → PROGRESSION`
+
+## Publics
+
+Élèves · Apprentis · Étudiants · Piétons · Passagers · Cyclistes · Motocyclistes · Usagers de taxi-moto · Conducteurs · Conducteurs professionnels · Enseignants · Formateurs · Établissements · Entreprises · Institutions.
+
+## Afrique
+
+L'architecture vise les **54 pays africains** grâce aux Country Packs. Un pays ne doit pas disparaître parce que ses données réglementaires ne sont pas encore complètes : les données peuvent être `Disponible`, `Enrichi`, `À compléter` ou `À vérifier`, avec source et date de vérification lorsque des règles nationales sont affichées.
+
+Le Mali est un premier terrain de déploiement et de preuve de concept ; il ne définit pas la limite géographique du produit. Le Bénin peut constituer un second terrain de référence. L'architecture reste continentale.
+
+## Institutionnel
+
+ADSO AFRICA peut être décliné en :
+
+- **ADSO Africa Citizen** — citoyens et apprenants ;
+- **ADSO Africa Établissements** — écoles, centres d'apprentissage, universités, auto-écoles et entreprises ;
+- **ADSO Africa Institutionnel** — ministères, agences, collectivités et partenaires.
+
+ADSO AFRICA ne remplace aucune autorité publique et ne prétend pas piloter la sécurité routière à la place des États. Il fournit une infrastructure technologique et pédagogique.
 
 ## MVP
 
@@ -24,20 +66,13 @@ Les domaines assurance, marketplace généraliste, flotte et télématique sont 
 - Vercel
 - NextAuth
 
-## Développement local
+## Vérifications
 
 ```bash
 npm install
 cp .env.example .env
 npm run db:generate
 npm run dev
-```
-
-L'application est disponible sur `http://localhost:3000`.
-
-## Vérifications
-
-```bash
 npm run lint
 npx tsc --noEmit
 npm run build
@@ -53,5 +88,3 @@ Les pull requests vers `main` exécutent l'installation, la génération Prisma,
 ## Déploiement
 
 Le déploiement de production est géré par Vercel. Les secrets et variables d'environnement doivent être configurés dans le projet Vercel, jamais committés dans le dépôt.
-
-Domaine de production canonique : `https://adso-safety.vercel.app`.
