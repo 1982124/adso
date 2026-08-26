@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import InstitutionalInquiryForm from '@/components/institutional/InstitutionalInquiryForm';
 
 const pillars = [
   { title: 'Éduquer', text: 'Parcours de mobilité et de sécurité routière adaptés à l’âge, au contexte, au métier et au profil de mobilité de l’apprenant.' },
@@ -41,7 +42,16 @@ export default function InstitutionsPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8" aria-labelledby="governance">
+      <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8" aria-labelledby="inquiry">
+        <div className="mb-7 max-w-3xl">
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-emerald-400">Entrer en relation</p>
+          <h2 id="inquiry" className="mt-2 text-3xl font-bold">Vous souhaitez étudier ADSO AFRICA ?</h2>
+          <p className="mt-3 text-slate-400">Décrivez votre contexte. Votre demande est reçue et qualifiée avec sobriété ; aucune affiliation ou partenariat n’est supposé sans accord formel.</p>
+        </div>
+        <InstitutionalInquiryForm />
+      </section>
+
+      <section className="mx-auto max-w-6xl px-5 pb-16 sm:px-8" aria-labelledby="governance">
         <div className="rounded-3xl border border-emerald-400/15 bg-emerald-400/[0.04] p-7 sm:p-10">
           <p className="text-sm font-bold uppercase tracking-[0.2em] text-emerald-400">Confiance & gouvernance</p>
           <h2 id="governance" className="mt-2 text-3xl font-bold">Des données contextualisées, sourcées et traçables</h2>
