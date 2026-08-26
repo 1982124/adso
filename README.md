@@ -12,9 +12,9 @@ ADSO AFRICA est une plateforme technologique dédiée à l'éducation routière,
 
 ## Mobilité-first
 
-ADSO AFRICA ne se limite pas aux futurs conducteurs. Un usager peut cumuler plusieurs situations de mobilité : élève, apprenti, piéton, passager, cycliste, motocycliste, usager de taxi-moto, conducteur ou professionnel.
+ADSO AFRICA ne se limite pas aux futurs conducteurs. Un usager peut cumuler plusieurs situations de mobilité : élève, apprenti de tout secteur d'activité, étudiant, piéton, passager, cycliste, motocycliste, usager de taxi-moto, conducteur ou professionnel.
 
-**Apprenti** signifie apprenti de tout domaine d'activité, pas « apprenti conducteur ». Les parcours doivent prendre en compte cette réalité et les vulnérabilités propres à chaque contexte.
+**Apprenti** signifie apprenti de tout domaine d'activité, pas « apprenti conducteur ». Un apprenti peut être exposé à la circulation lors de ses trajets, comme piéton, passager, cycliste, motocycliste ou conducteur selon son contexte professionnel. ADSO traite donc l'apprenti comme une population prioritaire de prévention et d'apprentissage de la mobilité sûre.
 
 ## Pédagogie
 
@@ -26,7 +26,7 @@ Le moteur pédagogique suit :
 
 ## Publics
 
-Élèves · Apprentis · Étudiants · Piétons · Passagers · Cyclistes · Motocyclistes · Usagers de taxi-moto · Conducteurs · Conducteurs professionnels · Enseignants · Formateurs · Établissements · Entreprises · Institutions.
+Élèves · Apprentis de tous secteurs · Étudiants · Piétons · Passagers · Cyclistes · Motocyclistes · Usagers de taxi-moto · Conducteurs · Conducteurs professionnels · Enseignants · Formateurs · Établissements · Entreprises · Institutions.
 
 ## Afrique
 
@@ -42,13 +42,24 @@ ADSO AFRICA peut être décliné en :
 - **ADSO Africa Établissements** — écoles, centres d'apprentissage, universités, auto-écoles et entreprises ;
 - **ADSO Africa Institutionnel** — ministères, agences, collectivités et partenaires.
 
-ADSO AFRICA ne remplace aucune autorité publique et ne prétend pas piloter la sécurité routière à la place des États. Il fournit une infrastructure technologique et pédagogique.
+ADSO AFRICA ne remplace aucune autorité publique et ne prétend pas piloter la sécurité routière à la place des États. Il fournit une infrastructure technologique et pédagogique complémentaire.
+
+## Priorité produit — apprentis et usagers vulnérables
+
+Le produit doit séparer quatre dimensions :
+
+`PERSONNE → MOBILITÉ → EXPOSITION AU RISQUE → COMPÉTENCES`
+
+Un apprenti peut changer de mode de déplacement sans changer de profil. Le parcours doit donc enseigner la sécurité sur les trajets quotidiens et dans les contextes professionnels, sans supposer que l'apprenti conduit un véhicule.
+
+Voir `docs/ADSO_AFRICA_INSTITUTIONAL_PRODUCT_BLUEPRINT.md` pour le blueprint institutionnel.
 
 ## MVP
 
 - Formation à la mobilité et éducation routière
 - ADSO Immersif
 - Parcours et progression
+- Compétences et prévention des usagers vulnérables
 - E-books et bibliothèque numérique
 - Afrique / Country Packs
 - Offres établissements
