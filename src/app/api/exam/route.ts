@@ -55,7 +55,12 @@ function verifyExamSession(token: string | undefined) {
   }
 }
 
-async function issueExamCertificate(userId: string, score: number, countryCode: string, licenseCode: string | null) {
+/**
+ * Creates an internal ADSO recognition record for a passed mock exam.
+ * This is deliberately not presented as an official State certification,
+ * permit, licence, or regulated qualification.
+ */
+async function issueExamRecognition(userId: string, score: number, countryCode: string, licenseCode: string | null) {
   const existing = await db.certification.findFirst({
     where: { userId, type: 'exam_passed', licenseCode, countryCode },
     orderBy: { issuedAt: 'desc' },
@@ -66,14 +71,14 @@ async function issueExamCertificate(userId: string, score: number, countryCode: 
     data: {
       userId,
       type: 'exam_passed',
-      title: 'Certification ADSO — Maîtrise du Code de la circulation',
-      description: 'Certification ADSO délivrée automatiquement après réussite d’un examen blanc supervisé par la plateforme.',
+      title: 'Reconnaissance ADSO — maîtrise du Code de la circulation',
+      description: 'Document interne de reconnaissance d’une réussite à une évaluation ADSO. Il ne constitue ni un permis, ni une certification officielle, ni une autorisation de conduire délivrée par une autorité publique.',
       countryCode,
       licenseCode,
       score,
-      qrCode: `https://adso.verify/${randomChars(16)}`,
+      qrCode: null,
       certificateId: `ADSO-${randomChars(4)}-${randomChars(4)}`,
-      expiresAt: new Date(new Date().setFullYear(new Date().getFullYear() + 2)),
+      expiresAt: null,
     },
   });
 }
@@ -175,9 +180,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    let certification: Awaited<ReturnType<typeof issueExamCertificate>> | null = null;
+    let recognition: Awaited<ReturnType<typeof issueExamRecognition>> | null = null;
     if (passed && examType === 'mock_exam') {
-      certification = await issueExamCertificate(user.id, score, normalizedCountry, licenseCode ?? null);
+      recognition = await issueExamRecognition(user.id, score, normalizedCountry, licenseCode ?? null);
     }
 
     const response = NextResponse.json({
@@ -187,7 +192,7 @@ export async function POST(request: NextRequest) {
       correctAnswers,
       totalQuestions,
       wrongAnswers: wrongAnswerIds,
-      certification,
+      recognition,
     });
     response.cookies.set(EXAM_SESSION_COOKIE, '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/api/exam', maxAge: 0 });
     return response;
