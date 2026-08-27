@@ -9,6 +9,14 @@ function recognitionLevel(level: number, attempts: number) {
   return 'En développement';
 }
 
+function recognitionReason(level: number, attempts: number, status: string) {
+  if (status === 'Reconnaissance ADSO') return 'Niveau démontré ≥ 80 % sur au moins 2 évaluations.';
+  if (status === 'Consolidée') return 'Niveau démontré ≥ 60 % sur au moins 2 évaluations.';
+  if (status === 'Acquise') return 'Niveau démontré ≥ 35 %.';
+  if (attempts === 0) return 'Aucune évaluation enregistrée pour le moment.';
+  return 'Le niveau démontré reste inférieur au seuil d’acquisition.';
+}
+
 export async function GET() {
   const session = await getSession();
   if (!session?.user) return NextResponse.json({ error: 'Authentification requise' }, { status: 401 });
@@ -22,20 +30,31 @@ export async function GET() {
     }>>(`SELECT "competency", "level", "attempts", "lastScore", "strengths", "weaknesses", "updatedAt"
       FROM "ImmersiveCompetency" WHERE "userId" = $1 ORDER BY "level" DESC, "updatedAt" DESC`, userId);
 
+    // Keep the five most recent pieces of evidence per competency. Partitioning
+    // in SQL prevents a busy competency from starving the others of evidence.
     const evidence = await db.$queryRawUnsafe<Array<{
       competency: string; sceneId: string; sceneTitle: string; score: number;
       maxScore: number; accuracy: number; completedAt: Date | null;
-    }>>(`SELECT c."competency", a."sceneId", s."title" AS "sceneTitle", a."score", a."maxScore", a."accuracy", a."completedAt"
-      FROM "ImmersiveCompetency" c
-      JOIN "ImmersiveAttempt" a ON a."userId" = c."userId"
-      JOIN "ImmersiveScene" s ON s."id" = a."sceneId"
-      WHERE c."userId" = $1 AND s."competency" = c."competency"
-      ORDER BY a."completedAt" DESC NULLS LAST LIMIT 100`, userId);
+    }>>(`
+      WITH ranked AS (
+        SELECT c."competency", a."sceneId", s."title" AS "sceneTitle", a."score", a."maxScore", a."accuracy", a."completedAt",
+          ROW_NUMBER() OVER (
+            PARTITION BY c."competency"
+            ORDER BY a."completedAt" DESC NULLS LAST, a."createdAt" DESC
+          ) AS rn
+        FROM "ImmersiveCompetency" c
+        JOIN "ImmersiveAttempt" a ON a."userId" = c."userId"
+        JOIN "ImmersiveScene" s ON s."id" = a."sceneId"
+        WHERE c."userId" = $1 AND s."competency" = c."competency"
+      )
+      SELECT "competency", "sceneId", "sceneTitle", "score", "maxScore", "accuracy", "completedAt"
+      FROM ranked WHERE rn <= 5
+      ORDER BY "competency", "completedAt" DESC NULLS LAST`, userId);
 
     const evidenceByCompetency = new Map<string, typeof evidence>();
     for (const item of evidence) {
       const list = evidenceByCompetency.get(item.competency) ?? [];
-      if (list.length < 5) list.push(item);
+      list.push(item);
       evidenceByCompetency.set(item.competency, list);
     }
 
@@ -43,16 +62,23 @@ export async function GET() {
       const level = Math.max(0, Math.min(100, Number(row.level) || 0));
       const attempts = Math.max(0, Number(row.attempts) || 0);
       const status = recognitionLevel(level, attempts);
+      const proofs = evidenceByCompetency.get(row.competency) ?? [];
+      const avgAccuracy = proofs.length
+        ? Math.round((proofs.reduce((sum, proof) => sum + Number(proof.accuracy || 0), 0) / proofs.length) * 100)
+        : 0;
       return {
         competency: row.competency,
         level: Math.round(level),
         attempts,
         lastScore: Math.round(Math.max(0, Math.min(100, Number(row.lastScore) || 0))),
         status,
+        recognitionReason: recognitionReason(level, attempts, status),
+        evidenceCount: proofs.length,
+        recentEvidenceAverageAccuracy: avgAccuracy,
         strengths: row.strengths,
         weaknesses: row.weaknesses,
         updatedAt: row.updatedAt,
-        evidence: evidenceByCompetency.get(row.competency) ?? [],
+        evidence: proofs,
       };
     });
 
