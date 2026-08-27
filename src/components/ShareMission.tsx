@@ -1,20 +1,54 @@
 'use client';
 
 import { Check, Copy, Share2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
+
+const MESSAGE = 'Je partage ADSO AFRICA parce qu’une connaissance peut éviter un accident, une blessure ou peut-être sauver une vie. Dans le monde, les traumatismes routiers sont la première cause de décès chez les 5–29 ans. Pour nos enfants, nos jeunes, nos apprentis, nos étudiants et toutes les personnes vulnérables sur nos routes africaines. La sécurité routière nous concerne tous. Une connaissance utile mérite d’être transmise pour sauver des vies et contribuer à réduire les chiffres. Moi, je partage ADSO. Et toi ? 🌍';
+const SOURCE = 'Organisation mondiale de la Santé (OMS), Traumatismes dus aux accidents de la circulation, 20 juillet 2026';
+
+function getOrCreateShareSlug() {
+  const key = 'adso_share_id';
+  try {
+    const existing = window.localStorage.getItem(key);
+    if (existing) return existing;
+    const id = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID().replace(/-/g, '').slice(0, 10)
+      : Math.random().toString(36).slice(2, 12);
+    const slug = `a-${id}`;
+    window.localStorage.setItem(key, slug);
+    return slug;
+  } catch {
+    return 'adso-africa';
+  }
+}
 
 export default function ShareMission() {
   const [copied, setCopied] = useState(false);
-  const smartLink = useMemo(() => typeof window === 'undefined' ? 'https://adso-safety.vercel.app/s/adso-africa' : `${window.location.origin}/s/adso-africa`, []);
-  const message = 'Je partage ADSO AFRICA parce qu’une connaissance peut éviter un accident, une blessure ou peut-être sauver une vie. Dans le monde, les traumatismes routiers sont la première cause de décès chez les 5–29 ans. Pour nos enfants, nos jeunes, nos apprentis, nos étudiants et toutes les personnes vulnérables sur nos routes africaines. La sécurité routière nous concerne tous. Une connaissance utile mérite d’être transmise pour sauver des vies et contribuer à réduire les chiffres. Moi, je partage ADSO. Et toi ? 🌍';
-  const encoded = encodeURIComponent(`${message}\n\n${smartLink}`);
+  const [smartLink, setSmartLink] = useState('https://adso-safety.vercel.app/s/adso-africa');
+
+  useEffect(() => {
+    const slug = getOrCreateShareSlug();
+    setSmartLink(`${window.location.origin}/s/${slug}`);
+  }, []);
 
   const copy = async () => {
-    try { await navigator.clipboard.writeText(`${message}\n\n${smartLink}`); setCopied(true); window.setTimeout(() => setCopied(false), 1800); } catch {}
+    try {
+      await navigator.clipboard.writeText(`${MESSAGE}\n\n${smartLink}`);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {}
   };
 
   const share = async () => {
-    if (navigator.share) { await navigator.share({ title: 'ADSO AFRICA — Une connaissance utile mérite d’être transmise', text: message, url: smartLink }).catch(() => undefined); return; }
+    const encoded = encodeURIComponent(`${MESSAGE}\n\n${smartLink}`);
+    if (navigator.share) {
+      await navigator.share({
+        title: 'ADSO AFRICA — Une connaissance utile mérite d’être transmise',
+        text: MESSAGE,
+        url: smartLink,
+      }).catch(() => undefined);
+      return;
+    }
     window.open(`https://wa.me/?text=${encoded}`, '_blank', 'noopener,noreferrer');
   };
 
@@ -30,11 +64,11 @@ export default function ShareMission() {
             <p className="mt-1.5 text-xs font-semibold leading-5 text-slate-200 sm:text-sm">Pour nos enfants, nos jeunes, nos apprentis, nos étudiants et toutes les personnes vulnérables sur nos routes africaines.</p>
           </div>
           <p className="mt-2 text-xs font-bold leading-5 text-[#E4C878]">Une connaissance utile mérite d’être transmise pour sauver des vies et contribuer à réduire les chiffres.</p>
-          <p className="mt-1 text-[10px] leading-4 text-slate-400">Source : Organisation mondiale de la Santé (OMS) · données mondiales sur les traumatismes routiers.</p>
+          <p className="mt-1 text-[10px] leading-4 text-slate-400">Source : {SOURCE}.</p>
         </div>
-        <div className="flex flex-wrap gap-2 lg:max-w-[230px] lg:justify-end">
+        <div className="flex flex-wrap gap-2 lg:max-w-[260px] lg:justify-end">
           <button type="button" onClick={share} className="inline-flex min-h-10 items-center rounded-xl bg-[#D7B45A] px-4 py-2 text-xs font-extrabold text-[#0B1F33] hover:bg-[#E4C878]"><Share2 className="mr-2 size-4" /> Partager ADSO</button>
-          <button type="button" onClick={copy} className="inline-flex min-h-10 items-center rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-bold text-white hover:bg-white/10">{copied ? <Check className="mr-2 size-4" /> : <Copy className="mr-2 size-4" />}{copied ? 'Smart link copié' : 'Copier le smart link'}</button>
+          <button type="button" onClick={copy} className="inline-flex min-h-10 items-center rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-bold text-white hover:bg-white/10">{copied ? <Check className="mr-2 size-4" /> : <Copy className="mr-2 size-4" />}{copied ? 'Message + lien copiés' : 'Copier le message + lien'}</button>
         </div>
       </div>
     </section>
