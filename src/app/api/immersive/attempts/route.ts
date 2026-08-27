@@ -12,8 +12,9 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const sceneId = String(body.sceneId ?? '');
+    const sceneId = typeof body.sceneId === 'string' ? body.sceneId.trim() : '';
     if (!sceneId) return NextResponse.json({ error: 'sceneId requis' }, { status: 400 });
+    if (!Array.isArray(body.answers)) return NextResponse.json({ error: 'answers doit être un tableau' }, { status: 400 });
 
     // Never trust scoring data supplied by the browser. Load the canonical
     // published scene and its choices from Neon, then evaluate server-side.
@@ -43,9 +44,13 @@ export async function POST(request: Request) {
     const scene = rows[0];
     if (!scene) return NextResponse.json({ error: 'Scène publiée introuvable' }, { status: 404 });
 
-    const submittedAnswers = Array.isArray(body.answers) ? body.answers : [];
+    const canonicalInteractions = scene.interactions ?? [];
+    if (canonicalInteractions.length === 0) {
+      return NextResponse.json({ error: 'Cette scène ne contient aucune interaction pédagogique.' }, { status: 409 });
+    }
+
     const canonicalChoices = new Map<string, { scoreDelta: number; correct: boolean }>();
-    for (const interaction of scene.interactions ?? []) {
+    for (const interaction of canonicalInteractions) {
       for (const choice of interaction.choices ?? []) {
         canonicalChoices.set(`${interaction.id}:${choice.id}`, {
           scoreDelta: Number(choice.scoreDelta ?? 0),
@@ -54,23 +59,34 @@ export async function POST(request: Request) {
       }
     }
 
-    const answers: ImmersiveAnswer[] = submittedAnswers
-      .map((answer: unknown) => {
-        const item = answer as Record<string, unknown>;
-        const interactionId = String(item.interactionId ?? '');
-        const choiceId = String(item.choiceId ?? '');
-        const canonical = canonicalChoices.get(`${interactionId}:${choiceId}`);
-        if (!canonical) return null;
-        return { interactionId, choiceId, scoreDelta: canonical.scoreDelta, correct: canonical.correct };
-      })
-      .filter((answer: ImmersiveAnswer | null): answer is ImmersiveAnswer => answer !== null);
+    const seenInteractions = new Set<string>();
+    const answers: ImmersiveAnswer[] = [];
+    for (const rawAnswer of body.answers) {
+      if (!rawAnswer || typeof rawAnswer !== 'object') continue;
+      const item = rawAnswer as Record<string, unknown>;
+      const interactionId = typeof item.interactionId === 'string' ? item.interactionId : '';
+      const choiceId = typeof item.choiceId === 'string' ? item.choiceId : '';
+      if (!interactionId || !choiceId || seenInteractions.has(interactionId)) continue;
+      const canonical = canonicalChoices.get(`${interactionId}:${choiceId}`);
+      if (!canonical) continue;
+      seenInteractions.add(interactionId);
+      answers.push({ interactionId, choiceId, scoreDelta: canonical.scoreDelta, correct: canonical.correct });
+    }
 
-    const result = evaluateScene(scene.interactions ?? [], answers);
-    const competency = String(scene.competency || body.competency || 'Conduite sûre');
+    // A completed scene must contain exactly one valid decision for every
+    // canonical interaction. This prevents forged partial attempts and keeps
+    // progression semantics deterministic.
+    if (answers.length !== canonicalInteractions.length) {
+      return NextResponse.json({
+        error: 'Toutes les décisions de la scène doivent être complétées avant l’enregistrement.',
+        answered: answers.length,
+        required: canonicalInteractions.length,
+      }, { status: 400 });
+    }
 
-    // A published immersive scene may optionally be linked to a canonical
-    // Course + Module. When that relation exists, persist the same completion
-    // into StudentProgress so the learner's dashboard sees the result.
+    const result = evaluateScene(canonicalInteractions, answers);
+    const competency = String(scene.competency || 'Conduite sûre');
+
     let persistedCourseProgress: number | null = null;
     let persistedCourseStatus: string | null = null;
 
@@ -105,7 +121,7 @@ export async function POST(request: Request) {
           ("id","sceneId","userId","score","maxScore","accuracy","competencyGain","answersJson","completedAt")
           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
           randomUUID(), sceneId, userId, result.score, result.maxScore, result.accuracy, result.competencyGain,
-          JSON.stringify(result.answers), result.completed ? new Date() : null);
+          JSON.stringify(result.answers), new Date());
 
         await tx.$executeRawUnsafe(`
           INSERT INTO "ImmersiveCompetency" ("id","userId","competency","level","attempts","lastScore")
@@ -146,7 +162,7 @@ export async function POST(request: Request) {
           ("id","sceneId","userId","score","maxScore","accuracy","competencyGain","answersJson","completedAt")
           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
           randomUUID(), sceneId, userId, result.score, result.maxScore, result.accuracy, result.competencyGain,
-          JSON.stringify(result.answers), result.completed ? new Date() : null);
+          JSON.stringify(result.answers), new Date());
 
         await tx.$executeRawUnsafe(`
           INSERT INTO "ImmersiveCompetency" ("id","userId","competency","level","attempts","lastScore")
