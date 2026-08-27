@@ -4,6 +4,10 @@
 
 ADSO évalue des comportements et décisions observables dans ses expériences pédagogiques et conserve des preuves liées aux évaluations immersives.
 
+## Chaîne de preuve
+
+Parcours → module → scène → interaction → décision → évaluation serveur → tentative persistée → compétence → progression → reconnaissance.
+
 ## Niveaux
 
 - **En développement** : niveau démontré inférieur au seuil d'acquisition.
@@ -38,13 +42,8 @@ ADSO ne doit pas présenter ses résultats comme une qualification délivrée pa
 
 Le référentiel V1 ne prétend pas constituer une norme réglementaire africaine. Les critères peuvent évoluer avec la validation pédagogique, les référentiels nationaux et les partenariats institutionnels.
 
-## Évolution prévue
+## Passeport V1
 
-La prochaine maturité pourra ajouter :
+Le dossier apprenant expose les compétences réellement enregistrées, leur niveau, leur nombre d'évaluations, leur dernier score et les scènes récentes ayant produit une preuve pour la compétence.
 
-1. une matrice compétence → critères observables → scènes ;
-2. des niveaux de difficulté ;
-3. des preuves plus fines par situation ;
-4. des recommandations de consolidation ;
-5. un passeport partageable avec consentement explicite ;
-6. une vérification publique sécurisée lorsque le modèle de gouvernance sera défini.
+Le partage externe d'un dossier de compétences n'est pas activé par défaut. Toute future vérification publique devra être conçue avec consentement explicite, contrôle d'accès et gouvernance adaptée.
