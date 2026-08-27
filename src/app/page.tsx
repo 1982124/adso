@@ -41,17 +41,15 @@ export default function Home() {
 function HomeView() {
   return <>
     <HeroRealisticHome />
-    <section aria-labelledby="home-proof" className="border-b border-slate-200 bg-white px-4 py-9 sm:px-6 lg:px-8 dark:border-slate-800 dark:bg-slate-950">
-      <div className="mx-auto grid max-w-7xl gap-7 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
-        <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-700 dark:text-[#D7B45A]">Pourquoi ADSO AFRICA</p>
-          <h2 id="home-proof" className="mt-2 max-w-xl text-2xl font-black tracking-[-0.03em] text-slate-950 sm:text-3xl dark:text-white">Transformer une connaissance en compétence, puis une compétence en réflexe.</h2>
-        </div>
-        <ADSOExperienceSection />
+    <section aria-labelledby="home-proof" className="border-b border-slate-200 bg-white px-4 py-10 sm:px-6 lg:px-8 dark:border-slate-800 dark:bg-slate-950">
+      <div className="mx-auto max-w-7xl text-center">
+        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-700 dark:text-[#D7B45A]">Pourquoi ADSO AFRICA</p>
+        <h2 id="home-proof" className="mx-auto mt-2 max-w-3xl text-2xl font-black tracking-[-0.03em] text-slate-950 sm:text-3xl dark:text-white">Transformer une connaissance en compétence, puis une compétence en réflexe.</h2>
       </div>
     </section>
+    <ADSOExperienceSection />
     <StatsSection />
-    <section aria-labelledby="share-home" className="border-t border-slate-200 bg-[#0B1F33] px-4 py-8 sm:px-6 lg:px-8 dark:border-slate-800">
+    <section aria-labelledby="share-home" className="border-t border-slate-200 bg-[#0B1F33] px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl"><ShareMission /></div>
     </section>
     <section id="ecosysteme" className="border-t border-slate-200 bg-slate-50 px-4 py-10 sm:px-6 lg:px-8 dark:border-slate-800 dark:bg-slate-900/40">
