@@ -1,6 +1,5 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import { useLayoutEffect } from 'react';
 import Link from 'next/link';
 import { useViewStore } from '@/stores/view-store';
@@ -10,23 +9,9 @@ import ChunkLoadRecovery from '@/components/ChunkLoadRecovery';
 import HeroRealisticHome from '@/components/sections/HeroRealisticHome';
 import StatsSection from '@/components/sections/StatsSection';
 import EcosystemSection from '@/components/sections/EcosystemSection';
-import AIFeaturesSection from '@/components/sections/AIFeaturesSection';
-import QuizSection from '@/components/sections/QuizSection';
-import AIChatSection from '@/components/sections/AIChatSection';
-import PricingSection from '@/components/sections/PricingSection';
-import RoadmapSection from '@/components/sections/RoadmapSection';
 import SecuritySection from '@/components/sections/SecuritySection';
-import AboutSection from '@/components/sections/AboutSection';
 import ADSOExperienceSection from '@/components/ADSOExperienceSection';
 import LearningPlatform from '@/components/modules/learning/LearningPlatform';
-import RealWorldScenes from '@/components/modules/learning/RealWorldScenes';
-
-const AIDrivingModule = dynamic(() => import('@/components/modules/v41/AIDrivingModule'), { ssr: false, loading: () => <ModuleLoader label="Formation mobilité" /> });
-const EnterpriseModule = dynamic(() => import('@/components/modules/v41/EnterpriseModule'), { ssr: false, loading: () => <ModuleLoader label="Établissements" /> });
-
-function ModuleLoader({ label }: { label: string }) {
-  return <div className="min-h-[60vh] flex items-center justify-center"><div className="text-center space-y-3"><div className="w-10 h-10 border-3 border-emerald-600 border-t-transparent rounded-full mx-auto animate-spin" /><p className="text-slate-500 text-sm">Chargement {label}...</p></div></div>;
-}
 
 export default function Home() {
   const { currentView, setView } = useViewStore();
@@ -40,7 +25,7 @@ export default function Home() {
     const frame = window.requestAnimationFrame(reset);
     const timer = window.setTimeout(reset, 120);
     window.addEventListener('pageshow', reset);
-    if (window.location.hash && !['#ebooks', '#pricing', '#tarifs'].includes(window.location.hash)) window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+    if (window.location.hash && !['#ebooks', '#pricing', '#tarifs', '#parcours'].includes(window.location.hash)) window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
     return () => {
       window.cancelAnimationFrame(frame);
       window.clearTimeout(timer);
@@ -49,34 +34,33 @@ export default function Home() {
     };
   }, []);
 
-  return <><ChunkLoadRecovery /><main role="main" aria-label="ADSO — formation à la mobilité et éducation routière"><ViewErrorBoundary key={currentView}>{currentView === 'home' && <HomeView />}{currentView === 'learning' && <LearningPlatform />}{currentView === 'driving' && <AIDrivingModule />}{currentView === 'security' && <SecurityModuleView />}{currentView === 'enterprise' && <EnterpriseModule />}</ViewErrorBoundary></main><Footer /></>;
+  return <><ChunkLoadRecovery /><main role="main" aria-label="ADSO AFRICA — infrastructure numérique de mobilité sûre"><ViewErrorBoundary key={currentView}>{currentView === 'home' && <HomeView />}{currentView === 'learning' && <LearningPlatform />}{currentView === 'driving' && <SecuritySection />}{currentView === 'security' && <SecuritySection />}</ViewErrorBoundary></main><Footer /></>;
 }
 
 function HomeView() {
   return <>
     <HeroRealisticHome />
-    <ADSOExperienceSection />
-    <section id="scenes-reelles" className="bg-slate-950 px-4 py-16 text-white sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl"><RealWorldScenes /></div>
-    </section>
-    <AboutSection />
-    <StatsSection />
-    <EcosystemSection />
-    <AIFeaturesSection />
-    <QuizSection />
-    <AIChatSection />
-    <section id="ebooks" className="scroll-mt-20 px-4 py-16 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-5xl rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">ADSO E-books</p>
-        <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">Apprendre, lire et progresser</h2>
-        <p className="mx-auto mt-4 max-w-2xl text-slate-600 dark:text-slate-300">Des contenus éducatifs numériques consacrés à la mobilité, à la prévention et à la sécurité routière.</p>
-        <Link href="/ebooks" className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-emerald-600 px-6 py-3 font-semibold text-white transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">Explorer les e-books</Link>
+    <section aria-labelledby="home-proof" className="border-b border-slate-200 bg-white px-4 py-10 sm:px-6 lg:px-8 dark:border-slate-800 dark:bg-slate-950">
+      <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+        <div>
+          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-700 dark:text-[#D7B45A]">Pourquoi ADSO AFRICA</p>
+          <h2 id="home-proof" className="mt-2 max-w-xl text-2xl font-black tracking-[-0.03em] text-slate-950 sm:text-3xl dark:text-white">Transformer une connaissance en compétence, puis une compétence en réflexe.</h2>
+        </div>
+        <ADSOExperienceSection />
       </div>
     </section>
-    <div id="tarifs" className="scroll-mt-20"><PricingSection /></div>
-    <RoadmapSection />
-    <SecuritySection />
+    <StatsSection />
+    <section id="ecosysteme" className="border-t border-slate-200 bg-slate-50 px-4 py-10 sm:px-6 lg:px-8 dark:border-slate-800 dark:bg-slate-900/40">
+      <div className="mx-auto max-w-7xl"><EcosystemSection /></div>
+    </section>
+    <section className="px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-7xl flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:bg-slate-900">
+        <div><p className="text-sm font-black text-slate-950 dark:text-white">Pour les établissements et institutions</p><p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">Découvrir une infrastructure complémentaire pour l'éducation, la prévention et le développement des compétences de mobilité sûre.</p></div>
+        <Link href="/institutions" className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-xs font-extrabold text-white hover:bg-slate-800 dark:bg-[#D7B45A] dark:text-slate-950 dark:hover:bg-[#E4C878]">Espace institutions</Link>
+      </div>
+    </section>
+    <section className="border-t border-slate-200 bg-slate-950 px-4 py-8 text-white sm:px-6 lg:px-8 dark:border-slate-800">
+      <div className="mx-auto flex max-w-7xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-black">Confiance avant promesse.</p><p className="mt-1 max-w-3xl text-xs leading-5 text-slate-300">ADSO AFRICA complète les dispositifs existants. Elle n’est pas une autorité publique et ne remplace pas les permis, examens ou certifications officiels des États.</p></div><span className="shrink-0 text-[10px] font-black uppercase tracking-[0.18em] text-[#D7B45A]">Pensé pour l’Afrique · Conçu pour l’avenir</span></div>
+    </section>
   </>;
 }
-
-function SecurityModuleView() { return <SecuritySection />; }
