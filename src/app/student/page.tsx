@@ -5,6 +5,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import LearnerCockpit from '@/components/sections/LearnerCockpit';
 import LearnerOnboarding from '@/components/modules/learning/LearnerOnboarding';
+import CompetencyPassport from '@/components/modules/learning/CompetencyPassport';
 import { useLocaleStore } from '@/stores/locale-store';
 
 const STORAGE_KEY = 'adso-learner-onboarding-v2';
@@ -39,6 +40,7 @@ export default function StudentCockpitPage() {
             <LearnerCockpit />
           )}
         </section>
+        {onboardingComplete && <CompetencyPassport />}
       </main>
       <Footer />
     </>
