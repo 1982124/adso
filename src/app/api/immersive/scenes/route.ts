@@ -4,10 +4,9 @@ import { db } from '@/lib/db';
 import { getSession, getUserId } from '@/lib/auth';
 import { clampVideoDuration, normalizePause } from '@/lib/engines/immersive-scene-engine';
 
-async function ensureTables() {
-  // Prisma prepares each raw statement separately; PostgreSQL rejects multiple
-  // commands in a single prepared statement. Keep initialization idempotent but
-  // execute every DDL statement independently.
+let schemaReady: Promise<void> | null = null;
+
+async function initializeSchema() {
   const statements = [
     `CREATE TABLE IF NOT EXISTS "ImmersiveScene" (
       "id" TEXT PRIMARY KEY, "title" TEXT NOT NULL, "description" TEXT NOT NULL,
@@ -38,8 +37,20 @@ async function ensureTables() {
   for (const statement of statements) await db.$executeRawUnsafe(statement);
 }
 
-async function ensureMediaTable() {
-  const statement = `CREATE TABLE IF NOT EXISTS "LabMediaAsset" (
+async function ensureTables() {
+  if (!schemaReady) {
+    schemaReady = initializeSchema().catch((error) => {
+      schemaReady = null;
+      throw error;
+    });
+  }
+  return schemaReady;
+}
+
+let mediaTableReady: Promise<void> | null = null;
+
+async function initializeMediaTable() {
+  await db.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "LabMediaAsset" (
     "id" TEXT PRIMARY KEY, "ownerId" TEXT NOT NULL, "courseId" TEXT, "moduleId" TEXT,
     "name" TEXT NOT NULL, "url" TEXT NOT NULL, "pathname" TEXT NOT NULL, "mimeType" TEXT NOT NULL,
     "sizeBytes" BIGINT NOT NULL DEFAULT 0, "durationSeconds" INTEGER,
@@ -47,8 +58,17 @@ async function ensureMediaTable() {
     "copyrightConfirmed" BOOLEAN NOT NULL DEFAULT false, "moderationStatus" TEXT NOT NULL DEFAULT 'pending',
     "failureReason" TEXT, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-  )`;
-  await db.$executeRawUnsafe(statement);
+  )`);
+}
+
+async function ensureMediaTable() {
+  if (!mediaTableReady) {
+    mediaTableReady = initializeMediaTable().catch((error) => {
+      mediaTableReady = null;
+      throw error;
+    });
+  }
+  return mediaTableReady;
 }
 
 export async function GET() {
