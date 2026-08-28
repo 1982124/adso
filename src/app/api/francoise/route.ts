@@ -8,6 +8,15 @@ const COOKIE = 'adso_francoise_guest';
 const WINDOW_MS = 60 * 60 * 1000;
 const GUEST_LIMIT = 5;
 
+type FrancoiseContext = {
+  country?: string;
+  language?: string;
+  profile?: string;
+  goal?: string;
+  course?: string;
+  competency?: string;
+};
+
 function sign(value: string) {
   const secret = process.env.NEXTAUTH_SECRET;
   if (!secret) throw new Error('NEXTAUTH_SECRET is not configured');
@@ -42,6 +51,16 @@ function attachGuestCookie(response: NextResponse, startedAt: number, count: num
   });
 }
 
+function sanitizeContext(value: unknown): FrancoiseContext {
+  if (!value || typeof value !== 'object') return {};
+  const source = value as Record<string, unknown>;
+  const clean: FrancoiseContext = {};
+  for (const key of ['country', 'language', 'profile', 'goal', 'course', 'competency'] as const) {
+    if (typeof source[key] === 'string' && source[key].trim()) clean[key] = source[key].trim().slice(0, 160);
+  }
+  return clean;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
@@ -53,6 +72,7 @@ export async function POST(request: NextRequest) {
     const userId = getUserId(session);
     const guest = !userId;
     const usage = readGuestUsage(request);
+    const clientContext = sanitizeContext(body.context);
 
     if (guest && usage.count >= GUEST_LIMIT) {
       return NextResponse.json(
@@ -71,12 +91,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const learningContext = Object.entries(clientContext).length
+      ? `\nCONTEXTE PÉDAGOGIQUE FOURNI PAR L'INTERFACE ADSO\n${Object.entries(clientContext).map(([key, value]) => `${key}: ${value}`).join('\n')}\nUtilise ce contexte pour personnaliser l'explication. Il ne constitue pas à lui seul une preuve réglementaire.`
+      : '';
+
     const reply = await aiChat(
       request,
       [
         {
           role: 'system',
-          content: `Tu es Françoise, l'assistante vocale et textuelle d'ADSO (Auto Drive School Online). Réponds dans la langue de l'utilisateur lorsque possible. Tu aides sur la mobilité, le code de la route, la sécurité routière, l'apprentissage et l'écosystème ADSO. Sois claire, chaleureuse, concise et factuelle. Pour toute règle réglementaire, distingue clairement une information vérifiée d'une information manquante et n'invente jamais. Les opérations sensibles, financières, contractuelles ou administratives ne sont jamais exécutées depuis cette conversation publique. ${countryContext}`,
+          content: `Tu es Françoise, l'assistante vocale et textuelle d'ADSO (Auto Drive School Online). Réponds dans la langue de l'utilisateur lorsque possible. Tu aides sur la mobilité, le code de la route, la sécurité routière, l'apprentissage et l'écosystème ADSO. Sois claire, chaleureuse, concise et factuelle. Pour toute règle réglementaire, distingue clairement une information vérifiée d'une information manquante et n'invente jamais. Les opérations sensibles, financières, contractuelles ou administratives ne sont jamais exécutées depuis cette conversation publique. ${countryContext}${learningContext}`,
         },
         { role: 'user', content: message },
       ],
