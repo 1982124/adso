@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { getLocaleDirection, isValidLocale, locales } from '@/i18n/config';
+import { getLocaleDirection, isSupportedLearningLocale, localeFlags, localeNames, type Locale, supportedLearningLocales } from '@/i18n/config';
 
 export interface LocaleOption {
   code: string;
@@ -33,20 +33,22 @@ function persistLocaleCookie(locale: string) {
   document.cookie = `${LOCALE_COOKIE}=${encodeURIComponent(locale)}; Path=/; Max-Age=${LOCALE_COOKIE_MAX_AGE}; SameSite=Lax`;
 }
 
+const learnerLocales: LocaleOption[] = supportedLearningLocales.map((code) => ({
+  code,
+  name: localeNames[code as Locale],
+  flag: localeFlags[code as Locale],
+  dir: getLocaleDirection(code),
+}));
+
 export const useLocaleStore = create<LocaleState>()(
   persist(
     (set) => ({
       locale: 'fr',
       direction: 'ltr',
       country: defaultCountry,
-      locales: locales.map((code) => ({
-        code,
-        name: ({ fr: 'Français', en: 'English', es: 'Español', ar: 'العربية', pt: 'Português', de: 'Deutsch', zh: '中文', ja: '日本語', sw: 'Kiswahili', bm: 'Bamanankan' } as Record<string, string>)[code] ?? code,
-        flag: ({ fr: '🇫🇷', en: '🇬🇧', es: '🇪🇸', ar: '🇸🇦', pt: '🇧🇷', de: '🇩🇪', zh: '🇨🇳', ja: '🇯🇵', sw: '🇰🇪', bm: '🇲🇱' } as Record<string, string>)[code] ?? '🌍',
-        dir: getLocaleDirection(code),
-      })),
+      locales: learnerLocales,
       setLocale: (locale) => {
-        const selectedLocale = isValidLocale(locale) ? locale : 'fr';
+        const selectedLocale = isSupportedLearningLocale(locale) ? locale : 'fr';
         persistLocaleCookie(selectedLocale);
         set({ locale: selectedLocale, direction: getLocaleDirection(selectedLocale) });
       },
@@ -55,7 +57,7 @@ export const useLocaleStore = create<LocaleState>()(
         set({ country });
       },
       setLanguageAndCountry: (locale, country) => {
-        const selectedLocale = isValidLocale(locale) ? locale : 'fr';
+        const selectedLocale = isSupportedLearningLocale(locale) ? locale : 'fr';
         if (!country?.code || !country?.name) return;
         persistLocaleCookie(selectedLocale);
         set({ locale: selectedLocale, direction: getLocaleDirection(selectedLocale), country });

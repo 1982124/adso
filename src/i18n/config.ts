@@ -1,5 +1,8 @@
 export const locales = ['fr', 'en', 'es', 'ar', 'pt', 'de', 'zh', 'ja', 'sw', 'bm'] as const;
 
+/** Languages exposed as learner choices in ADSO V1. Other locale packs remain internal/forward-compatible. */
+export const supportedLearningLocales = ['fr', 'en', 'es', 'ar', 'pt'] as const;
+
 export type Locale = (typeof locales)[number];
 
 export const defaultLocale: Locale = 'fr';
@@ -22,7 +25,7 @@ export const localeFlags: Record<Locale, string> = {
   en: '🇬🇧',
   es: '🇪🇸',
   ar: '🇸🇦',
-  pt: '🇧🇷',
+  pt: '🇵🇹',
   de: '🇩🇪',
   zh: '🇨🇳',
   ja: '🇯🇵',
@@ -45,6 +48,10 @@ export const localeDirections: Record<Locale, 'ltr' | 'rtl'> = {
 
 export function isValidLocale(locale: string): locale is Locale {
   return (locales as readonly string[]).includes(locale);
+}
+
+export function isSupportedLearningLocale(locale: string): locale is (typeof supportedLearningLocales)[number] {
+  return (supportedLearningLocales as readonly string[]).includes(locale);
 }
 
 export function getLocaleDirection(locale: string): 'ltr' | 'rtl' {
