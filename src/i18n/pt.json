@@ -1,0 +1,197 @@
+{
+  "common": {
+    "app_name": "ADSO",
+    "welcome": "Bem-vindo",
+    "loading": "A carregar...",
+    "error": "Erro",
+    "retry": "Tentar novamente",
+    "search": "Pesquisar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "back": "Voltar",
+    "next": "Seguinte",
+    "previous": "Anterior",
+    "confirm": "Confirmar",
+    "yes": "Sim",
+    "no": "Não",
+    "close": "Fechar",
+    "submit": "Enviar",
+    "or": "ou",
+    "see_more": "Ver mais",
+    "see_less": "Ver menos",
+    "no_results": "Sem resultados",
+    "coming_soon": "Em breve",
+    "free_trial": "Período experimental gratuito",
+    "get_started": "Começar",
+    "learn_more": "Saber mais",
+    "view_all": "Ver tudo",
+    "per_month": "/ mês",
+    "per_year": "/ ano"
+  },
+  "nav": {
+    "home": "Início",
+    "ecosystem": "Ecossistema",
+    "ai_features": "Inteligência de IA",
+    "platform": "Plataforma",
+    "quiz": "Questionário",
+    "ai_coach": "Coach IA",
+    "pricing": "Preços",
+    "roadmap": "Roteiro",
+    "architecture": "Arquitetura",
+    "back_to_app": "Voltar à aplicação"
+  },
+  "hero": {
+    "title": "ADSO — Auto Drive School Online",
+    "subtitle": "A plataforma inteligente de educação para a mobilidade segura",
+    "description": "Democratizar a educação para a mobilidade através da inteligência artificial, com formação acessível, personalizada e de qualidade para todos.",
+    "cta_primary": "Começar gratuitamente",
+    "cta_secondary": "Ver demonstração"
+  },
+  "stats": {
+    "title": "O desafio mundial da segurança rodoviária",
+    "subtitle": "Números preocupantes que orientam a nossa missão",
+    "deaths": "1,35 milhões de mortes por ano",
+    "injuries": "50 milhões de feridos",
+    "youth_affected": "Jovens dos 15 aos 29 anos são os mais afetados",
+    "economic_cost": "3% do PIB mundial em custos"
+  },
+  "ecosystem": {
+    "title": "Um ecossistema completo",
+    "subtitle": "Componentes integrados para uma educação abrangente para a mobilidade segura",
+    "admin": "Administração",
+    "saas": "Plataforma SaaS",
+    "enterprise": "Empresas",
+    "monitor": "Instrutor",
+    "partners": "Parceiros",
+    "student": "Aplicação do aluno"
+  },
+  "ai_features": {
+    "title": "Inteligência artificial no centro da aprendizagem",
+    "subtitle": "Agentes especializados para transformar a experiência de aprendizagem",
+    "badge": "Desenvolvido com IA",
+    "coach": "Coach IA pessoal",
+    "coach_desc": "Um assistente inteligente que adapta a aprendizagem ao ritmo e nível de cada aluno",
+    "teacher": "Professor virtual IA",
+    "teacher_desc": "Conteúdos interativos com explicações personalizadas",
+    "examiner": "Examinador IA",
+    "examiner_desc": "Simulações de avaliação com análise dos erros",
+    "simulator": "Simulador de condução",
+    "simulator_desc": "Ambiente imersivo para praticar situações de mobilidade segura",
+    "analyst": "Analista de negócios IA",
+    "analyst_desc": "Painéis e análises para estabelecimentos de formação",
+    "support": "Suporte IA 24/7",
+    "support_desc": "Assistência multilingue imediata para os utilizadores",
+    "scos_title": "AI-SCOS",
+    "scos_description": "Sistema cognitivo operacional que coordena agentes especializados para uma experiência de aprendizagem integrada"
+  },
+  "dashboard": {
+    "title": "Painel do aluno",
+    "subtitle": "Acompanhe o seu progresso e alcance os seus objetivos",
+    "stats": {
+      "courses_in_progress": "Cursos em progresso",
+      "quizzes_passed": "Questionários concluídos",
+      "average_score": "Pontuação média",
+      "time_learned": "Tempo de aprendizagem"
+    },
+    "my_courses": "Os meus cursos",
+    "continue_btn": "Continuar",
+    "loading": "A carregar o painel...",
+    "error_loading": "Erro ao carregar o painel"
+  },
+  "quiz": {
+    "title": "Questionários interativos",
+    "subtitle": "Teste os seus conhecimentos sobre as regras de circulação",
+    "ready_title": "Pronto para começar?",
+    "ready_description": "Este questionário contém 20 perguntas sobre as regras de circulação. Tem 20 minutos para responder.",
+    "start_btn": "Começar questionário",
+    "question_of": "Pergunta {current} de {total}",
+    "timer": "Tempo restante",
+    "validate_btn": "Validar",
+    "next_btn": "Pergunta seguinte",
+    "see_results": "Ver resultados",
+    "restart_btn": "Recomeçar",
+    "correct": "Correta",
+    "incorrect": "Incorreta",
+    "time_spent": "Tempo utilizado",
+    "passed_title": "Parabéns!",
+    "passed_description": "Concluiu o questionário com uma pontuação de {score}%.",
+    "failed_title": "Questionário não concluído",
+    "failed_description": "Obteve {score}%. A pontuação mínima exigida é de 80%."
+  },
+  "pricing": {
+    "title": "Uma oferta para cada perfil",
+    "subtitle": "Escolha a oferta mais adequada às suas necessidades",
+    "b2c_tab": "Individual",
+    "b2b_tab": "Institucional",
+    "starter": {
+      "name": "Inicial",
+      "price": "0",
+      "features": ["5 cursos gratuitos", "Questionários ilimitados", "Suporte comunitário", "Aplicação móvel"]
+    },
+    "pro": {
+      "name": "Pro",
+      "price": "9.99",
+      "features": ["Todos os cursos", "Coach IA pessoal", "Simulações de avaliação ilimitadas", "Suporte prioritário", "Reconhecimento de conclusão"]
+    },
+    "premium": {
+      "name": "Premium",
+      "price": "19.99",
+      "features": ["Tudo do Pro", "Simulador de condução IA", "Análises avançadas de desempenho", "Sessões de acompanhamento", "Garantia de reembolso de 30 dias"]
+    },
+    "excellence": {
+      "name": "Excelência",
+      "price": "39.99",
+      "features": ["Tudo do Premium", "Plano de aprendizagem personalizado", "Acesso à API para parceiros", "Suporte dedicado 24/7", "Formação completa com reconhecimento de competências"]
+    },
+    "cta": "Começar",
+    "period_monthly": "Mensal",
+    "period_yearly": "Anual",
+    "popular_badge": "Popular",
+    "excellence_badge": "Excelência",
+    "enterprise": {
+      "title": "Soluções institucionais",
+      "description": "Para estabelecimentos de formação e organizações",
+      "starter": {"name": "Inicial para estabelecimento", "price": "99", "description": "Até 50 alunos"},
+      "pro": {"name": "Pro para estabelecimento", "price": "299", "description": "Até 500 alunos"},
+      "enterprise": {"name": "Institucional", "price": "Personalizado", "description": "Sem limite, com API"}
+    }
+  },
+  "roadmap": {
+    "title": "Roteiro",
+    "subtitle": "Evolução estratégica da ADSO",
+    "phase_1": "Fundamentos",
+    "phase_2": "Inteligência IA",
+    "phase_3": "Expansão",
+    "phase_4": "Ecossistema",
+    "phase_5": "Impacto global",
+    "done": "Concluído",
+    "active": "Em progresso",
+    "planned": "Planeado"
+  },
+  "security": {
+    "title": "Segurança de nível empresarial",
+    "subtitle": "Proteção dos dados e governação no centro da ADSO",
+    "features": ["Encriptação AES-256", "Autenticação multifator (MFA)", "Controlo de acesso baseado em funções (RBAC)", "Proteção de dados e conformidade", "Registos de auditoria e rastreabilidade", "Cópias de segurança e recuperação de desastre"],
+    "international": {
+      "title": "Presença internacional",
+      "subtitle": "Concebida para crescer em diferentes países e contextos",
+      "stats": {"countries": "Países", "languages": "Línguas", "currencies": "Moedas"}
+    }
+  },
+  "analytics": {
+    "title": "Análises avançadas",
+    "subtitle": "Dados e informação para melhorar continuamente a aprendizagem",
+    "kpis": {"total_users": "Total de utilizadores", "available_courses": "Cursos disponíveis", "quizzes_passed": "Questionários concluídos", "average_score": "Pontuação média"},
+    "charts": {"progression": "Progressão", "categories": "Categorias", "difficulty": "Dificuldade", "leaderboard": "Classificação"}
+  },
+  "footer": {
+    "description": "Educação para uma mobilidade mais segura através da inteligência artificial.",
+    "platform": "Plataforma",
+    "company": "Empresa",
+    "legal": "Legal",
+    "copyright": "© {year} ADSO Engineering. Todos os direitos reservados.",
+    "language_label": "Idioma"
+  }
+}
