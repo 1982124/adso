@@ -4,183 +4,43 @@ import { motion } from 'framer-motion'
 import { Lock, ShieldCheck, FileText, DatabaseBackup, Globe, Languages, CreditCard, Scale } from 'lucide-react'
 
 const securityFeatures = [
-  {
-    icon: <Lock className="h-6 w-6" />,
-    title: 'Chiffrement AES-256 + TLS 1.3',
-    description: 'Données au repos et en transit protégées par un chiffrement de niveau militaire.',
-  },
-  {
-    icon: <ShieldCheck className="h-6 w-6" />,
-    title: 'MFA obligatoire + RBAC',
-    description: "Authentification multi-facteurs et contrôle d'accès basé sur les rôles pour chaque utilisateur.",
-  },
-  {
-    icon: <FileText className="h-6 w-6" />,
-    title: 'Audit logs immuables + RGPD',
-    description: "Traçabilité complète de chaque action et conformité totale avec le règlement européen.",
-  },
-  {
-    icon: <DatabaseBackup className="h-6 w-6" />,
-    title: 'Sauvegardes 3-2-1 + PRA',
-    description: "Stratégie de sauvegarde redondante et plan de reprise après incident testé régulièrement.",
-  },
+  { icon: <Lock className="h-6 w-6" />, title: 'HTTPS et protection des flux', description: "La production ADSO est servie sur HTTPS avec des en-têtes de sécurité côté plateforme. Les mécanismes réellement actifs sont vérifiés dans l'environnement de déploiement." },
+  { icon: <ShieldCheck className="h-6 w-6" />, title: 'Accès et rôles', description: "Les accès administratifs sont séparés des parcours publics. Une fonctionnalité de sécurité n'est présentée comme obligatoire que lorsqu'elle est effectivement imposée et vérifiée." },
+  { icon: <FileText className="h-6 w-6" />, title: 'Traçabilité', description: "ADSO privilégie des journaux d'activité et des preuves vérifiables. Les garanties d'immutabilité, de conformité ou de rétention légale ne sont annoncées qu'après implémentation et test." },
+  { icon: <DatabaseBackup className="h-6 w-6" />, title: 'Sauvegarde et reprise', description: "La stratégie de sauvegarde et de reprise est traitée comme une exigence d'infrastructure. Aucun niveau de PRA ou de sauvegarde n'est présenté comme testé tant qu'une preuve de test n'est pas disponible." },
 ]
 
 const internationalFeatures = [
-  {
-    icon: <Globe className="h-6 w-6" />,
-    title: 'Country Packs réglementaires',
-    description: "Contenu réglementaire adapté à chaque pays : code de la route, règles spécifiques, panneaux locaux.",
-  },
-  {
-    icon: <Languages className="h-6 w-6" />,
-    title: 'Support RTL',
-    description: "Interface complète en arabe, hébreu et toutes les langues à écriture droite-à-gauche.",
-  },
-  {
-    icon: <CreditCard className="h-6 w-6" />,
-    title: 'Paiements locaux',
-    description: "Apple Pay, Orange Money, M-Pesa, WeChat Pay et plus de 50 méthodes de paiement locales.",
-  },
-  {
-    icon: <Scale className="h-6 w-6" />,
-    title: 'Parité de pouvoir d\'achat',
-    description: "Tarification adaptée au niveau de vie local pour un accès équitable dans chaque marché.",
-  },
+  { icon: <Globe className="h-6 w-6" />, title: 'Country Packs', description: "ADSO peut servir des contextes nationaux distincts. Les données réglementaires sont séparées du socle pédagogique commun et doivent être sourcées, datées et versionnées." },
+  { icon: <Languages className="h-6 w-6" />, title: 'Langues V1', description: "Les choix d'apprentissage V1 sont Français, English, العربية, Español et Português. La couverture réelle est mesurée par contenu, pas seulement par traduction de l'interface." },
+  { icon: <CreditCard className="h-6 w-6" />, title: 'Paiements locaux', description: "Les moyens de paiement sont activés pays par pays. ADSO ne promet pas une méthode de paiement avant que son intégration et son parcours de règlement aient été vérifiés." },
+  { icon: <Scale className="h-6 w-6" />, title: 'Gouvernance responsable', description: "ADSO ne se présente pas comme une autorité publique. Les permis, examens et titres officiels restent de la responsabilité des États et organismes habilités." },
 ]
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.2 },
-  },
-}
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-}
-
-const statsVariants = {
-  hidden: { opacity: 0, scale: 0.8 },
-  visible: (i: number) => ({
-    opacity: 1,
-    scale: 1,
-    transition: { delay: i * 0.15, duration: 0.4, ease: 'easeOut' as const },
-  }),
-}
+const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.2 } } }
+const itemVariants = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }
 
 export default function SecuritySection() {
   return (
-    <section id="security" className="py-20 px-4 bg-slate-900">
-      <div className="max-w-6xl mx-auto">
-        {/* Security subsection */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="mb-16"
-        >
-          <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Sécurité entreprise de niveau bancaire
-            </h2>
-            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-              La protection de vos données et de celles de vos élèves est notre priorité absolue
-            </p>
+    <section id="security" className="bg-slate-900 px-4 py-20">
+      <div className="mx-auto max-w-6xl">
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="mb-16">
+          <div className="mb-10 text-center">
+            <p className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-emerald-400">ADSO · sécurité & gouvernance</p>
+            <h2 className="mb-4 text-3xl font-bold text-white md:text-4xl">Une sécurité démontrable, pas une promesse bancaire.</h2>
+            <p className="mx-auto max-w-2xl text-lg text-slate-400">Nous documentons les protections réellement actives et séparons clairement les contrôles en place des objectifs d'infrastructure encore à auditer.</p>
           </div>
-
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.2 }}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-6"
-          >
-            {securityFeatures.map((feature) => (
-              <motion.div
-                key={feature.title}
-                variants={itemVariants}
-                className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 hover:bg-slate-800 transition-colors"
-              >
-                <div className="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-4">
-                  {feature.icon}
-                </div>
-                <h3 className="text-white font-semibold mb-2">{feature.title}</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">{feature.description}</p>
-              </motion.div>
-            ))}
+          <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            {securityFeatures.map((feature) => <motion.div key={feature.title} variants={itemVariants} className="rounded-xl border border-slate-700/50 bg-slate-800/50 p-6 transition-colors hover:bg-slate-800"><div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">{feature.icon}</div><h3 className="mb-2 font-semibold text-white">{feature.title}</h3><p className="text-sm leading-relaxed text-slate-400">{feature.description}</p></motion.div>)}
           </motion.div>
         </motion.div>
 
-        {/* Divider */}
-        <div className="border-t border-slate-700/50 mb-16" />
+        <div className="mb-16 border-t border-slate-700/50" />
 
-        {/* International subsection */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Une plateforme véritablement mondiale
-            </h2>
-            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-              Conçue dès le départ pour servir chaque marché, chaque langue, chaque devise
-            </p>
-          </div>
-
-          {/* Stats row */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-12 mb-12">
-            {[
-              { value: '120+', label: 'Pays cibles' },
-              { value: '50+', label: 'Langues' },
-              { value: '135+', label: 'Devises' },
-            ].map((stat, i) => (
-              <motion.div
-                key={stat.label}
-                custom={i}
-                variants={statsVariants}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-                className="text-center"
-              >
-                <div className="text-4xl md:text-5xl font-bold text-emerald-400 mb-1">
-                  {stat.value}
-                </div>
-                <div className="text-sm text-slate-400 uppercase tracking-wider">
-                  {stat.label}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* International features */}
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.2 }}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-6"
-          >
-            {internationalFeatures.map((feature) => (
-              <motion.div
-                key={feature.title}
-                variants={itemVariants}
-                className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 hover:bg-slate-800 transition-colors"
-              >
-                <div className="w-12 h-12 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400 mb-4">
-                  {feature.icon}
-                </div>
-                <h3 className="text-white font-semibold mb-2">{feature.title}</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">{feature.description}</p>
-              </motion.div>
-            ))}
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
+          <div className="mb-10 text-center"><h2 className="mb-4 text-3xl font-bold text-white md:text-4xl">Une architecture africaine et vérifiable</h2><p className="mx-auto max-w-2xl text-lg text-slate-400">ADSO est conçue pour accueillir plusieurs pays, langues et contextes sans prétendre que toutes les réglementations sont déjà validées.</p></div>
+          <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            {internationalFeatures.map((feature) => <motion.div key={feature.title} variants={itemVariants} className="rounded-xl border border-slate-700/50 bg-slate-800/50 p-6 transition-colors hover:bg-slate-800"><div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-amber-500/10 text-amber-400">{feature.icon}</div><h3 className="mb-2 font-semibold text-white">{feature.title}</h3><p className="text-sm leading-relaxed text-slate-400">{feature.description}</p></motion.div>)}
           </motion.div>
         </motion.div>
       </div>
