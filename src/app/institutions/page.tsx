@@ -20,7 +20,7 @@ export default function InstitutionsPage() {
           <h1 className="mt-5 max-w-4xl text-4xl font-black tracking-tight sm:text-6xl">Éduquer. Prévenir. Évaluer. Agir.</h1>
           <p className="mt-6 max-w-3xl text-lg leading-8 text-emerald-50/80">Une infrastructure numérique complémentaire pour l’éducation routière, la formation à la mobilité, la prévention, la simulation et l’évaluation et reconnaissance des compétences acquises.</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/" className="rounded-xl bg-emerald-500 px-5 py-3 font-semibold text-slate-950">Découvrir ADSO AFRICA</Link>
+            <Link href="/education" className="rounded-xl bg-emerald-500 px-5 py-3 font-semibold text-slate-950">Découvrir les parcours ADSO</Link>
             <Link href="/admin" className="rounded-xl border border-white/15 bg-white/5 px-5 py-3 font-semibold">Cockpit sécurisé</Link>
           </div>
         </div>
