@@ -4,10 +4,10 @@ import Link from 'next/link';
 import { ArrowRight, BookOpen, CarFront, ShieldCheck, Users } from 'lucide-react';
 
 const audiences = [
-  { label: 'Élèves', text: 'École, collège et lycée', icon: BookOpen },
-  { label: 'Étudiants', text: 'Université · permis · Code', icon: Users },
-  { label: 'Apprentis', text: 'Tous secteurs d’activité', icon: ShieldCheck },
-  { label: 'Conducteurs', text: 'Prévention · perfectionnement', icon: CarFront },
+  { label: 'Élèves', text: 'École, collège et lycée', icon: BookOpen, profile: 'eleve' },
+  { label: 'Étudiants', text: 'Université · permis · Code', icon: Users, profile: 'etudiant' },
+  { label: 'Apprentis', text: 'Tous secteurs d’activité', icon: ShieldCheck, profile: 'apprenti' },
+  { label: 'Conducteurs', text: 'Prévention · perfectionnement', icon: CarFront, profile: 'conducteur' },
 ];
 
 export default function HeroRealisticHome() {
@@ -22,9 +22,9 @@ export default function HeroRealisticHome() {
             <Link href="/education" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#D7B45A] px-5 text-sm font-extrabold text-[#0B1F33] hover:bg-[#E4C878]">Découvrir ADSO <ArrowRight className="ml-2 size-4" /></Link>
             <Link href="/formation/immersive" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/20 bg-white/5 px-5 text-sm font-bold text-white hover:bg-white/10"><span className="mr-2 text-[#D7B45A]">▶</span> ADSO Immersif</Link>
           </div>
-          <div id="parcours" className="mt-5 grid max-w-xl gap-2 sm:grid-cols-2">{audiences.map(({ label, text, icon: Icon }) => <Link key={label} href="/student" className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.045] px-3 py-2.5 hover:bg-white/[0.08]"><span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#D7B45A]/10 text-[#D7B45A]"><Icon className="size-4" /></span><div><p className="text-sm font-extrabold text-white">{label}</p><p className="text-[11px] text-slate-300">{text}</p><p className="mt-1 text-[10px] font-bold text-[#D7B45A]">Ouvrir le parcours →</p></div></Link>)}</div>
+          <div id="parcours" className="mt-5 grid max-w-xl gap-2 sm:grid-cols-2">{audiences.map(({ label, text, icon: Icon, profile }) => <Link key={label} href={`/student?profile=${profile}`} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.045] px-3 py-2.5 hover:bg-white/[0.08]"><span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#D7B45A]/10 text-[#D7B45A]"><Icon className="size-4" /></span><div><p className="text-sm font-extrabold text-white">{label}</p><p className="text-[11px] text-slate-300">{text}</p><p className="mt-1 text-[10px] font-bold text-[#D7B45A]">Ouvrir le parcours →</p></div></Link>)}</div>
         </div>
-        <figure className="min-w-0"><div className="overflow-hidden rounded-[1.25rem] border border-white/15 bg-[#081724] shadow-2xl shadow-black/40"><img src="https://anaser.sn/storage/2023/01/sensibilisation-par-les-enfants-sur-la-1024x852.jpg" alt="Scène documentaire de sensibilisation à la sécurité routière d'enfants sur une route en Afrique." className="block aspect-[4/3] w-full object-cover object-center" loading="eager" fetchPriority="high" decoding="async" referrerPolicy="no-referrer" /></div><figcaption className="mt-2 text-[10px] leading-4 text-slate-400">Illustration documentaire · sensibilisation à la sécurité routière en Afrique.</figcaption></figure>
+        <figure className="min-w-0"><div className="overflow-hidden rounded-[1.25rem] border border-white/15 bg-[#081724] shadow-2xl shadow-black/40"><img src="https://anaser.sn/storage/2023/01/sensibilisation-par-les-enfants-sur-la-1024x852.jpg" alt="Illustration documentaire de sensibilisation à la sécurité routière en Afrique. L'image canonique ADSO sera remplacée ici dès que l'asset validé sera disponible." className="block aspect-[4/3] w-full object-cover object-center" loading="eager" fetchPriority="high" decoding="async" referrerPolicy="no-referrer" /></div><figcaption className="mt-2 text-[10px] leading-4 text-slate-400">Illustration documentaire temporaire · asset canonique ADSO à intégrer après validation.</figcaption></figure>
       </div>
     </div>
   </section>;
