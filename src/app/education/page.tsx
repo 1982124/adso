@@ -6,7 +6,7 @@ import { BookOpen, GraduationCap, ShieldCheck, Users, BarChart3, Award } from 'l
 const levels = [
   ['Primaire', 'Découvrir la route', 'Piétons, panneaux essentiels, vélo et premiers réflexes de sécurité.'],
   ['Collège', 'Comprendre la circulation', 'Signalisation, priorités, comportements responsables et dangers.'],
-  ['Lycée', 'Se préparer à devenir conducteur', 'Code, situations réelles, responsabilités et examens blancs.'],
+  ['Lycée', 'Se préparer à devenir conducteur', 'Code, situations réelles, responsabilités et évaluations pédagogiques.'],
   ['Université', 'Conducteur et citoyen responsable', 'Code, prévention, conduite défensive et préparation au permis.'],
 ];
 
@@ -22,9 +22,9 @@ export default function EducationPage() {
 
         <div className="mt-10 grid gap-5 md:grid-cols-3">
           {[
-            [GraduationCap, 'Abonnement établissement', 'L&apos;école ou l&apos;université abonne ses élèves et étudiants et pilote le programme depuis son cockpit.'],
+            [GraduationCap, 'Abonnement établissement', 'L&apos;école ou l&apos;université peut structurer ses programmes et suivre la progression depuis son espace dédié.'],
             [BookOpen, 'Parcours adaptés', 'Les contenus évoluent selon l&apos;âge et le niveau : primaire, collège, lycée et université.'],
-            [Award, 'Progression & certification', 'Les apprenants suivent leur parcours, passent les évaluations et peuvent obtenir leur certification ADSO lorsqu&apos;ils remplissent les conditions.'],
+            [Award, 'Progression & reconnaissance', 'Les apprenants suivent leur parcours, passent les évaluations pédagogiques et peuvent obtenir une reconnaissance ADSO des compétences acquises lorsque les critères sont remplis. Cette reconnaissance ne remplace aucun titre officiel d’un État.'],
           ].map(([Icon, title, text]) => {
             const I = Icon as typeof GraduationCap;
             return <article key={String(title)} className="rounded-2xl border bg-card p-6 shadow-sm"><I className="h-8 w-8 text-primary" /><h2 className="mt-4 text-xl font-semibold">{title as string}</h2><p className="mt-2 text-muted-foreground">{text as string}</p></article>;
@@ -40,14 +40,17 @@ export default function EducationPage() {
 
         <section className="mt-14 grid gap-5 lg:grid-cols-3">
           <article className="rounded-2xl border p-6"><Users className="h-7 w-7 text-primary" /><h2 className="mt-3 font-semibold">Cockpit ADSO School</h2><p className="mt-2 text-sm text-muted-foreground">Inscrits, participation, progression et résultats agrégés par établissement ou groupe.</p></article>
-          <article className="rounded-2xl border p-6"><BarChart3 className="h-7 w-7 text-primary" /><h2 className="mt-3 font-semibold">Rapports de sécurité</h2><p className="mt-2 text-sm text-muted-foreground">Suivi pédagogique et campagnes de sensibilisation sans exposer inutilement les données individuelles.</p></article>
+          <article className="rounded-2xl border p-6"><BarChart3 className="h-7 w-7 text-primary" /><h2 className="mt-3 font-semibold">Rapports pédagogiques</h2><p className="mt-2 text-sm text-muted-foreground">Suivi pédagogique et campagnes de sensibilisation sans exposer inutilement les données individuelles.</p></article>
           <article className="rounded-2xl border p-6"><ShieldCheck className="h-7 w-7 text-primary" /><h2 className="mt-3 font-semibold">Une culture durable</h2><p className="mt-2 text-sm text-muted-foreground">Avant le permis, pendant le permis, après le permis : apprendre, maîtriser, progresser, conduire en sécurité.</p></article>
         </section>
 
         <div className="mt-12 rounded-2xl border bg-muted/40 p-8 text-center">
           <p className="text-xl font-semibold">ADSO — Maîtriser le Code de la circulation et devenir un citoyen responsable.</p>
           <p className="mt-2 text-muted-foreground">Parce que toute vie est précieuse.</p>
-          <Link href="/" className="mt-6 inline-flex rounded-lg bg-primary px-5 py-3 font-medium text-primary-foreground">Découvrir ADSO</Link>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Link href="/student" className="inline-flex rounded-lg bg-primary px-5 py-3 font-medium text-primary-foreground">Construire mon parcours</Link>
+            <Link href="/formation/immersive" className="inline-flex rounded-lg border px-5 py-3 font-medium">Découvrir l&apos;immersif</Link>
+          </div>
         </div>
       </section>
     </main>
