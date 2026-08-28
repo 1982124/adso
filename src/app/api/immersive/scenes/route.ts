@@ -32,9 +32,23 @@ async function ensureTables() {
   `);
 }
 
+async function ensureMediaTable() {
+  await db.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "LabMediaAsset" (
+      "id" TEXT PRIMARY KEY, "ownerId" TEXT NOT NULL, "courseId" TEXT, "moduleId" TEXT,
+      "name" TEXT NOT NULL, "url" TEXT NOT NULL, "pathname" TEXT NOT NULL, "mimeType" TEXT NOT NULL,
+      "sizeBytes" BIGINT NOT NULL DEFAULT 0, "durationSeconds" INTEGER,
+      "status" TEXT NOT NULL DEFAULT 'queued', "provider" TEXT NOT NULL DEFAULT 'vercel-blob',
+      "copyrightConfirmed" BOOLEAN NOT NULL DEFAULT false, "moderationStatus" TEXT NOT NULL DEFAULT 'pending',
+      "failureReason" TEXT, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS "LabMediaAsset_url_idx" ON "LabMediaAsset"("url");
+    CREATE INDEX IF NOT EXISTS "LabMediaAsset_status_idx" ON "LabMediaAsset"("status");
+  `);
+}
+
 export async function GET() {
-  // Published scenes are intentionally public so the immersive library does not
-  // appear empty to a visitor. Drafts remain visible only to their creator.
   const session = await getSession();
   try {
     const userId = session?.user ? getUserId(session) : null;
@@ -71,8 +85,26 @@ export async function POST(request: Request) {
 
   try {
     await ensureTables();
+    await ensureMediaTable();
     const body = await request.json();
+    const videoUrl = String(body.videoUrl ?? '').trim();
+    if (!videoUrl) return NextResponse.json({ error: 'Une vidéo source réelle est requise' }, { status: 400 });
+
     const durationSeconds = clampVideoDuration(Number(body.durationSeconds));
+    const status = String(body.status ?? 'draft');
+
+    // A scene may be drafted before moderation, but a public scene must reference
+    // an actually uploaded, copyright-confirmed and approved media asset.
+    if (status === 'published') {
+      const media = await db.$queryRawUnsafe<Array<{ id: string }>>(
+        `SELECT "id" FROM "LabMediaAsset" WHERE "url"=$1 AND "status"='ready' AND "moderationStatus"='approved' AND "copyrightConfirmed"=true LIMIT 1`,
+        videoUrl,
+      );
+      if (!media[0]) {
+        return NextResponse.json({ error: 'Publication bloquée : la vidéo doit être réellement stockée, approuvée et autorisée.' }, { status: 422 });
+      }
+    }
+
     const sceneId = randomUUID();
     const interactions = Array.isArray(body.interactions) ? body.interactions : [];
 
@@ -80,9 +112,9 @@ export async function POST(request: Request) {
       await tx.$executeRawUnsafe(`INSERT INTO "ImmersiveScene"
         ("id","title","description","videoUrl","durationSeconds","courseId","moduleId","competency","level","language","status","order","createdById")
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
-        sceneId, String(body.title ?? 'Scène immersive'), String(body.description ?? ''), String(body.videoUrl ?? ''),
+        sceneId, String(body.title ?? 'Scène immersive'), String(body.description ?? ''), videoUrl,
         durationSeconds, body.courseId ?? null, body.moduleId ?? null, String(body.competency ?? 'Conduite sûre'),
-        String(body.level ?? 'beginner'), String(body.language ?? 'fr'), String(body.status ?? 'draft'), Number(body.order ?? 0), getUserId(session));
+        String(body.level ?? 'beginner'), String(body.language ?? 'fr'), status, Number(body.order ?? 0), getUserId(session));
 
       for (let index = 0; index < interactions.length; index += 1) {
         const interaction = interactions[index] ?? {};
@@ -106,7 +138,7 @@ export async function POST(request: Request) {
       }
     });
 
-    return NextResponse.json({ id: sceneId, status: body.status ?? 'draft' }, { status: 201 });
+    return NextResponse.json({ id: sceneId, status }, { status: 201 });
   } catch (error) {
     console.error('[immersive/scenes POST]', error);
     return NextResponse.json({ error: 'Création de scène impossible' }, { status: 500 });
