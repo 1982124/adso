@@ -26,11 +26,12 @@ interface LocaleState {
 
 const defaultCountry: CountryContext = { code: 'ZZ', name: 'International — choisissez votre pays' };
 const LOCALE_COOKIE = 'adso-locale';
-const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+const COUNTRY_COOKIE = 'adso-country';
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
-function persistLocaleCookie(locale: string) {
+function persistCookie(name: string, value: string) {
   if (typeof document === 'undefined') return;
-  document.cookie = `${LOCALE_COOKIE}=${encodeURIComponent(locale)}; Path=/; Max-Age=${LOCALE_COOKIE_MAX_AGE}; SameSite=Lax`;
+  document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${COOKIE_MAX_AGE}; SameSite=Lax`;
 }
 
 const learnerLocales: LocaleOption[] = supportedLearningLocales.map((code) => ({
@@ -49,17 +50,19 @@ export const useLocaleStore = create<LocaleState>()(
       locales: learnerLocales,
       setLocale: (locale) => {
         const selectedLocale = isSupportedLearningLocale(locale) ? locale : 'fr';
-        persistLocaleCookie(selectedLocale);
+        persistCookie(LOCALE_COOKIE, selectedLocale);
         set({ locale: selectedLocale, direction: getLocaleDirection(selectedLocale) });
       },
       setCountry: (country) => {
         if (!country?.code || !country?.name) return;
+        persistCookie(COUNTRY_COOKIE, JSON.stringify({ code: country.code, name: country.name }));
         set({ country });
       },
       setLanguageAndCountry: (locale, country) => {
         const selectedLocale = isSupportedLearningLocale(locale) ? locale : 'fr';
         if (!country?.code || !country?.name) return;
-        persistLocaleCookie(selectedLocale);
+        persistCookie(LOCALE_COOKIE, selectedLocale);
+        persistCookie(COUNTRY_COOKIE, JSON.stringify({ code: country.code, name: country.name }));
         set({ locale: selectedLocale, direction: getLocaleDirection(selectedLocale), country });
       },
     }),
