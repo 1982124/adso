@@ -14,13 +14,17 @@ ADSO does not issue driving licences, impose sanctions, regulate traffic, or rep
 ## Current evidence
 
 - The production project is connected to GitHub repository `1982124/adso`.
-- The latest production deployment before the current competency-evidence cycle was `f997efc418aa9e39efd2cf88d42a510ae9e4f2fd` and was `READY`.
-- Vercel reported no runtime errors during the latest 24-hour check before this cycle.
+- The immersive engine has a real persistent media pipeline in ADSO LAB using Vercel Blob.
+- Video upload is restricted to MP4, WebM and MOV, with a 500 MB limit and an explicit rights confirmation.
+- Uploaded media is stored as a durable `LabMediaAsset` record and remains non-public to the immersive catalogue until moderation is approved.
+- The immersive scene API now accepts a `videoAssetId` and resolves the source URL from the stored asset rather than trusting an arbitrary public URL.
+- Public scene publication is blocked unless the linked video asset is actually ready, approved and copyright-confirmed.
 - The immersive attempt API loads the published scene and canonical choices server-side before evaluating an attempt.
-- Partial or forged immersive attempts are rejected when the submitted decisions do not cover every canonical interaction.
-- The competency dossier is backed by `ImmersiveCompetency` and `ImmersiveAttempt` records.
-- The learner passport exposes recent scene evidence and recognition status.
-- The current cycle strengthens the passport so the recognition status includes an explicit rationale and per-competency recent evidence summary.
+- Partial or forged immersive attempts are rejected when submitted decisions do not cover every canonical interaction.
+- The competency dossier is backed by immersive competency/attempt records.
+- The learner passport exposes recent scene evidence and recognition status, with explicit rationale and per-competency evidence summary.
+- The current main branch contains an administrative Immersive Content Studio at `/admin/immersive` for selecting approved video assets and creating scenes as drafts.
+- The Home keeps its existing working image. A reserved canonical asset slot is documented at `/images/home/adso-canonical-home.webp`; no fake image URL is used while the real rights-cleared asset is unavailable.
 
 ## V1 competency recognition rule
 
@@ -72,6 +76,8 @@ V1 must not be declared frozen until the following are objectively demonstrated 
 9. No critical runtime/build errors remain after the final deployment.
 10. Mali country learning content has a verified-source status before any regulatory claim is presented as official.
 11. The final production deployment corresponds exactly to the final `main` commit.
+12. At least one real video asset has been uploaded, stored, approved and played successfully before claiming the video-to-scene pipeline is production-demonstrated.
+13. The canonical Home image has been supplied as a real rights-cleared asset before claiming that the final mission image is installed.
 
 ## Explicit non-goals for V1
 
