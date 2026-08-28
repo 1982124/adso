@@ -5,8 +5,11 @@ import { getSession, getUserId } from '@/lib/auth';
 import { clampVideoDuration, normalizePause } from '@/lib/engines/immersive-scene-engine';
 
 async function ensureTables() {
-  await db.$executeRawUnsafe(`
-    CREATE TABLE IF NOT EXISTS "ImmersiveScene" (
+  // Prisma prepares each raw statement separately; PostgreSQL rejects multiple
+  // commands in a single prepared statement. Keep initialization idempotent but
+  // execute every DDL statement independently.
+  const statements = [
+    `CREATE TABLE IF NOT EXISTS "ImmersiveScene" (
       "id" TEXT PRIMARY KEY, "title" TEXT NOT NULL, "description" TEXT NOT NULL,
       "videoUrl" TEXT NOT NULL, "videoAssetId" TEXT, "durationSeconds" INTEGER NOT NULL, "courseId" TEXT,
       "moduleId" TEXT, "competency" TEXT NOT NULL, "level" TEXT NOT NULL DEFAULT 'beginner',
@@ -14,38 +17,38 @@ async function ensureTables() {
       "order" INTEGER NOT NULL DEFAULT 0, "createdById" TEXT,
       "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
       "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-    ALTER TABLE "ImmersiveScene" ADD COLUMN IF NOT EXISTS "videoAssetId" TEXT;
-    CREATE TABLE IF NOT EXISTS "ImmersiveInteraction" (
+    )`,
+    `ALTER TABLE "ImmersiveScene" ADD COLUMN IF NOT EXISTS "videoAssetId" TEXT`,
+    `CREATE TABLE IF NOT EXISTS "ImmersiveInteraction" (
       "id" TEXT PRIMARY KEY, "sceneId" TEXT NOT NULL REFERENCES "ImmersiveScene"("id") ON DELETE CASCADE,
       "type" TEXT NOT NULL, "atSecond" DOUBLE PRECISION NOT NULL, "prompt" TEXT NOT NULL,
       "explanation" TEXT, "ttsText" TEXT, "points" INTEGER NOT NULL DEFAULT 10,
       "order" INTEGER NOT NULL DEFAULT 0, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-    CREATE TABLE IF NOT EXISTS "ImmersiveChoice" (
+    )`,
+    `CREATE TABLE IF NOT EXISTS "ImmersiveChoice" (
       "id" TEXT PRIMARY KEY, "interactionId" TEXT NOT NULL REFERENCES "ImmersiveInteraction"("id") ON DELETE CASCADE,
       "label" TEXT NOT NULL, "isCorrect" BOOLEAN NOT NULL DEFAULT false, "scoreDelta" INTEGER NOT NULL DEFAULT 0,
       "consequence" TEXT NOT NULL, "explanation" TEXT NOT NULL, "competency" TEXT,
       "nextInteractionId" TEXT, "order" INTEGER NOT NULL DEFAULT 0
-    );
-    CREATE INDEX IF NOT EXISTS "ImmersiveInteraction_sceneId_idx" ON "ImmersiveInteraction"("sceneId");
-    CREATE INDEX IF NOT EXISTS "ImmersiveChoice_interactionId_idx" ON "ImmersiveChoice"("interactionId");
-    CREATE INDEX IF NOT EXISTS "ImmersiveScene_videoAssetId_idx" ON "ImmersiveScene"("videoAssetId");
-  `);
+    )`,
+    `CREATE INDEX IF NOT EXISTS "ImmersiveInteraction_sceneId_idx" ON "ImmersiveInteraction"("sceneId")`,
+    `CREATE INDEX IF NOT EXISTS "ImmersiveChoice_interactionId_idx" ON "ImmersiveChoice"("interactionId")`,
+    `CREATE INDEX IF NOT EXISTS "ImmersiveScene_videoAssetId_idx" ON "ImmersiveScene"("videoAssetId")`,
+  ];
+  for (const statement of statements) await db.$executeRawUnsafe(statement);
 }
 
 async function ensureMediaTable() {
-  await db.$executeRawUnsafe(`
-    CREATE TABLE IF NOT EXISTS "LabMediaAsset" (
-      "id" TEXT PRIMARY KEY, "ownerId" TEXT NOT NULL, "courseId" TEXT, "moduleId" TEXT,
-      "name" TEXT NOT NULL, "url" TEXT NOT NULL, "pathname" TEXT NOT NULL, "mimeType" TEXT NOT NULL,
-      "sizeBytes" BIGINT NOT NULL DEFAULT 0, "durationSeconds" INTEGER,
-      "status" TEXT NOT NULL DEFAULT 'queued', "provider" TEXT NOT NULL DEFAULT 'vercel-blob',
-      "copyrightConfirmed" BOOLEAN NOT NULL DEFAULT false, "moderationStatus" TEXT NOT NULL DEFAULT 'pending',
-      "failureReason" TEXT, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
+  const statement = `CREATE TABLE IF NOT EXISTS "LabMediaAsset" (
+    "id" TEXT PRIMARY KEY, "ownerId" TEXT NOT NULL, "courseId" TEXT, "moduleId" TEXT,
+    "name" TEXT NOT NULL, "url" TEXT NOT NULL, "pathname" TEXT NOT NULL, "mimeType" TEXT NOT NULL,
+    "sizeBytes" BIGINT NOT NULL DEFAULT 0, "durationSeconds" INTEGER,
+    "status" TEXT NOT NULL DEFAULT 'queued', "provider" TEXT NOT NULL DEFAULT 'vercel-blob',
+    "copyrightConfirmed" BOOLEAN NOT NULL DEFAULT false, "moderationStatus" TEXT NOT NULL DEFAULT 'pending',
+    "failureReason" TEXT, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`;
+  await db.$executeRawUnsafe(statement);
 }
 
 export async function GET() {
