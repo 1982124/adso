@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { BookOpen, GraduationCap, ShieldCheck, Users, BarChart3, Award, ArrowRight } from 'lucide-react';
+import { ArrowRight, Award, BarChart3, ShieldCheck, Users } from 'lucide-react';
 import { restoredCurriculum } from '@/data/restored-curriculum';
 
 const levels = [
@@ -39,7 +39,7 @@ export default function EducationPage() {
               const image = imageFrom(course.modules[0]?.content ?? '');
               return <article key={course.id} className="overflow-hidden rounded-2xl border bg-card shadow-sm">
                 {image && <img src={image} alt={`Illustration du cours ${course.title}`} className="aspect-[16/9] w-full object-cover" loading="lazy" referrerPolicy="no-referrer" />}
-                <div className="p-5"><div className="flex items-center justify-between gap-3"><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">GRATUIT</span><span className="text-xs text-muted-foreground">{course.duration} min</span></div><h3 className="mt-3 text-xl font-bold">{course.title}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{course.description}</p><p className="mt-3 text-xs text-muted-foreground">{course.modules.length} séquences · leçons · situations · quiz</p><Link href={`/education/${course.id}`} className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">Lire gratuitement <ArrowRight className="ml-2 h-4 w-4" /></Link></div>
+                <div className="p-5"><div className="flex items-center justify-between gap-3"><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">GRATUIT</span><span className="text-xs text-muted-foreground">{course.duration} min</span></div><h3 className="mt-3 text-xl font-bold">{course.title}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{course.description}</p><p className="mt-3 text-xs text-muted-foreground">{course.modules.length} séquences · leçons · situations · quiz</p><Link aria-label={`Lire ${course.title}`} href={`/education/${course.id}`} className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">LIRE <ArrowRight className="ml-2 h-4 w-4" /></Link></div>
               </article>;
             })}
           </div>
