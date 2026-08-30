@@ -24,11 +24,12 @@ function getOrCreateShareSlug() {
 
 export default function ShareMission() {
   const [copied, setCopied] = useState(false);
-  const [smartLink, setSmartLink] = useState('https://adso-safety.vercel.app/s/adso-africa');
+  const [smartLink, setSmartLink] = useState('');
 
   useEffect(() => {
     const slug = getOrCreateShareSlug();
-    setSmartLink(`${window.location.origin}/s/${slug}`);
+    const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin).replace(/\/$/, '');
+    setSmartLink(`${baseUrl}/s/${slug}`);
   }, []);
 
   const copy = async () => {
@@ -67,8 +68,8 @@ export default function ShareMission() {
           <p className="mt-1 text-[10px] leading-4 text-slate-400">Source : {SOURCE}.</p>
         </div>
         <div className="flex flex-wrap gap-2 lg:max-w-[260px] lg:justify-end">
-          <button type="button" onClick={share} className="inline-flex min-h-10 items-center rounded-xl bg-[#D7B45A] px-4 py-2 text-xs font-extrabold text-[#0B1F33] hover:bg-[#E4C878]"><Share2 className="mr-2 size-4" /> Partager ADSO</button>
-          <button type="button" onClick={copy} className="inline-flex min-h-10 items-center rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-bold text-white hover:bg-white/10">{copied ? <Check className="mr-2 size-4" /> : <Copy className="mr-2 size-4" />}{copied ? 'Message + lien copiés' : 'Copier le message + lien'}</button>
+          <button type="button" onClick={share} disabled={!smartLink} className="inline-flex min-h-10 items-center rounded-xl bg-[#D7B45A] px-4 py-2 text-xs font-extrabold text-[#0B1F33] hover:bg-[#E4C878] disabled:cursor-not-allowed disabled:opacity-60"><Share2 className="mr-2 size-4" /> Partager ADSO</button>
+          <button type="button" onClick={copy} disabled={!smartLink} className="inline-flex min-h-10 items-center rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-bold text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60">{copied ? <Check className="mr-2 size-4" /> : <Copy className="mr-2 size-4" />}{copied ? 'Message + lien copiés' : 'Copier le message + lien'}</button>
         </div>
       </div>
     </section>
