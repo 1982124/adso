@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: postgresql://ci:ci@localhost:5432/adso
-      NEXTAUTH_SECRET: ci-only-secret-not-used-in-production
+      NEXTAUTH_SECRET: ci-only-secret-not-used-in-production-32chars
       NEXTAUTH_URL: http://localhost:3000
     steps:
       - name: Checkout
