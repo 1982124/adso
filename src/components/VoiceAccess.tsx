@@ -47,18 +47,6 @@ export function VoiceAccess() {
   const recognition = useRef<RecognitionLike | null>(null);
   const presentationTimer = useRef<number | null>(null);
 
-  useEffect(() => {
-    const speechWindow = window as SpeechWindow;
-    setSupported(Boolean(speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition));
-    const handleToggle = () => toggle();
-    window.addEventListener('adso:voice-toggle', handleToggle);
-    return () => {
-      window.removeEventListener('adso:voice-toggle', handleToggle);
-      recognition.current?.stop();
-      if (presentationTimer.current) window.clearTimeout(presentationTimer.current);
-    };
-  }, [listening]);
-
   const speak = (text: string, lang = document.documentElement.lang || "fr-FR") => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
@@ -137,6 +125,18 @@ export function VoiceAccess() {
     recognition.current = instance; setEnabled(true); setListening(true);
     speak("Commande vocale activée. Je vous écoute."); instance.start();
   }
+
+  useEffect(() => {
+    const speechWindow = window as SpeechWindow;
+    setSupported(Boolean(speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition));
+    const handleToggle = () => toggle();
+    window.addEventListener('adso:voice-toggle', handleToggle);
+    return () => {
+      window.removeEventListener('adso:voice-toggle', handleToggle);
+      recognition.current?.stop();
+      if (presentationTimer.current) window.clearTimeout(presentationTimer.current);
+    };
+  }, [listening]);
 
   // Françoise is controlled from the single microphone in the ADSO header.
   // Keep this controller mounted for voice functionality, but render no second floating microphone.
