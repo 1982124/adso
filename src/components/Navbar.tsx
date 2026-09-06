@@ -7,10 +7,11 @@ import Link from 'next/link';
 import { FrancoiseAssistant } from '@/components/FrancoiseAssistant';
 
 const items = [
-  { label: 'Accueil', href: '/' , icon: Home },
-  { label: 'Formation', href: '/education', icon: GraduationCap },
+  { label: 'Accueil', href: '/', icon: Home },
+  { label: 'Éducation routière', href: '/education', icon: GraduationCap },
   { label: 'ADSO Immersif', href: '/formation/immersive', icon: Car },
   { label: 'Mon parcours', href: '/student', icon: Route },
+  { label: 'Conducteur', href: '/student?profile=taxi-voiture', icon: Car },
   { label: 'Sécurité', href: '/securite', icon: Shield },
 ];
 
