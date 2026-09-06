@@ -10,6 +10,9 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      NEXTAUTH_SECRET: ci-only-not-a-production-secret-32chars
+      NEXTAUTH_URL: http://localhost:3000
     steps:
       - name: Checkout
         uses: actions/checkout@v4
