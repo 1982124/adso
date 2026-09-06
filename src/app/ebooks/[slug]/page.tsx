@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 type Ebook = {
@@ -25,6 +26,7 @@ function track(ebookId: string, eventType: string) {
 }
 
 export default function EbookProductPage({ params }: { params: Promise<{ slug: string }> }) {
+  const router = useRouter();
   const [ebook, setEbook] = useState<Ebook | null>(null);
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState('');
@@ -52,7 +54,7 @@ export default function EbookProductPage({ params }: { params: Promise<{ slug: s
         body: JSON.stringify({ slug: ebook.slug, provider, idempotencyKey: makeKey(ebook.slug) }),
       });
       const data = await response.json();
-      if (response.status === 401) { track(ebook.id, 'checkout_abandoned'); window.location.href = '/api/auth/signin'; return; }
+      if (response.status === 401) { track(ebook.id, 'checkout_abandoned'); router.push('/api/auth/signin'); return; }
       if (!response.ok) { track(ebook.id, 'payment_failed'); throw new Error(data.error ?? 'Checkout indisponible'); }
       if (!data.order?.checkoutUrl) { track(ebook.id, 'payment_failed'); throw new Error('Lien de paiement indisponible'); }
       window.location.href = data.order.checkoutUrl;
