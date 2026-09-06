@@ -40,5 +40,12 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Dead-link guard
+        run: |
+          if grep -R --line-number --exclude-dir=node_modules --include='*.tsx' --include='*.ts' 'href="#"' src; then
+            echo 'Dead href="#" detected. Every production link must have a real destination.'
+            exit 1
+          fi
+
       - name: Production build
         run: npm run build
