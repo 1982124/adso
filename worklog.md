@@ -157,7 +157,6 @@ Work Log:
 - User reported: "Application error: a client-side exception has occurred while loading"
 - Analyzed dev.log: server compiled and returned HTTP 200, but client-side hydration/rendering crashed
 - Ran `npx tsc --noEmit`: found 82+ TypeScript errors across src/
-- Ran `bun run lint`: 0 ESLint errors
 - Identified ROOT CAUSE: `SteeringWheel` referenced in Navbar.tsx line 26 but NOT imported from lucide-react
   - This caused a runtime ReferenceError crashing the entire client-side rendering
 - Fixed 4 files with minimum changes:
@@ -251,7 +250,7 @@ Work Log:
 - Corrected internal learner navigation in `src/components/sections/LearnerCockpit.tsx` by replacing `window.location.assign()` with `useRouter().push()`.
 - Replaced the learner cockpit's misleading empty-state wording with a truthful preparation state and a route to `/education`; ADSO does not invent country-specific regulatory content.
 - Confirmed `production-quality.yml` already carries isolated CI auth configuration, Prisma validation, security audit and dead-link guard.
-- Current Vercel connector account exposes only the `whatsafrica` project; the historical ADSO project `adso-safety` is not currently exposed through the connected Vercel project list. Therefore no deployment or production claim is being fabricated.
+- Current Vercel connector account exposes only the `whatsafrica` project; the historical ADSO project `adso-safety` is not currently exposed through the connected Vercel project inventory. Therefore no deployment or production claim is being fabricated.
 
 Evidence / commits:
 - CI auth fix: `6b09cde6af20de2e17535d98c637ba0959f4ee6a`
@@ -270,3 +269,33 @@ CTO decision:
 - Continue autonomously until reproducible proof exists.
 - Never label a feature LIVE merely because its UI or route exists.
 - Never fabricate Vercel, payment, country-data, AI-provider or E2E verification.
+
+---
+Task ID: CTO-AUDIT-2026-09-06-B
+Agent: CTO / Product Owner
+Task: Audit sévère pré-finalisation — stabilité, CI, Home et assets visuels
+
+Findings:
+- CRITICAL/RELEASE BLOCKER: the latest commit `77176ae21f4be5f08ece824166902b5ab04c0789` has an overall failing GitHub status. The Vercel status reports one successful deployment for `adso-safety`, but another Vercel project status is failed. Production cannot be declared green from these mixed signals.
+- CI FAILURE CONFIRMED: the `Node.js CI` run `34003318918` failed before install because `actions/setup-node` was configured with `cache: npm` while the repository has no `package-lock.json`. Node 22 failed at the setup step; Node 20 was cancelled. This is an infrastructure/CI defect, not an application code defect.
+- FIX APPLIED: `.github/workflows/node.js.yml` now removes the invalid npm cache dependency, injects CI-only NextAuth variables, and runs audit, lint, TypeScript and production build for Node 20 and 22. Commit: `23a6b716105b5be185c9daa9578d8d614c3fed03`.
+- SECURITY: `package.json` now pins `fast-uri` to patched `3.1.7`. The prior high-severity audit finding was addressed; the new production-quality workflow still requires `npm audit --audit-level=high`.
+- HOME VISUAL CRITICAL UX FINDING: `HeroRealisticHome.tsx` does not currently use the canonical image asset. It renders a CSS/icon scene with Bike/CarFront/building shapes. This is not the requested real-world editorial visual and is therefore a visual mockup, not a final Home image.
+- ASSET FINDING: `public/images/home/README.md` reserves `/images/home/adso-canonical-home.webp` and explicitly says the real rights-cleared asset must be supplied before replacing the working image. That asset is not present in the repository. The old `adso-home-accident-eleves.svg` remains, but the new Home must not recycle it as the final visual.
+- DECISION: do NOT create another CSS illustration pretending to be a photograph. The final Home must use a genuinely different, rights-cleared real image (or a clearly provenance-tagged generated image), with a new visual composition. The image-generator tool is temporarily unavailable in this session, so no fabricated image URL or false completion claim is permitted.
+- PRODUCT ALIGNMENT: README defines ADSO as mobility-first across students, apprentices of all sectors, pedestrians, passengers, cyclists, motorcyclists, taxi-moto users and drivers. Therefore the Home visual should communicate safe mobility broadly, not reduce ADSO to a single accident scene.
+
+Current release gates after this audit:
+- Code source: HARDENING CONTINUES
+- CI: FIX COMMITTED, NEW RUN MUST PASS
+- Security audit: PATCH APPLIED, NEW RUN MUST PASS
+- Home image: NOT FINAL — replacement asset required
+- Vercel: deployment signals exist, but connected Vercel project inventory still does not expose `adso-safety`; production E2E remains unverified
+- Acceptance chains 01–07: PENDING
+- GO GEL V1: NOT GRANTED
+
+CTO decision:
+- Continue fixing verified blockers.
+- Do not reuse the old Home image.
+- Do not substitute another fake CSS scene for the missing real asset.
+- Do not declare ADSO delivered until CI, production runtime, visual Home, and acceptance evidence are all green.
