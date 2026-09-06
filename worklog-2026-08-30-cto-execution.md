@@ -1,4 +1,4 @@
-# CTO Execution Continuation — 2026-08-30
+# CTO Execution Continuation — 2026-08-30 → 2026-09-06
 
 ## Task ID
 CTO-2026-08-30-FINAL-EXECUTION
@@ -6,61 +6,65 @@ CTO-2026-08-30-FINAL-EXECUTION
 ## Agent
 CTO / Product / Engineering autonomous execution
 
-## Task
-Execute the ADSO master CTO prompt through the real repository, CI and Vercel verification loop without declaring unverified success.
+## Mission
+Raise ADSO toward a world-class educational platform maturity level while preserving ADSO's road-safety, mobility, immersive-learning and African country-pack identity. No unverified production claim is allowed.
 
-## Work Log
-- Read the repository governance/status/acceptance documentation and current worklog before continuing.
-- Confirmed the previous ESLint failure on commit 06f7f123: `TypeError: expand is not a function` from minimatch/brace-expansion.
-- Corrected `@radix-ui/react-hover-card` from invalid `^2.0.0` to `^1.1.15` while preserving the existing dependency set.
-- Corrected the VoiceAccess lint ordering issue by moving the effect below the `toggle` declaration.
-- Restored `next-intl` after detecting an accidental omission during dependency-file editing.
-- Restored `tailwindcss` to `^4` after detecting accidental drift during dependency-file editing.
-- Addressed high dependency audit findings: `npm audit --audit-level=high` now reports 0 vulnerabilities in the production-quality workflow; `deepmerge-ts` is overridden to 8.0.0 and `react-syntax-highlighter` is aligned to 16.1.1.
-- Added a CI-only `NEXTAUTH_SECRET` to GitHub CI workflows so production builds can execute without using a real secret.
-- Removed lockfile-dependent npm caching from `.github/workflows/ci.yml` because the repository does not currently contain the expected lockfile.
+## Verified baseline
+- Repository: `1982124/adso`, branch `main`.
+- Latest baseline before this continuation: `7f6ba0b8e4b81df351a5c2449dbe737d4a768aba`.
+- README, V1 status and acceptance matrix were re-read before mutation.
+- V1 acceptance matrix still requires all seven acceptance chains to reach GO GEL V1.
+- V1 status still has 13 freeze gates; in particular, the final production deployment, a real approved video asset and the rights-cleared canonical Home image must be objectively demonstrated before claiming completion.
+- Previous Production Quality Gate evidence on commit `6ddd778ecc81c45024c8dca0b632e52ef08681e7`: install, security audit, Prisma validate/generate, TypeScript, ESLint and production build all succeeded; audit reported 0 vulnerabilities.
+- Current Vercel connector context does not expose the `adso-safety` project, so no deployment is being falsely claimed from the wrong Vercel project.
 
-## Verified CI Evidence
-Commit `6ddd778ecc81c45024c8dca0b632e52ef08681e7` was checked by the Production Quality Gate run `33332385281`.
+## CTO audit findings acted on in this continuation
+### 1. Dead navigation links
+A repository-wide search found three production footer social links using `href="#"`, which are non-functional destinations.
 
-Results:
-- Install dependencies: SUCCESS
-- Security audit: SUCCESS — 0 vulnerabilities
-- Prisma validate: SUCCESS
-- Prisma generate: SUCCESS
-- TypeScript: SUCCESS
-- ESLint: SUCCESS — 0 errors, 4 warnings
-- Production build: SUCCESS
-- Job conclusion: SUCCESS
+### 2. Footer product drift
+The footer still contained generic/legacy copy and links to anchors that are not part of the current ADSO route architecture.
 
-The production build generated all listed routes successfully, including `/`, `/api/health`, learning routes and the application API surface.
+### 3. Quality guard added
+A CI guard was added to fail the Production Quality Gate whenever `href="#"` is introduced in TypeScript/TSX source.
 
-## Vercel Evidence
-The latest main deployment for commit `6ddd778ecc81c45024c8dca0b632e52ef08681e7` exists but remains `QUEUED` because the Vercel project currently has a backlog of deployments, including several Dependabot deployments.
+## Changes executed
+### Commit `5608f76ee76875d86165603d8fed7a1ac56e2d82`
+- Rebuilt `src/components/Footer.tsx` navigation around verified ADSO routes:
+  - `/education`
+  - `/formation/immersive`
+  - `/student`
+  - `/ebooks`
+  - `/afrique`
+  - `/institutions`
+  - `/communaute`
+  - `/offres`
+  - `/securite`
+  - `/inscription`
+- Removed fake Twitter/LinkedIn/GitHub `href="#"` links rather than exposing non-functional social destinations.
+- Updated footer language to match the current ADSO positioning: education, prevention, mobility safety, evaluation and recognition of acquired competencies.
+- Explicitly avoided claiming that ADSO issues an official driving licence or government credential.
 
-No build logs are available yet for the latest queued deployment. Therefore production readiness for commit `6ddd...` is NOT declared.
+### Commit `b6ea023a4c3e2586974283755dbfa6dcff1947c8`
+- Added `Dead-link guard` to `.github/workflows/production-quality.yml`.
+- The guard fails CI if `href="#"` appears in `src/**/*.ts` or `src/**/*.tsx`.
 
-Current production runtime error aggregation over the last 24h: no runtime errors found.
+## CI status after mutation
+Push-triggered GitHub Actions runs were created for commit `b6ea023a4c3e2586974283755dbfa6dcff1947c8`.
+At the time of this log update, the relevant runs were still `queued`; therefore this commit is NOT yet marked CI-GREEN.
 
-## Stage Summary
-- Code correction: GO
-- CI Production Quality Gate: GO
-- Security audit: GO
-- TypeScript: GO
-- ESLint: GO (4 warnings, 0 errors)
-- Production build: GO
-- Vercel deployment of latest main commit: PENDING — queued
-- Production E2E on latest commit: PENDING — deployment not READY
+## Current truth status
+- Code mutation: GO
+- Dead-link remediation: GO
+- CI verification of latest mutation: PENDING — queued
+- Vercel verification of latest main: PENDING — current Vercel connector does not expose `adso-safety`
+- Production E2E of latest main: PENDING
 - Acceptance chains 01–07: PENDING
 - V1 freeze: NOT ACQUIRED
 
-## Important Truth Rule
-No acceptance chain has been promoted to GO. A successful CI build is not treated as proof of an end-to-end production acceptance chain.
-
-## Files Changed During This Continuation
-- `package.json`
-- `.github/workflows/ci.yml`
-- `.github/workflows/production-quality.yml`
-- `.github/workflows/mvp.yml`
-- `src/components/VoiceAccess.tsx`
-- `worklog-2026-08-30-cto-execution.md`
+## Next autonomous priority
+1. Verify all queued CI jobs for `b6ea023a...` and repair any failure.
+2. Continue static audit of all public pages, forms, buttons, links and API routes for dead destinations, misleading copy, missing states and unsafe mutations.
+3. Audit the seven acceptance chains against real database/API paths, not screenshots or source-code presence.
+4. Re-establish direct access to the actual `adso-safety` Vercel project before claiming production deployment parity.
+5. Do not promote any acceptance gate to GO without reproducible production evidence.
