@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">ADSO — apprendre la mobilité sûre dès l'école</title>
+  <desc id="desc">Illustration éditoriale originale d'une zone scolaire africaine avec passage piéton, élèves, vélo avec casque, taxi-moto et panneau de vigilance.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#123b55"/><stop offset="1" stop-color="#0b1f33"/></linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f5d48"/><stop offset="1" stop-color="#102d29"/></linearGradient>
+    <linearGradient id="road" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#344755"/><stop offset="1" stop-color="#172530"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-opacity=".25"/></filter>
+  </defs>
+  <rect width="1200" height="760" fill="url(#sky)"/>
+  <circle cx="960" cy="120" r="74" fill="#d7b45a" opacity=".18"/>
+  <path d="M0 410 C190 350 360 390 520 360 C710 325 920 360 1200 300 V760 H0Z" fill="url(#ground)"/>
+  <path d="M420 760 C470 590 525 470 600 395 C675 470 730 590 780 760Z" fill="url(#road)"/>
+  <path d="M598 430 L600 505 M590 545 L600 620 M590 660 L600 730" stroke="#f3df9b" stroke-width="14" stroke-linecap="round" stroke-dasharray="1 28"/>
+  <g opacity=".9" stroke="#e9f1ef" stroke-width="18">
+    <path d="M515 545 l65 0"/><path d="M520 575 l70 0"/><path d="M525 605 l70 0"/>
+    <path d="M605 545 l65 0"/><path d="M610 575 l70 0"/><path d="M615 605 l70 0"/>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="92" y="228" width="310" height="190" rx="18" fill="#d9b56b"/>
+    <path d="M70 230 L247 110 L425 230Z" fill="#8c4b35"/>
+    <rect x="135" y="275" width="75" height="70" rx="8" fill="#21465a"/>
+    <rect x="285" y="275" width="75" height="70" rx="8" fill="#21465a"/>
+    <rect x="215" y="325" width="62" height="93" rx="8" fill="#5b3428"/>
+  </g>
+  <g transform="translate(150 470)">
+    <circle cx="0" cy="0" r="28" fill="#5a3528"/>
+    <path d="M-24 3 Q0 -30 24 3" fill="#d7b45a"/>
+    <path d="M-45 105 Q-32 40 0 38 Q32 40 45 105Z" fill="#1f6f5a"/>
+    <path d="M-25 58 L-62 110 M25 58 L62 110" stroke="#e0b38d" stroke-width="13" stroke-linecap="round"/>
+    <path d="M-14 105 L-25 164 M14 105 L25 164" stroke="#182631" stroke-width="15" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(825 465)">
+    <circle cx="0" cy="0" r="28" fill="#6a3b2d"/>
+    <path d="M-30 -3 Q0 -35 30 -3" fill="#1b2e39"/>
+    <path d="M-52 110 Q-36 38 0 38 Q36 38 52 110Z" fill="#d7b45a"/>
+    <path d="M-30 64 L-78 112 M30 64 L78 112" stroke="#c68d6d" stroke-width="13" stroke-linecap="round"/>
+    <path d="M-17 110 L-29 165 M17 110 L29 165" stroke="#182631" stroke-width="15" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(930 510)" filter="url(#shadow)">
+    <circle cx="-45" cy="80" r="34" fill="none" stroke="#0d1821" stroke-width="11"/>
+    <circle cx="72" cy="80" r="34" fill="none" stroke="#0d1821" stroke-width="11"/>
+    <path d="M-45 80 L-5 25 L32 80 M-5 25 L55 25 L72 80 M-5 25 L-27 80" fill="none" stroke="#d7b45a" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="0" cy="-15" r="25" fill="#70412f"/>
+    <path d="M-27 -16 Q0 -50 27 -16" fill="#17364a"/>
+    <path d="M-35 52 Q0 15 35 52 L47 80 H-47Z" fill="#e6e9e7"/>
+  </g>
+  <g transform="translate(1030 210)" filter="url(#shadow)">
+    <rect x="0" y="0" width="112" height="112" rx="14" fill="#d7b45a"/>
+    <path d="M56 22 L91 86 H21Z" fill="#fff7d6" stroke="#0b1f33" stroke-width="7"/>
+    <circle cx="56" cy="56" r="7" fill="#0b1f33"/>
+    <path d="M56 69 V80" stroke="#0b1f33" stroke-width="7" stroke-linecap="round"/>
+    <path d="M56 112 V185" stroke="#d7b45a" stroke-width="12"/>
+  </g>
+  <g transform="translate(50 55)">
+    <rect width="360" height="62" rx="31" fill="#07131f" opacity=".78"/>
+    <text x="28" y="40" font-family="Arial, sans-serif" font-size="27" font-weight="800" fill="#fff">APPRENDRE · OBSERVER · ANTICIPER</text>
+  </g>
+  <g transform="translate(735 100)">
+    <rect width="250" height="82" rx="20" fill="#07131f" opacity=".82" stroke="#d7b45a" stroke-width="2"/>
+    <text x="24" y="34" font-family="Arial, sans-serif" font-size="18" font-weight="800" fill="#d7b45a">ZONE D'APPRENTISSAGE</text>
+    <text x="24" y="61" font-family="Arial, sans-serif" font-size="17" fill="#fff">La route devient une leçon.</text>
+  </g>
+</svg>
