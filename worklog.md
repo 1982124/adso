@@ -38,11 +38,20 @@ Actions exécutées:
 - Sur `b647eaac18b1a322d807f47cbf8400aff70fd6f2`, les jobs `build (20.x)`, `build (22.x)` et `quality (22)` sont en cours au dernier contrôle; aucun GO n'est déduit avant leur conclusion.
 - Un ancien job `validate` a été annulé par concurrence, ce qui n'est pas assimilé à un échec applicatif.
 
-### État de livraison
+### CTO-WORLD-2026-09-06-C — Home: suppression de la répétition visuelle
+- Constat utilisateur intégré comme exigence UX: la même photographie ne doit pas être recyclée à plusieurs endroits de l'expérience.
+- Création de l'asset éditorial original `public/images/home/adso-mobilite-ecole.svg`, dédié au Hero Home. Il représente une zone scolaire, la mobilité, le vélo avec casque, le taxi-moto et la signalisation dans une composition distincte.
+- `HeroRealisticHome.tsx` ne construit plus une fausse scène CSS/Lucide et ne réutilise plus l'ancien visuel opaque. Il affiche désormais l'asset dédié avec texte alternatif accessible et dimensions explicites.
+- La légende du Hero précise que cette scène est éditorialement distincte du reste du parcours.
+- Commit asset: `95e34c9a65338b93a58f70238be6ea19e334f960`.
+- Commit Hero: `8fe6a45b2a428eb73de5c1bb24a313538a16cacd`.
+- L'image photographique générée pendant la session reste une proposition créative de référence; elle n'est pas déclarée comme asset production tant qu'elle n'est pas intégrée et vérifiée dans le dépôt.
+
+### État de livraison après correction Home
 - Code: durcissement actif.
 - Sécurité: correctif `fast-uri` appliqué; audit doit être revalidé par le CI.
-- Home: NOT FINAL — asset réaliste inédit avec provenance/droits requis.
-- Vercel: NOT VERIFIED — projet `adso-safety` absent du compte connecté; ne pas déployer vers un projet inconnu sans preuve de cible.
+- Home: amélioré contre la répétition visuelle; validation production encore requise.
+- Vercel: NOT VERIFIED — le compte connecté n'expose pas actuellement `adso-safety` dans son inventaire; ne pas prétendre à une production E2E.
 - Acceptance 01–07: PENDING.
 - GO GEL V1: NOT GRANTED.
 
