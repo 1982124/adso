@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/adso
       NEXTAUTH_SECRET: ci-only-not-a-production-secret-32chars
       NEXTAUTH_URL: http://localhost:3000
     steps:
