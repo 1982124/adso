@@ -13,6 +13,10 @@ jobs:
     strategy:
       matrix:
         node-version: [20, 22]
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/adso
+      NEXTAUTH_SECRET: ci-only-not-a-production-secret-32chars
+      NEXTAUTH_URL: http://localhost:3000
 
     steps:
       - name: Checkout
