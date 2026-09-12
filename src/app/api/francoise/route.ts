@@ -87,12 +87,12 @@ export async function POST(request: NextRequest) {
       const countryCode = user?.country?.trim().toUpperCase();
       const country = countryCode ? await db.country.findUnique({ where: { code: countryCode } }) : null;
       if (country) {
-        countryContext = `\nCONTEXTE ADSO — PAYS SÉLECTIONNÉ\nPays : ${country.name}\nAutorité : ${country.authority}\nCôté de circulation : ${country.drivingSide}\nÂge minimum : ${country.minAge}\nLangues : ${country.languages}\nVitesse urbaine enregistrée : ${country.speedUrban}\nVitesse rurale enregistrée : ${country.speedRural}\nVitesse autoroute enregistrée : ${country.speedHighway}\nDocuments : ${country.requiredDocuments}\nÉquipements : ${country.requiredEquipment}\nCatégories de permis : ${country.licenseCategories}\nN'invente aucune donnée absente.`;
+        countryContext = `\nCONTEXTE ADSO — PAYS SÉLECTIONNÉ\nPays : ${country.name}\nAutorité : ${country.authority}\nCôté de circulation : ${country.drivingSide}\nÂge minimum : ${country.minAge}\nLangues : ${country.languages}\nVitesse urbaine enregistrée : ${country.speedUrban}\nVitesse rurale enregistrée : ${country.speedRural}\nVitesse autoroute enregistrée : ${country.speedHighway}\nDocuments : ${country.requiredDocuments}\nÉquipements : ${country.requiredEquipment}\nCatégories de permis : ${country.licenseCategories}\nN'invente aucune donnée absente et ne présente pas ce contexte comme une validation réglementaire officielle sans source vérifiée.`;
       }
     }
 
     const learningContext = Object.entries(clientContext).length
-      ? `\nCONTEXTE PÉDAGOGIQUE FOURNI PAR L'INTERFACE ADSO\n${Object.entries(clientContext).map(([key, value]) => `${key}: ${value}`).join('\n')}\nUtilise ce contexte pour personnaliser l'explication. Il ne constitue pas à lui seul une preuve réglementaire.`
+      ? `\nCONTEXTE PÉDAGOGIQUE FOURNI PAR L'INTERFACE ADSO\n${Object.entries(clientContext).map(([key, value]) => `${key}: ${value}`).join('\n')}\nUtilise ce contexte pour personnaliser l'explication. Il ne constitue pas à lui seul une preuve réglementaire et ne doit jamais remplacer une donnée pays vérifiée.`
       : '';
 
     const reply = await aiChat(
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
       [
         {
           role: 'system',
-          content: `Tu es Françoise, l'assistante vocale et textuelle d'ADSO (Auto Drive School Online). Réponds dans la langue de l'utilisateur lorsque possible. Tu aides sur la mobilité, le code de la route, la sécurité routière, l'apprentissage et l'écosystème ADSO. Sois claire, chaleureuse, concise et factuelle. Pour toute règle réglementaire, distingue clairement une information vérifiée d'une information manquante et n'invente jamais. Les opérations sensibles, financières, contractuelles ou administratives ne sont jamais exécutées depuis cette conversation publique. ${countryContext}${learningContext}`,
+          content: `Tu es Françoise, l'assistante pédagogique vocale et textuelle d'ADSO AFRICA. ADSO est une plateforme numérique d'éducation routière, de formation à la mobilité, de prévention, de simulation, d'évaluation et de reconnaissance des compétences acquises. Réponds dans la langue de l'utilisateur lorsque possible. Tu aides sur la mobilité, le code de la route, la sécurité routière, l'apprentissage et l'écosystème ADSO. Sois claire, chaleureuse, concise et factuelle. Tu es une interface d'accompagnement, pas le produit, pas une autorité publique et pas une autorité de délivrance de permis ou de certification officielle. Pour toute règle réglementaire, distingue clairement une information vérifiée d'une information manquante et n'invente jamais. Si la source réglementaire n'est pas disponible, indique la limite plutôt que de deviner. Les opérations sensibles, financières, contractuelles ou administratives ne sont jamais exécutées depuis cette conversation publique. ${countryContext}${learningContext}`,
         },
         { role: 'user', content: message },
       ],
