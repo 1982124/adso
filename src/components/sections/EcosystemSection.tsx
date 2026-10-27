@@ -1,9 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { GraduationCap, Users, Bike, ShieldCheck, Landmark, School, HeartHandshake, ClipboardCheck, TrendingUp } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { GraduationCap, Users, Bike, ShieldCheck, Landmark, School, HeartHandshake, ArrowRight } from 'lucide-react';
 
 interface AudienceCard {
   id: string;
@@ -15,103 +13,55 @@ interface AudienceCard {
 }
 
 const cards: AudienceCard[] = [
-  {
-    id: 'citizens',
-    title: 'Citoyens, familles & communautés',
-    icon: Users,
-    description: 'Comprendre les dangers et adopter des comportements qui protègent la vie au quotidien.',
-    actions: ['Sécurité des piétons et des passagers', 'Vélo, moto et taxi-moto plus sûrs', 'Sensibilisation familiale et communautaire'],
-    href: '/education',
-  },
-  {
-    id: 'young',
-    title: 'Élèves, étudiants & apprentis',
-    icon: GraduationCap,
-    description: 'Installer une culture de mobilité sûre dès l’école et tout au long des apprentissages.',
-    actions: ['Parcours adaptés à l’âge et au niveau', 'Scènes, questions et décisions immersives', 'Progression et compétences acquises'],
-    href: '/student?profile=primaire',
-  },
-  {
-    id: 'drivers',
-    title: 'Conducteurs & professionnels',
-    icon: Bike,
-    description: 'Entretenir les connaissances et mieux anticiper les situations à risque.',
-    actions: ['Révision du Code de la circulation', 'Vigilance, vitesse et distances de sécurité', 'Prévention adaptée aux trajets professionnels'],
-    href: '/student?profile=taxi-voiture',
-  },
-  {
-    id: 'schools',
-    title: 'Établissements & formateurs',
-    icon: School,
-    description: 'Déployer des apprentissages structurés et accompagner les publics dans la durée.',
-    actions: ['Ressources pédagogiques numériques', 'Parcours et évaluations', 'Suivi des acquis selon les fonctions disponibles'],
-    href: '/institutions',
-  },
-  {
-    id: 'government',
-    title: 'Gouvernements & acteurs publics',
-    icon: Landmark,
-    description: 'Disposer d’un outil complémentaire pour soutenir les politiques de prévention et la sensibilisation.',
-    actions: ['Programmes d’éducation et de prévention', 'Indicateurs d’usage et de progression, si disponibles', 'Approche adaptée au contexte et aux règles de chaque pays'],
-    href: '/institutions',
-  },
-  {
-    id: 'partners',
-    title: 'Entreprises, associations & partenaires',
-    icon: HeartHandshake,
-    description: 'Mobiliser les organisations autour de la protection des usagers et de la prévention des risques.',
-    actions: ['Sensibilisation des équipes et communautés', 'Formation continue à la mobilité sûre', 'Coopération avec les établissements et institutions'],
-    href: '/institutions',
-  },
+  { id: 'citizens', title: 'Citoyens et communautés', icon: Users, description: 'Mieux reconnaître les dangers et comprendre les comportements qui réduisent les risques au quotidien.', actions: ['Piétons et passagers', 'Cyclistes et usagers de deux-roues', 'Prévention familiale et communautaire'], href: '/education' },
+  { id: 'young', title: 'Élèves, étudiants et apprentis', icon: GraduationCap, description: 'Développer les connaissances de mobilité sûre tout au long des apprentissages.', actions: ['Parcours pédagogiques adaptés', 'Scènes et décisions immersives', 'Évaluations des connaissances disponibles'], href: '/student?profile=primaire' },
+  { id: 'drivers', title: 'Conducteurs et professionnels', icon: Bike, description: 'Actualiser les connaissances et travailler l’anticipation des situations à risque.', actions: ['Règles de circulation', 'Vigilance et distances de sécurité', 'Prévention adaptée aux déplacements professionnels'], href: '/student?profile=taxi-voiture' },
+  { id: 'schools', title: 'Établissements et formateurs', icon: School, description: 'Intégrer des ressources numériques dans les actions d’éducation et de prévention.', actions: ['Ressources pédagogiques', 'Parcours et évaluations', 'Suivi selon les fonctions effectivement disponibles'], href: '/institutions' },
+  { id: 'government', title: 'Institutions et acteurs publics', icon: Landmark, description: 'Explorer un outil complémentaire aux politiques publiques de prévention et d’éducation routière.', actions: ['Sensibilisation et éducation', 'Indicateurs d’usage si disponibles', 'Adaptation aux sources et règles nationales vérifiées'], href: '/institutions' },
+  { id: 'partners', title: 'Associations et partenaires', icon: HeartHandshake, description: 'Soutenir des actions collectives de sensibilisation et de formation à la mobilité sûre.', actions: ['Mobilisation des communautés', 'Formation continue', 'Coopération avec les établissements'], href: '/institutions' },
 ];
-
-const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.08 } } };
-const itemVariants = { hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' as const } } };
 
 function AudienceCardView({ card }: { card: AudienceCard }) {
   return (
-    <Card className="h-full border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:border-emerald-300 hover:shadow-lg">
-      <CardContent className="flex h-full flex-col p-5 sm:p-6">
-        <div className="flex items-start gap-3">
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#0B1F33] text-[#E4C878]"><card.icon className="size-5" aria-hidden="true" /></span>
-          <h3 className="pt-1 text-base font-black leading-snug text-slate-950">{card.title}</h3>
-        </div>
-        <p className="mt-4 text-sm leading-6 text-slate-600">{card.description}</p>
-        <ul className="mt-4 space-y-2">
-          {card.actions.map((action) => (
-            <li key={action} className="flex items-start gap-2 text-xs leading-5 text-slate-700">
-              <ShieldCheck className="mt-0.5 size-4 shrink-0 text-emerald-700" aria-hidden="true" /> {action}
-            </li>
-          ))}
-        </ul>
-        <Link href={card.href} className="mt-5 inline-flex min-h-10 items-center justify-center self-start rounded-lg border border-slate-200 px-3 py-2 text-xs font-extrabold text-slate-900 transition hover:border-emerald-600 hover:bg-emerald-50">
-          Découvrir les parcours <span className="ml-2" aria-hidden="true">→</span>
-        </Link>
-      </CardContent>
-    </Card>
+    <article className="flex h-full min-w-0 flex-col border-t-2 border-[#0B1F33] bg-white px-4 py-5 sm:px-5">
+      <div className="flex items-start gap-3">
+        <card.icon className="mt-1 size-5 shrink-0 text-emerald-800" aria-hidden="true" />
+        <h3 className="text-base font-bold leading-snug text-slate-950">{card.title}</h3>
+      </div>
+      <p className="mt-3 text-sm leading-6 text-slate-600">{card.description}</p>
+      <ul className="mt-4 space-y-2 border-t border-slate-200 pt-3">
+        {card.actions.map((action) => <li key={action} className="flex items-start gap-2 text-sm leading-5 text-slate-700"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-emerald-800" aria-hidden="true" />{action}</li>)}
+      </ul>
+      <Link href={card.href} className="mt-5 inline-flex min-h-10 items-center gap-2 self-start text-sm font-semibold text-emerald-900 underline decoration-slate-300 underline-offset-4 transition-colors hover:decoration-emerald-800">Explorer <ArrowRight className="size-4" aria-hidden="true" /></Link>
+    </article>
   );
 }
 
 export default function EcosystemSection() {
   return (
-    <section id="ecosystem" className="bg-[#f7f8f4] py-16 sm:py-20 lg:py-24" aria-labelledby="ecosystem-heading">
+    <section id="ecosystem" className="bg-slate-50 py-14 sm:py-18 lg:py-20" aria-labelledby="ecosystem-heading">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-80px' }} transition={{ duration: 0.5 }} className="mx-auto mb-10 max-w-3xl text-center sm:mb-14">
-          <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-emerald-800"><ShieldCheck className="size-4" aria-hidden="true" /> Une mission collective</p>
-          <h2 id="ecosystem-heading" className="mt-4 text-3xl font-black tracking-[-0.035em] text-slate-950 sm:text-4xl">La sécurité routière concerne toute la société.</h2>
-          <p className="mt-4 text-base leading-7 text-slate-600 sm:text-lg">ADSO AFRICA relie l’apprentissage des citoyens, les besoins des établissements et les objectifs de prévention des institutions. La plateforme complète les dispositifs publics et éducatifs ; elle ne remplace ni les autorités ni les services d’urgence.</p>
-        </motion.div>
+        <div className="mb-9 max-w-3xl">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-800">Publics et usages</p>
+          <h2 id="ecosystem-heading" className="mt-3 text-3xl font-bold tracking-[-0.035em] text-slate-950 sm:text-4xl">Une approche commune, des responsabilités distinctes.</h2>
+          <p className="mt-4 text-base leading-7 text-slate-600 sm:text-lg">ADSO AFRICA propose des ressources numériques pour l’éducation routière et la prévention. Les besoins des citoyens, des formateurs et des institutions diffèrent ; les contenus et les données doivent rester adaptés au public et au contexte national.</p>
+        </div>
 
-        <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-50px' }} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {cards.map((card) => <motion.div key={card.id} variants={itemVariants} className="h-full"><AudienceCardView card={card} /></motion.div>)}
-        </motion.div>
+        <div className="grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+          {cards.map((card) => <AudienceCardView key={card.id} card={card} />)}
+        </div>
 
-        <div className="mt-8 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-          <div className="rounded-2xl bg-[#0B1F33] p-6 text-white sm:p-8">
-            <div className="flex items-start gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-[#E4C878]"><ClipboardCheck className="size-5" aria-hidden="true" /></span><div><h3 className="text-lg font-black">Apprendre, décider, progresser</h3><p className="mt-2 text-sm leading-6 text-slate-200">Les expériences pédagogiques d’ADSO aident à reconnaître un danger, choisir une conduite plus sûre, comprendre les conséquences et renforcer progressivement les compétences.</p></div></div>
+        <div className="mt-10 grid border-t border-slate-300 pt-7 md:grid-cols-2 md:gap-10">
+          <div className="pb-6 md:pb-0">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">Méthode pédagogique</p>
+            <h3 className="mt-2 text-xl font-bold text-slate-950">Observer, décider, comprendre.</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-600">Les activités immersives présentent des situations de circulation, invitent à choisir une réponse et expliquent les conséquences après la décision. Leur qualité dépend de scénarios réalistes et de contenus vérifiés.</p>
           </div>
-          <div className="rounded-2xl border border-emerald-200 bg-white p-6 sm:p-8">
-            <div className="flex items-start gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800"><TrendingUp className="size-5" aria-hidden="true" /></span><div><h3 className="text-lg font-black text-slate-950">Prévenir et mesurer avec rigueur</h3><p className="mt-2 text-sm leading-6 text-slate-600">L’impact sur les accidents et les décès doit être évalué à partir de données fiables, de références datées et d’indicateurs validés avec les acteurs compétents. ADSO ne revendique pas de baisse de mortalité sans preuve.</p></div></div>
+          <div className="border-t border-slate-300 pt-6 md:border-l md:border-t-0 md:pl-8 md:pt-0">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">Redevabilité</p>
+            <h3 className="mt-2 text-xl font-bold text-slate-950">Mesurer ce qui est réellement démontré.</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-600">Les données d’utilisation et les résultats d’apprentissage ne prouvent pas, à eux seuls, une baisse des accidents. Toute évaluation d’impact exige des données fiables, une méthode explicite et une analyse adaptée.</p>
+            <Link href="/institutions" className="mt-4 inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-emerald-900 underline underline-offset-4">Consulter l’espace institutions <ArrowRight className="size-4" aria-hidden="true" /></Link>
           </div>
         </div>
       </div>
