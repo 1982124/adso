@@ -39,6 +39,15 @@ export default function HeroRealisticHome() {
                 Espace institutions <ArrowRight className="ml-2 size-4" />
               </Link>
             </div>
+            <div className="mt-5 rounded-xl border border-[#D7B45A]/25 bg-white/[0.04] p-4" aria-label="Méthode pédagogique ADSO Immersif">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#E4C878]">La méthode ADSO Immersif</p>
+              <ol className="mt-2 grid gap-2 text-xs font-semibold leading-5 text-slate-100 sm:grid-cols-2">
+                <li><span className="mr-2 text-[#E4C878]">01</span>Observer une situation de risque</li>
+                <li><span className="mr-2 text-[#E4C878]">02</span>Choisir comment réagir</li>
+                <li><span className="mr-2 text-[#E4C878]">03</span>Comprendre les conséquences</li>
+                <li><span className="mr-2 text-[#E4C878]">04</span>Évaluer et renforcer ses réflexes</li>
+              </ol>
+            </div>
             <div className="mt-7 grid gap-2 sm:grid-cols-2">
               {audiences.map(({ label, text, icon: Icon, href }) => (
                 <Link key={label} href={href} className="group flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.045] p-3 transition hover:border-[#D7B45A]/60 hover:bg-white/[0.08]">
