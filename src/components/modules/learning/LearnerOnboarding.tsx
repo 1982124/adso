@@ -87,7 +87,7 @@ export default function LearnerOnboarding({ onComplete, initialProfile = '' }: {
         // Keep the guaranteed static African directory visible.
       });
     return () => controller.abort();
-  }, [setCountry, setLocale]);
+  }, [setCountry, setLocale, validInitialProfile]);
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
