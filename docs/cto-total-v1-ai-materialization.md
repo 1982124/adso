@@ -50,7 +50,7 @@ The commercial chain must be:
 
 **upload → AI enrichment → review → price/country currency rules → publish → catalogue → teaser → checkout → payment confirmation → order → entitlement → library → telemetry**
 
-No “marketplace ready” claim is allowed until the complete chain has passed a real test purchase in the configured payment environment.
+ADSO no longer includes a public marketplace. Educational content may remain available through the internal learning library; no seller catalog, third-party listing or marketplace purchase flow should be implemented.
 
 ## 5. Teasers are first-class content
 
