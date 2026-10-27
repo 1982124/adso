@@ -9,7 +9,6 @@ import {
   Building2,
   Briefcase,
   Landmark,
-  Store,
   Code2,
   Plug,
   Globe,
@@ -253,49 +252,8 @@ export default function Monetisation({ className }: PartProps) {
 
       <Separator className="bg-slate-800 mb-12" />
 
-      {/* 6.3 Marketplace */}
-      <SubsectionTitle id="marketplace">6.3 Marketplace</SubsectionTitle>
-      <motion.div
-        className="bg-slate-900/80 border border-slate-700/50 rounded-xl p-6 sm:p-8 mb-8"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5 }}
-      >
-        <p className="text-slate-300 leading-relaxed mb-4">
-          Le marketplace ADSO permet aux créateurs de contenu pédagogique (auto-écoles,
-          moniteurs indépendants, éditeurs spécialisés) de publier et vendre leurs cours,
-          quiz et simulations sur la plateforme.
-        </p>
-        <div className="grid sm:grid-cols-3 gap-4">
-          <div className="bg-slate-800/60 border border-slate-700/40 rounded-lg p-4">
-            <div className="text-cyan-400 font-bold text-2xl mb-1">15%</div>
-            <div className="text-slate-300 text-sm font-medium">Commission par leçon</div>
-            <div className="text-slate-400 text-xs mt-1">
-              Commission prélevée sur chaque vente de contenu sur le marketplace
-            </div>
-          </div>
-          <div className="bg-slate-800/60 border border-slate-700/40 rounded-lg p-4">
-            <Store className="w-5 h-5 text-cyan-400 mb-2" />
-            <div className="text-slate-300 text-sm font-medium">Réductions de volume</div>
-            <div className="text-slate-400 text-xs mt-1">
-              12% au-delà de 100 ventes/mois, 10% au-delà de 500 ventes/mois
-            </div>
-          </div>
-          <div className="bg-slate-800/60 border border-slate-700/40 rounded-lg p-4">
-            <Globe className="w-5 h-5 text-cyan-400 mb-2" />
-            <div className="text-slate-300 text-sm font-medium">Audience mondiale</div>
-            <div className="text-slate-400 text-xs mt-1">
-              Accès au marché de 100M d'utilisateurs potentiels dans 120+ pays
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
-      <Separator className="bg-slate-800 mb-12" />
-
-      {/* 6.4 API Partnerships */}
-      <SubsectionTitle id="api-partnerships">6.4 Partenariats API</SubsectionTitle>
+      {/* 6.3 API Partnerships */}
+      <SubsectionTitle id="api-partnerships">6.3 Partenariats API</SubsectionTitle>
       <p className="text-slate-300 text-base leading-relaxed mb-6">
         L'API ADSO permet aux partenaires (assureurs, constructeurs automobiles,
         gouvernements) d'intégrer les fonctionnalités d'ADSO dans leurs propres
