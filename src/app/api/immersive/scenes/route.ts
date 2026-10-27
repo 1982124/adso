@@ -82,9 +82,7 @@ export async function GET() {
         'id', i.id, 'type', i.type, 'atSecond', i."atSecond", 'prompt', i.prompt,
         'explanation', i.explanation, 'ttsText', i."ttsText", 'points', i.points,
         'choices', (SELECT COALESCE(json_agg(json_build_object(
-          'id', c.id, 'label', c.label, 'isCorrect', c."isCorrect", 'scoreDelta', c."scoreDelta",
-          'consequence', c.consequence, 'explanation', c.explanation, 'competency', c.competency,
-          'nextInteractionId', c."nextInteractionId"
+          'id', c.id, 'label', c.label
         ) ORDER BY c."order"), '[]'::json) FROM "ImmersiveChoice" c WHERE c."interactionId" = i.id)
       ) ORDER BY i."order") FILTER (WHERE i.id IS NOT NULL), '[]'::json) AS interactions
       FROM "ImmersiveScene" s LEFT JOIN "ImmersiveInteraction" i ON i."sceneId" = s.id
@@ -92,7 +90,12 @@ export async function GET() {
       WHERE s.status = 'published' OR s."createdById" = $1
       GROUP BY s.id, m.id ORDER BY s."order", s."createdAt" DESC
     `, userId);
-    return NextResponse.json({ scenes }, { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } });
+    return NextResponse.json({ scenes }, {
+      headers: {
+        // Authenticated requests can include the instructor's own drafts; never let a shared cache store them.
+        'Cache-Control': userId ? 'private, no-store' : 'public, s-maxage=60, stale-while-revalidate=300',
+      },
+    });
   } catch (error) {
     console.error('[immersive/scenes GET]', error);
     return NextResponse.json({ error: 'Impossible de charger les scènes' }, { status: 500 });
