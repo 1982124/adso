@@ -192,7 +192,7 @@ export default function ArchitectureTechnique({ className }: PartProps) {
           { icon: Brain, name: 'AI Service', desc: 'IA Coach, recommandations' },
           { icon: FileImage, name: 'File Service', desc: 'Upload, CDN, images' },
           { icon: Calendar, name: 'Schedule Service', desc: 'Calendrier, réservations' },
-          { icon: Handshake, name: 'Partner Service', desc: 'Partenariats, marketplace' },
+          { icon: Handshake, name: 'Partner Service', desc: 'Partenariats institutionnels et intégrations utiles à la sécurité routière' },
         ].map((service, i) => (
           <motion.div
             key={service.name}
