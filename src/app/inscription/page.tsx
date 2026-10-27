@@ -4,11 +4,14 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { FormEvent, Suspense, useState } from 'react';
 import { signIn } from 'next-auth/react';
+import { africaCountryDirectory } from '@/data/africa-country-directory';
 
 function RegistrationForm() {
   const searchParams = useSearchParams();
   const from = searchParams.get('from') || '/';
   const [name, setName] = useState('');
+  const [country, setCountry] = useState('');
+  const [language, setLanguage] = useState('fr');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
@@ -24,7 +27,7 @@ function RegistrationForm() {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, country, language }),
       });
       const data = await response.json();
       if (!response.ok) return setError(data.error || 'Impossible de créer le compte.');
@@ -47,6 +50,20 @@ function RegistrationForm() {
         <p className="mt-2 text-sm leading-6 text-white/60">Rejoignez ADSO pour commencer votre parcours et conserver votre progression.</p>
         <form onSubmit={submit} className="mt-7 space-y-4">
           <label className="block text-sm font-semibold">Nom<input value={name} onChange={(e) => setName(e.target.value)} required autoComplete="name" className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 outline-none focus:border-emerald-400" /></label>
+          <label className="block text-sm font-semibold">Pays de référence
+            <select value={country} onChange={(e) => setCountry(e.target.value)} required className="mt-2 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-emerald-400">
+              <option value="">Choisir mon pays</option>
+              {africaCountryDirectory.map((item) => <option key={item.code} value={item.code}>{item.name}</option>)}
+              <option value="FR">France</option>
+              <option value="ZZ">Autre pays / pas encore défini</option>
+            </select>
+          </label>
+          <label className="block text-sm font-semibold">Langue préférée
+            <select value={language} onChange={(e) => setLanguage(e.target.value)} className="mt-2 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 outline-none focus:border-emerald-400">
+              <option value="fr">Français</option>
+              <option value="en">English</option>
+            </select>
+          </label>
           <label className="block text-sm font-semibold">Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 outline-none focus:border-emerald-400" /></label>
           <label className="block text-sm font-semibold">Mot de passe<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="new-password" className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 outline-none focus:border-emerald-400" /></label>
           <label className="block text-sm font-semibold">Confirmer le mot de passe<input type="password" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} required autoComplete="new-password" className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 outline-none focus:border-emerald-400" /></label>
