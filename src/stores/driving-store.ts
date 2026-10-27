@@ -16,8 +16,7 @@ type DrivingView =
   | 'certification'
   | 'notifications'
   | 'admin'
-  | 'pricing'
-  | 'marketplace';
+  | 'pricing';
 
 interface DrivingState {
   currentView: DrivingView;
