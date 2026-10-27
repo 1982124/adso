@@ -1,48 +1,63 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, BookOpen, CarFront, ShieldCheck, Users } from 'lucide-react';
+import { ArrowRight, BookOpen, CarFront, ShieldCheck, Users, Landmark, School, HeartPulse } from 'lucide-react';
 
 const audiences = [
-  { label: 'Élèves', text: 'École, collège et lycée · Je découvre la route', icon: BookOpen, profile: 'primaire' },
-  { label: 'Étudiants', text: 'Université · permis · Code', icon: Users, profile: 'universitaire' },
-  { label: 'Apprentis', text: 'Tous secteurs d’activité · mobilité', icon: ShieldCheck, profile: 'apprenti' },
-  { label: 'Conducteurs', text: 'Prévention · perfectionnement', icon: CarFront, profile: 'taxi-voiture' },
+  { label: 'Citoyens & familles', text: 'Piétons, passagers, cyclistes et usagers de deux-roues', icon: Users, href: '/education' },
+  { label: 'Élèves, étudiants & apprentis', text: 'Apprendre les bons réflexes dès le plus jeune âge', icon: BookOpen, href: '/student?profile=primaire' },
+  { label: 'Conducteurs & professionnels', text: 'Anticiper les risques et renforcer ses compétences', icon: CarFront, href: '/student?profile=taxi-voiture' },
+  { label: 'Établissements & formateurs', text: 'Structurer les parcours et suivre les apprentissages', icon: School, href: '/institutions' },
 ];
 
 export default function HeroRealisticHome() {
   return (
     <section id="hero" className="relative overflow-hidden bg-[#0B1F33] text-white">
-      <div className="mx-auto max-w-7xl px-4 pb-10 pt-20 sm:px-6 lg:px-8 lg:pb-12">
-        <div className="grid items-center gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:gap-10">
+      <div className="mx-auto max-w-7xl px-4 pb-10 pt-16 sm:px-6 sm:pt-20 lg:px-8 lg:pb-14">
+        <div className="grid items-center gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:gap-10">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#D7B45A] sm:text-[11px]">Une ambition africaine · un impact humain</p>
-            <h1 className="mt-3 max-w-2xl text-[2rem] font-black leading-[1.08] tracking-[-0.035em] sm:text-[2.35rem] lg:text-[2.75rem]">Pour éduquer et former des conducteurs responsables dès l’école.</h1>
-            <p className="mt-4 max-w-xl text-[15px] leading-6 text-slate-200 sm:text-base">ADSO AFRICA est une infrastructure numérique d’éducation routière, de formation à la mobilité, de prévention, de simulation, d’évaluation et de reconnaissance des compétences acquises. Elle accompagne chacun selon son parcours, son contexte et son niveau.</p>
-            <p className="mt-3 max-w-xl text-sm font-bold leading-6 text-white">Il est temps de changer les chiffres. Parce que toute vie est précieuse.</p>
-            <div className="mt-5 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
-              <Link href="/education" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#D7B45A] px-5 text-sm font-extrabold text-[#0B1F33] hover:bg-[#E4C878]">Commencer à apprendre <ArrowRight className="ml-2 size-4" /></Link>
-              <Link href="/formation/immersive" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/20 bg-white/5 px-5 text-sm font-bold text-white hover:bg-white/10"><span className="mr-2 text-[#D7B45A]">▶</span> Découvrir ADSO Immersif</Link>
+            <p className="inline-flex items-center gap-2 rounded-full border border-[#D7B45A]/40 bg-white/5 px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#E4C878] sm:text-[11px]">
+              <ShieldCheck className="size-4" aria-hidden="true" /> Éducation · Prévention · Mobilité sûre
+            </p>
+            <h1 className="mt-5 max-w-2xl text-[2.25rem] font-black leading-[1.04] tracking-[-0.04em] sm:text-5xl lg:text-[3.5rem]">
+              Chaque vie compte. <span className="text-[#E4C878]">La sécurité routière s’apprend.</span>
+            </h1>
+            <p className="mt-5 max-w-xl text-base leading-7 text-slate-200 sm:text-lg">
+              ADSO AFRICA est une plateforme numérique d’éducation routière, de formation à la mobilité et de prévention. Elle aide les citoyens à mieux comprendre les risques, les établissements à former et les institutions à renforcer leurs actions de sécurité routière.
+            </p>
+            <p className="mt-3 max-w-xl text-sm font-semibold leading-6 text-white/90">
+              Notre ambition : contribuer à réduire les décès et les blessures sur les routes africaines grâce à l’apprentissage, aux bons réflexes et à des compétences évaluables.
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <Link href="/education" className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#D7B45A] px-5 text-sm font-extrabold text-[#0B1F33] transition hover:bg-[#E4C878]">
+                Apprendre les bons réflexes <ArrowRight className="ml-2 size-4" />
+              </Link>
+              <Link href="/formation/immersive" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/25 bg-white/5 px-5 text-sm font-bold text-white transition hover:bg-white/10">
+                Découvrir ADSO Immersif <span className="ml-2 text-[#E4C878]">▶</span>
+              </Link>
+              <Link href="/institutions" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/15 px-5 text-sm font-bold text-white/90 transition hover:bg-white/10">
+                Espace institutions <ArrowRight className="ml-2 size-4" />
+              </Link>
             </div>
-            <div className="mt-6 max-w-xl rounded-2xl border border-white/10 bg-white/[0.045] p-4">
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#D7B45A]">Où en êtes-vous dans votre parcours de mobilité ?</p>
-              <div id="parcours" className="mt-3 grid gap-2 sm:grid-cols-2">
-                {audiences.map(({ label, text, icon: Icon, profile }) => (
-                  <Link key={label} href={`/student?profile=${profile}`} className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#07131F]/45 px-3 py-2.5 hover:bg-white/[0.08]">
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#D7B45A]/10 text-[#D7B45A]"><Icon className="size-4" /></span>
-                    <div><p className="text-sm font-extrabold text-white">{label}</p><p className="text-[11px] text-slate-300">{text}</p><p className="mt-1 text-[10px] font-bold text-[#D7B45A]">Construire mon parcours →</p></div>
-                  </Link>
-                ))}
-              </div>
+            <div className="mt-7 grid gap-2 sm:grid-cols-2">
+              {audiences.map(({ label, text, icon: Icon, href }) => (
+                <Link key={label} href={href} className="group flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.045] p-3 transition hover:border-[#D7B45A]/60 hover:bg-white/[0.08]">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#D7B45A]/10 text-[#E4C878]"><Icon className="size-4" aria-hidden="true" /></span>
+                  <span><span className="block text-sm font-extrabold text-white">{label}</span><span className="mt-1 block text-xs leading-5 text-slate-300">{text}</span></span>
+                </Link>
+              ))}
             </div>
-            <p className="mt-4 text-[11px] leading-5 text-slate-400">Pensé pour l’Afrique · Conçu pour l’avenir</p>
+            <p className="mt-5 text-[11px] leading-5 text-slate-400">Pensé pour les réalités africaines · Conçu pour tous les usagers de la route</p>
           </div>
 
           <figure className="min-w-0">
             <div className="overflow-hidden rounded-[1.35rem] border border-white/15 bg-[#07131F] shadow-2xl shadow-black/40">
-              <img src="/images/home/adso-mobilite-ecole.svg" alt="Zone scolaire et mobilité sûre : élèves, vélo équipé d'un casque, taxi-moto et signalisation de vigilance" className="block h-auto w-full" width="1200" height="760" fetchPriority="high" />
+              <img src="/images/home/adso-mobilite-ecole.svg" alt="Scène de mobilité sûre près d’une école, avec enfants, usagers de deux-roues et signalisation de vigilance" className="block h-auto w-full" width="1200" height="760" fetchPriority="high" />
             </div>
-            <figcaption className="mt-2 text-[10px] leading-4 text-slate-300">La route devient un espace d’apprentissage, d’observation et d’anticipation.</figcaption>
+            <figcaption className="mt-3 flex items-start gap-2 text-xs leading-5 text-slate-300">
+              <HeartPulse className="mt-0.5 size-4 shrink-0 text-[#E4C878]" aria-hidden="true" />
+              Prévenir, c’est apprendre à reconnaître le danger, décider plus sûrement et protéger la vie — avant, pendant et après la formation.
+            </figcaption>
           </figure>
         </div>
       </div>
