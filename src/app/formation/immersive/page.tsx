@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 
-type Choice = { id: string; label: string; isCorrect: boolean; scoreDelta: number; consequence: string; explanation: string; competency?: string };
+type Choice = { id: string; label: string };
 type Interaction = { id: string; type: string; atSecond: number; prompt: string; explanation?: string; ttsText?: string; points: number; choices: Choice[] };
 type Scene = { id: string; title: string; description: string; videoUrl: string; durationSeconds: number; competency: string; level: string; language: string; status: string; interactions: Interaction[] };
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
@@ -15,7 +15,14 @@ export default function ImmersiveFormationPage() {
   const [answer, setAnswer] = useState<Record<string, string>>({});
   const [activeInteractionId, setActiveInteractionId] = useState<string | null>(null);
   const [triggered, setTriggered] = useState<Set<string>>(new Set());
-  const [result, setResult] = useState<{ score: number; maxScore: number; accuracy: number; competencyGain: number; completed: boolean } | null>(null);
+  const [result, setResult] = useState<{
+    score: number;
+    maxScore: number;
+    accuracy: number;
+    competencyGain: number;
+    completed: boolean;
+    feedback: Array<{ interactionId: string; prompt: string; choiceLabel: string; consequence: string; explanation: string; correct: boolean }>;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [saveError, setSaveError] = useState('');
@@ -285,16 +292,15 @@ export default function ImmersiveFormationPage() {
                     <div className="mt-1 text-3xl font-black">{Math.round(result.accuracy * 100)}% · {result.score}/{result.maxScore}</div>
                     <div className="mt-1 text-sm text-slate-300">Progression de compétence : {result.competencyGain}%</div>
                     <div className="mt-5 grid gap-3">
-                      {orderedInteractions.map((interaction) => {
-                        const selectedChoice = interaction.choices.find((choice) => choice.id === answer[interaction.id]);
-                        return selectedChoice ? (
-                          <div key={interaction.id} className="rounded-2xl border border-white/10 bg-black/10 p-4 text-sm">
-                            <div className="font-semibold">{interaction.prompt}</div>
-                            <div className="mt-2 text-slate-300"><strong className="text-white">Conséquence :</strong> {selectedChoice.consequence}</div>
-                            <div className="mt-1 text-slate-300"><strong className="text-white">Pourquoi :</strong> {selectedChoice.explanation}</div>
-                          </div>
-                        ) : null;
-                      })}
+                      {result.feedback.map((item) => (
+                        <div key={item.interactionId} className="rounded-2xl border border-white/10 bg-black/10 p-4 text-sm">
+                          <div className="font-semibold">{item.prompt}</div>
+                          <div className="mt-2 text-slate-300"><strong className="text-white">Ta décision :</strong> {item.choiceLabel}</div>
+                          <div className="mt-2 text-slate-300"><strong className="text-white">Évaluation :</strong> {item.correct ? 'Décision adaptée' : 'Décision à améliorer'}</div>
+                          <div className="mt-1 text-slate-300"><strong className="text-white">Conséquence :</strong> {item.consequence}</div>
+                          <div className="mt-1 text-slate-300"><strong className="text-white">Pourquoi :</strong> {item.explanation}</div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
