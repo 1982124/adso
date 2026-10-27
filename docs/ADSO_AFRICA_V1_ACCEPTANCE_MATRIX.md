@@ -42,7 +42,7 @@ The target flow is:
 
 `upload → AI enrichment → cover/metadata → teaser → preview → price → publication → product page → checkout → payment → entitlement → library → analytics → sharing`.
 
-The implementation may adopt proven digital-product marketplace patterns such as seller catalog management, product pages, checkout, post-payment access, sales analytics and shareable purchase links, without copying another platform's branding or code.
+ADSO provides learning content through its own educational library. Public seller catalogs, third-party product listings, marketplace checkout, sales commissions and seller analytics are out of scope. Keep course access, learner progress and authorized institutional content management intact.
 
 ### Truthfulness
 
