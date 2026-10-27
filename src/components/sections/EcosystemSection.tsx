@@ -1,33 +1,119 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { GraduationCap, Briefcase, Bike, ShieldCheck, Landmark, School, HeartHandshake, ArrowRight } from 'lucide-react';
+import { GraduationCap, Users, Bike, ShieldCheck, Landmark, School, HeartHandshake, ClipboardCheck, ChartNoAxesCombined } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
-interface EcosystemCard { id: string; title: string; icon: React.ComponentType<{ className?: string }>; bgClass: string; borderClass: string; iconBg: string; iconColor: string; textColor: string; features: string[]; }
+interface AudienceCard {
+  id: string;
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  description: string;
+  actions: string[];
+  href: string;
+}
 
-const cards: EcosystemCard[] = [
-  { id: 'education', title: 'Éducation routière — primaire → université', icon: GraduationCap, bgClass: 'bg-emerald-900', borderClass: 'border-emerald-800', iconBg: 'bg-emerald-800', iconColor: 'text-emerald-200', textColor: 'text-white', features: ['Primaire, collège & lycée', 'Université & campus', 'Parcours progressifs, quiz & certification'] },
-  { id: 'parents', title: 'Parents & communautés', icon: HeartHandshake, bgClass: 'bg-emerald-800', borderClass: 'border-emerald-700', iconBg: 'bg-emerald-700', iconColor: 'text-emerald-100', textColor: 'text-white', features: ['Suivi de progression', 'Prévention & sensibilisation', 'Communautés & programmes jeunesse'] },
-  { id: 'driver', title: 'Conducteurs & taxi-moto', icon: Bike, bgClass: 'bg-emerald-700', borderClass: 'border-emerald-600', iconBg: 'bg-emerald-600', iconColor: 'text-emerald-100', textColor: 'text-white', features: ['Préparation au permis', 'ADSO Moto Safe', 'Professionnalisation & certification'] },
-  { id: 'schools', title: 'Écoles & auto-écoles', icon: School, bgClass: 'bg-emerald-700', borderClass: 'border-emerald-600', iconBg: 'bg-emerald-600', iconColor: 'text-emerald-100', textColor: 'text-white', features: ['Gestion des apprenants', 'Cours & progression', 'Acquisition de futurs conducteurs'] },
-  { id: 'business', title: 'Entreprises & flottes', icon: Briefcase, bgClass: 'bg-emerald-600', borderClass: 'border-emerald-500', iconBg: 'bg-emerald-500', iconColor: 'text-white', textColor: 'text-white', features: ['Formation conducteurs', 'Suivi véhicules & équipes', 'Prévention & analytics'] },
-  { id: 'partners', title: 'Assureurs & partenaires', icon: Landmark, bgClass: 'bg-emerald-600', borderClass: 'border-emerald-500', iconBg: 'bg-emerald-500', iconColor: 'text-white', textColor: 'text-white', features: ['Assureurs & constructeurs', 'Télécoms, banques & fintech', 'ONG, gouvernements & institutions'] },
+const cards: AudienceCard[] = [
+  {
+    id: 'citizens',
+    title: 'Citoyens, familles & communautés',
+    icon: Users,
+    description: 'Comprendre les dangers et adopter des comportements qui protègent la vie au quotidien.',
+    actions: ['Sécurité des piétons et des passagers', 'Vélo, moto et taxi-moto plus sûrs', 'Sensibilisation familiale et communautaire'],
+    href: '/education',
+  },
+  {
+    id: 'young',
+    title: 'Élèves, étudiants & apprentis',
+    icon: GraduationCap,
+    description: 'Installer une culture de mobilité sûre dès l’école et tout au long des apprentissages.',
+    actions: ['Parcours adaptés à l’âge et au niveau', 'Scènes, questions et décisions immersives', 'Progression et compétences acquises'],
+    href: '/student?profile=primaire',
+  },
+  {
+    id: 'drivers',
+    title: 'Conducteurs & professionnels',
+    icon: Bike,
+    description: 'Entretenir les connaissances et mieux anticiper les situations à risque.',
+    actions: ['Révision du Code de la circulation', 'Vigilance, vitesse et distances de sécurité', 'Prévention adaptée aux trajets professionnels'],
+    href: '/student?profile=taxi-voiture',
+  },
+  {
+    id: 'schools',
+    title: 'Établissements & formateurs',
+    icon: School,
+    description: 'Déployer des apprentissages structurés et accompagner les publics dans la durée.',
+    actions: ['Ressources pédagogiques numériques', 'Parcours et évaluations', 'Suivi des acquis selon les fonctions disponibles'],
+    href: '/institutions',
+  },
+  {
+    id: 'government',
+    title: 'Gouvernements & acteurs publics',
+    icon: Landmark,
+    description: 'Disposer d’un outil complémentaire pour soutenir les politiques de prévention et la sensibilisation.',
+    actions: ['Programmes d’éducation et de prévention', 'Indicateurs d’usage et de progression, si disponibles', 'Approche adaptée au contexte et aux règles de chaque pays'],
+    href: '/institutions',
+  },
+  {
+    id: 'partners',
+    title: 'Entreprises, associations & partenaires',
+    icon: HeartHandshake,
+    description: 'Mobiliser les organisations autour de la protection des usagers et de la prévention des risques.',
+    actions: ['Sensibilisation des équipes et communautés', 'Formation continue à la mobilité sûre', 'Coopération avec les établissements et institutions'],
+    href: '/institutions',
+  },
 ];
 
-const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } };
-const itemVariants = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } } };
+const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.08 } } };
+const itemVariants = { hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' as const } } };
 
-function EcosystemCardComponent({ card, index }: { card: EcosystemCard; index: number }) {
-  return <motion.div variants={itemVariants} custom={index}><Card className={`${card.bgClass} ${card.borderClass} border-2 hover:scale-[1.03] transition-all duration-300 shadow-lg hover:shadow-xl h-full`}><CardContent className="p-4 sm:p-5"><div className="flex items-center gap-3 mb-3"><div className={`${card.iconBg} p-2 rounded-lg`}><card.icon className={`size-5 ${card.iconColor}`} /></div><h4 className={`font-bold text-sm sm:text-base ${card.textColor}`}>{card.title}</h4></div><ul className="space-y-1.5">{card.features.map((feature) => <li key={feature} className={`text-xs sm:text-sm ${card.textColor} opacity-90 flex items-center gap-2`}><span className="w-1 h-1 rounded-full bg-current opacity-60 shrink-0" />{feature}</li>)}</ul></CardContent></Card></motion.div>;
+function AudienceCardView({ card }: { card: AudienceCard }) {
+  return (
+    <Card className="h-full border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:border-emerald-300 hover:shadow-lg">
+      <CardContent className="flex h-full flex-col p-5 sm:p-6">
+        <div className="flex items-start gap-3">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#0B1F33] text-[#E4C878]"><card.icon className="size-5" aria-hidden="true" /></span>
+          <h3 className="pt-1 text-base font-black leading-snug text-slate-950">{card.title}</h3>
+        </div>
+        <p className="mt-4 text-sm leading-6 text-slate-600">{card.description}</p>
+        <ul className="mt-4 space-y-2">
+          {card.actions.map((action) => (
+            <li key={action} className="flex items-start gap-2 text-xs leading-5 text-slate-700">
+              <ShieldCheck className="mt-0.5 size-4 shrink-0 text-emerald-700" aria-hidden="true" /> {action}
+            </li>
+          ))}
+        </ul>
+        <a href={card.href} className="mt-5 inline-flex min-h-10 items-center justify-center self-start rounded-lg border border-slate-200 px-3 py-2 text-xs font-extrabold text-slate-900 transition hover:border-emerald-600 hover:bg-emerald-50">
+          Découvrir les parcours <span className="ml-2" aria-hidden="true">→</span>
+        </a>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function EcosystemSection() {
-  return <section id="ecosystem" className="bg-slate-50 py-16 sm:py-20 lg:py-24"><div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-    <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-100px' }} transition={{ duration: 0.6 }} className="text-center mb-12 sm:mb-16"><p className="text-sm font-bold uppercase tracking-[0.2em] text-emerald-600">L’écosystème ADSO</p><h2 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Une chaîne de valeur <span className="text-emerald-600">de l’école à la mobilité professionnelle</span></h2><p className="mt-4 text-base sm:text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">ADSO ne s’arrête pas au permis. La plateforme accompagne l’éducation routière, le futur conducteur, le professionnel taxi-moto, les écoles, les entreprises, les flottes et les partenaires de sécurité.</p></motion.div>
-    <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-50px' }} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {cards.map((card, index) => <EcosystemCardComponent key={card.id} card={card} index={index} />)}
-    </motion.div>
-    <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mt-8 rounded-3xl border border-emerald-100 bg-white p-6 shadow-sm sm:p-8"><div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center"><div><div className="flex items-center gap-2"><ShieldCheck className="size-5 text-emerald-600" aria-hidden="true" /><h3 className="font-bold text-gray-900 text-lg">Le même parcours, plusieurs modèles économiques</h3></div><p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">Élève, parent, école, conducteur, flotte, assureur ou institution : chacun accède à une proposition de valeur adaptée, tandis qu’ADSO mesure les usages, les coûts de service et la valeur créée.</p></div><ArrowRight className="hidden size-7 text-emerald-500 lg:block" aria-hidden="true" /></div></motion.div>
-  </div></section>;
+  return (
+    <section id="ecosystem" className="bg-[#f7f8f4] py-16 sm:py-20 lg:py-24" aria-labelledby="ecosystem-heading">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-80px' }} transition={{ duration: 0.5 }} className="mx-auto mb-10 max-w-3xl text-center sm:mb-14">
+          <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-emerald-800"><ShieldCheck className="size-4" aria-hidden="true" /> Une mission collective</p>
+          <h2 id="ecosystem-heading" className="mt-4 text-3xl font-black tracking-[-0.035em] text-slate-950 sm:text-4xl">La sécurité routière concerne toute la société.</h2>
+          <p className="mt-4 text-base leading-7 text-slate-600 sm:text-lg">ADSO AFRICA relie l’apprentissage des citoyens, les besoins des établissements et les objectifs de prévention des institutions. La plateforme complète les dispositifs publics et éducatifs ; elle ne remplace ni les autorités ni les services d’urgence.</p>
+        </motion.div>
+
+        <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-50px' }} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {cards.map((card) => <motion.div key={card.id} variants={itemVariants} className="h-full"><AudienceCardView card={card} /></motion.div>)}
+        </motion.div>
+
+        <div className="mt-8 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+          <div className="rounded-2xl bg-[#0B1F33] p-6 text-white sm:p-8">
+            <div className="flex items-start gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-[#E4C878]"><ClipboardCheck className="size-5" aria-hidden="true" /></span><div><h3 className="text-lg font-black">Apprendre, décider, progresser</h3><p className="mt-2 text-sm leading-6 text-slate-200">Les expériences pédagogiques d’ADSO aident à reconnaître un danger, choisir une conduite plus sûre, comprendre les conséquences et renforcer progressivement les compétences.</p></div></div>
+          </div>
+          <div className="rounded-2xl border border-emerald-200 bg-white p-6 sm:p-8">
+            <div className="flex items-start gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800"><ChartNoAxesCombined className="size-5" aria-hidden="true" /></span><div><h3 className="text-lg font-black text-slate-950">Prévenir et mesurer avec rigueur</h3><p className="mt-2 text-sm leading-6 text-slate-600">L’impact sur les accidents et les décès doit être évalué à partir de données fiables, de références datées et d’indicateurs validés avec les acteurs compétents. ADSO ne revendique pas de baisse de mortalité sans preuve.</p></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }
