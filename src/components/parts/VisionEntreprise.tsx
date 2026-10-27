@@ -416,7 +416,7 @@ export default function VisionEntreprise({ className }: PartProps) {
               },
               {
                 criterion: 'Modèle Economique',
-                adso: 'SaaS B2B2C + Marketplace',
+                adso: 'Éducation routière + prévention + outils institutionnels',
                 general: 'SaaS B2C',
                 local: 'Licence ou abonnement',
               },
