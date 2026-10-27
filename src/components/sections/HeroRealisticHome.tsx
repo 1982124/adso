@@ -61,7 +61,7 @@ export default function HeroRealisticHome() {
 
           <figure className="min-w-0">
             <div className="overflow-hidden rounded-[1.35rem] border border-white/15 bg-[#07131F] shadow-2xl shadow-black/40">
-              <img src="/images/home/adso-mobilite-ecole.svg" alt="Scène de mobilité sûre près d’une école, avec enfants, usagers de deux-roues et signalisation de vigilance" className="block h-auto w-full" width="1200" height="760" fetchPriority="high" />
+              <img src="https://static.independent.co.uk/2026/01/05/04/Zimbabwe_Road_Safety_28808.jpg?fit=crop&height=1200&width=1200" alt="Photographie réelle de circulation routière en Afrique, illustrant les risques auxquels sont exposés les usagers" className="block h-auto w-full object-cover" width="1200" height="760" fetchPriority="high" referrerPolicy="no-referrer" />
             </div>
             <figcaption className="mt-3 flex items-start gap-2 text-xs leading-5 text-slate-300">
               <HeartPulse className="mt-0.5 size-4 shrink-0 text-[#E4C878]" aria-hidden="true" />
