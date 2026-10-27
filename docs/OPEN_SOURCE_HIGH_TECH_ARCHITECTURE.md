@@ -29,7 +29,7 @@ Priority order:
 3. Road-safety learning visuals
 4. Françoise identity assets
 5. 54-country contextual variants
-6. eBook / marketplace assets
+6. Educational library assets
 
 Preferred pipeline for future photorealistic assets:
 
