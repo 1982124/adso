@@ -65,7 +65,7 @@ Voir `docs/ADSO_AFRICA_INSTITUTIONAL_PRODUCT_BLUEPRINT.md` pour le blueprint ins
 - Offres établissements
 - Authentification, paiement et administration selon les fonctionnalités réellement activées
 
-Les domaines assurance, marketplace généraliste, flotte et télématique sont hors du périmètre produit central du MVP.
+Le périmètre central d’ADSO est l’éducation routière, la formation à la mobilité, la prévention, la simulation et l’évaluation des compétences. ADSO ne propose pas de marketplace publique.
 
 ## Stack technique
 
