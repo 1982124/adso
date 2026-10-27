@@ -43,9 +43,6 @@ The application may use a clearly-labelled international safety foundation when 
 
 AI may personalize, explain, recommend and analyze. It must not invent official road rules, legal limits or government requirements. Regulatory facts must come from maintained authoritative sources and be versioned.
 
-## Marketplace and ecosystem
-
-Marketplace, insurance, fleet, maintenance, partner and driving-school capabilities remain ecosystem modules. They must not overload the learner's core journey.
 
 ## Production gate
 
