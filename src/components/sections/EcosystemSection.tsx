@@ -1,7 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { GraduationCap, Users, Bike, ShieldCheck, Landmark, School, HeartHandshake, ClipboardCheck, ChartNoAxesCombined } from 'lucide-react';
+import { GraduationCap, Users, Bike, ShieldCheck, Landmark, School, HeartHandshake, ClipboardCheck, TrendingUp } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface AudienceCard {
@@ -83,9 +84,9 @@ function AudienceCardView({ card }: { card: AudienceCard }) {
             </li>
           ))}
         </ul>
-        <a href={card.href} className="mt-5 inline-flex min-h-10 items-center justify-center self-start rounded-lg border border-slate-200 px-3 py-2 text-xs font-extrabold text-slate-900 transition hover:border-emerald-600 hover:bg-emerald-50">
+        <Link href={card.href} className="mt-5 inline-flex min-h-10 items-center justify-center self-start rounded-lg border border-slate-200 px-3 py-2 text-xs font-extrabold text-slate-900 transition hover:border-emerald-600 hover:bg-emerald-50">
           Découvrir les parcours <span className="ml-2" aria-hidden="true">→</span>
-        </a>
+        </Link>
       </CardContent>
     </Card>
   );
@@ -110,7 +111,7 @@ export default function EcosystemSection() {
             <div className="flex items-start gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-[#E4C878]"><ClipboardCheck className="size-5" aria-hidden="true" /></span><div><h3 className="text-lg font-black">Apprendre, décider, progresser</h3><p className="mt-2 text-sm leading-6 text-slate-200">Les expériences pédagogiques d’ADSO aident à reconnaître un danger, choisir une conduite plus sûre, comprendre les conséquences et renforcer progressivement les compétences.</p></div></div>
           </div>
           <div className="rounded-2xl border border-emerald-200 bg-white p-6 sm:p-8">
-            <div className="flex items-start gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800"><ChartNoAxesCombined className="size-5" aria-hidden="true" /></span><div><h3 className="text-lg font-black text-slate-950">Prévenir et mesurer avec rigueur</h3><p className="mt-2 text-sm leading-6 text-slate-600">L’impact sur les accidents et les décès doit être évalué à partir de données fiables, de références datées et d’indicateurs validés avec les acteurs compétents. ADSO ne revendique pas de baisse de mortalité sans preuve.</p></div></div>
+            <div className="flex items-start gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800"><TrendingUp className="size-5" aria-hidden="true" /></span><div><h3 className="text-lg font-black text-slate-950">Prévenir et mesurer avec rigueur</h3><p className="mt-2 text-sm leading-6 text-slate-600">L’impact sur les accidents et les décès doit être évalué à partir de données fiables, de références datées et d’indicateurs validés avec les acteurs compétents. ADSO ne revendique pas de baisse de mortalité sans preuve.</p></div></div>
           </div>
         </div>
       </div>
