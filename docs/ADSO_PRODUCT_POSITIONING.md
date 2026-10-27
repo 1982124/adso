@@ -11,7 +11,7 @@ The product has two primary pillars:
 
 ## Explicitly out of the core product
 
-The following domains are no longer primary ADSO products or navigation destinations:
+The following domains are excluded from the ADSO product and navigation scope:
 
 - assurance
 - marketplace généraliste
