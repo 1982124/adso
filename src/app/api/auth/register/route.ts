@@ -27,7 +27,10 @@ export async function POST(request: Request) {
     } catch {
       // A missing or invalid cookie means the learner still needs to choose a country.
     }
-    const selectedLanguage = readCookie('adso-locale').toLowerCase();
+    const requestedCountry = String(body.country || '').trim().toUpperCase();
+    if (/^[A-Z]{2}$/.test(requestedCountry)) country = requestedCountry;
+    const requestedLanguage = String(body.language || '').trim().toLowerCase();
+    const selectedLanguage = requestedLanguage || readCookie('adso-locale').toLowerCase();
     const language = ['fr', 'en'].includes(selectedLanguage) ? selectedLanguage : 'fr';
 
     if (!email || !name || !password) {
