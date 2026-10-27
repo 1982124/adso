@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, BookOpen, CarFront, ShieldCheck, Users, Landmark, School, HeartPulse } from 'lucide-react';
+import { ArrowRight, BookOpen, CarFront, ShieldCheck, Users, Landmark, School } from 'lucide-react';
 
 const audiences = [
   { label: 'Citoyens & familles', text: 'Piétons, passagers, cyclistes et usagers de deux-roues', icon: Users, href: '/education' },
@@ -14,7 +14,7 @@ export default function HeroRealisticHome() {
   return (
     <section id="hero" className="relative overflow-hidden bg-[#0B1F33] text-white">
       <div className="mx-auto max-w-7xl px-4 pb-10 pt-16 sm:px-6 sm:pt-20 lg:px-8 lg:pb-14">
-        <div className="grid items-center gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:gap-10">
+        <div className="mx-auto grid max-w-5xl items-center gap-8">
           <div>
             <p className="inline-flex items-center gap-2 rounded-full border border-[#D7B45A]/40 bg-white/5 px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#E4C878] sm:text-[11px]">
               <ShieldCheck className="size-4" aria-hidden="true" /> Éducation · Prévention · Mobilité sûre
@@ -59,15 +59,6 @@ export default function HeroRealisticHome() {
             <p className="mt-5 text-[11px] leading-5 text-slate-400">Pensé pour les réalités africaines · Conçu pour tous les usagers de la route</p>
           </div>
 
-          <figure className="min-w-0">
-            <div className="overflow-hidden rounded-[1.35rem] border border-white/15 bg-[#07131F] shadow-2xl shadow-black/40">
-              <img src="https://static.independent.co.uk/2026/01/05/04/Zimbabwe_Road_Safety_28808.jpg?fit=crop&height=1200&width=1200" alt="Photographie réelle de circulation routière en Afrique, illustrant les risques auxquels sont exposés les usagers" className="block h-auto w-full object-cover" width="1200" height="760" fetchPriority="high" referrerPolicy="no-referrer" />
-            </div>
-            <figcaption className="mt-3 flex items-start gap-2 text-xs leading-5 text-slate-300">
-              <HeartPulse className="mt-0.5 size-4 shrink-0 text-[#E4C878]" aria-hidden="true" />
-              Prévenir, c’est apprendre à reconnaître le danger, décider plus sûrement et protéger la vie — avant, pendant et après la formation.
-            </figcaption>
-          </figure>
         </div>
       </div>
     </section>
