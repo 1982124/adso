@@ -222,7 +222,25 @@ export default function ImmersiveFormationPage() {
                   {saveState === 'saving' ? 'Enregistrement…' : result ? 'Progression enregistrée' : 'Enregistrer ma progression'}
                 </button>
 
-                {saveState === 'error' && <div role="alert" className="mt-4 rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200">{saveError} <button type="button" onClick={submit} className="ml-2 font-bold underline">Réessayer</button></div>}
+                {saveState === 'error' && (
+                  <div role="alert" className="mt-4 rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200">
+                    <p>{saveError}</p>
+                    {saveError.toLowerCase().includes('connectez-vous') ? (
+                      <div className="mt-3 flex flex-wrap gap-3">
+                        <Link href="/api/auth/signin?callbackUrl=%2Fformation%2Fimmersive" className="inline-flex min-h-11 items-center rounded-lg bg-white px-4 py-2 font-bold text-slate-950 underline-offset-4 hover:underline">
+                          Se connecter pour sauvegarder
+                        </Link>
+                        <Link href="/inscription?from=%2Fformation%2Fimmersive" className="inline-flex min-h-11 items-center rounded-lg border border-white/20 px-4 py-2 font-semibold text-white underline-offset-4 hover:underline">
+                          Créer un compte
+                        </Link>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={submit} className="mt-3 min-h-11 font-bold underline underline-offset-4">
+                        Réessayer l’enregistrement
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {result && (
                   <div className="mt-6 rounded-3xl border border-emerald-400/30 bg-emerald-400/10 p-5 sm:p-6">
