@@ -7,6 +7,7 @@ type Choice = { id: string; label: string; isCorrect: boolean; scoreDelta: numbe
 type Interaction = { id: string; type: string; atSecond: number; prompt: string; explanation?: string; ttsText?: string; points: number; choices: Choice[] };
 type Scene = { id: string; title: string; description: string; videoUrl: string; durationSeconds: number; competency: string; level: string; language: string; status: string; interactions: Interaction[] };
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
+const DRAFT_STORAGE_KEY = 'adso-immersive-draft-v1';
 
 export default function ImmersiveFormationPage() {
   const [scenes, setScenes] = useState<Scene[]>([]);
@@ -26,7 +27,34 @@ export default function ImmersiveFormationPage() {
       .then((data) => {
         const nextScenes = Array.isArray(data.scenes) ? data.scenes : [];
         setScenes(nextScenes);
-        if (nextScenes[0]) setSelected(nextScenes[0]);
+
+        // Keep decisions across the sign-in redirect so learners do not lose
+        // their work when they authenticate to save their result.
+        let restoredDraft: { sceneId?: string; answers?: Record<string, string> } | null = null;
+        try {
+          const rawDraft = window.sessionStorage.getItem(DRAFT_STORAGE_KEY);
+          restoredDraft = rawDraft ? JSON.parse(rawDraft) : null;
+        } catch {
+          window.sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+        }
+
+        const restoredScene = restoredDraft?.sceneId
+          ? nextScenes.find((scene: Scene) => scene.id === restoredDraft?.sceneId)
+          : undefined;
+        if (restoredScene) {
+          const validAnswers: Record<string, string> = {};
+          for (const interaction of restoredScene.interactions ?? []) {
+            const choiceId = restoredDraft?.answers?.[interaction.id];
+            if (choiceId && interaction.choices.some((choice) => choice.id === choiceId)) {
+              validAnswers[interaction.id] = choiceId;
+            }
+          }
+          setSelected(restoredScene);
+          setAnswer(validAnswers);
+          setTriggered(new Set(Object.keys(validAnswers)));
+        } else if (nextScenes[0]) {
+          setSelected(nextScenes[0]);
+        }
       })
       .catch(() => setScenes([]))
       .finally(() => setLoading(false));
@@ -42,6 +70,7 @@ export default function ImmersiveFormationPage() {
   function selectScene(scene: Scene) {
     setSelected(scene);
     setAnswer({});
+    window.sessionStorage.removeItem(DRAFT_STORAGE_KEY);
     setActiveInteractionId(null);
     setTriggered(new Set());
     setResult(null);
@@ -62,7 +91,14 @@ export default function ImmersiveFormationPage() {
   }
 
   function choose(interactionId: string, choiceId: string) {
-    setAnswer((current) => ({ ...current, [interactionId]: choiceId }));
+    const nextAnswers = { ...answer, [interactionId]: choiceId };
+    setAnswer(nextAnswers);
+    if (selected) {
+      window.sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({
+        sceneId: selected.id,
+        answers: nextAnswers,
+      }));
+    }
     setSaveState('idle');
   }
 
@@ -102,6 +138,7 @@ export default function ImmersiveFormationPage() {
         throw new Error(message);
       }
       setResult(data);
+      window.sessionStorage.removeItem(DRAFT_STORAGE_KEY);
       setActiveInteractionId(null);
       setSaveState('saved');
     } catch (error) {
