@@ -63,16 +63,6 @@ const featureFlags: Array<{
     createdAt: '2025-04-01T10:00:00Z',
   },
   {
-    id: 'ff-6',
-    name: 'Marché Intégré',
-    description: 'Accès au marché de services automobiles',
-    key: 'marketplace_access',
-    enabled: true,
-    targetAudience: ['starter', 'pro', 'premium'],
-    category: 'Marketplace',
-    createdAt: '2025-04-15T10:00:00Z',
-  },
-  {
     id: 'ff-7',
     name: 'Télémétrie Avancée',
     description: 'Données télémétriques détaillées et analyses prédictives',
