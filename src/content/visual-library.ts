@@ -49,12 +49,4 @@ export const ADSO_VISUAL_LIBRARY: AdsoVisualPack[] = [
     targetCount: 54,
     visualDirection: 'Variantes progressives par pays : environnement, mobilité, école, usagers et contexte local sans stéréotypes.',
   },
-  {
-    id: 'marketplace',
-    title: 'Marketplace / livres / marketing',
-    priority: 'medium',
-    status: 'planned',
-    targetCount: 30,
-    visualDirection: 'Couvertures, collections, teasers, bannières et visuels sociaux cohérents avec la marque ADSO.',
-  },
 ]
