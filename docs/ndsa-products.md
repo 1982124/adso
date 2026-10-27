@@ -16,7 +16,7 @@ Le positionnement du produit est de permettre aux distributeurs de disposer d'un
 
 **ADSO — Auto Drive School Online / AI-Driven & Smart Operations** est un produit de Neo Digital Startup Academy (NDSA), dédié à la mobilité, à l'éducation, à la prévention et à la sécurité routière.
 
-ADSO connecte progressivement apprentissage, IA, prévention, diagnostic, télématique, gestion de flotte, assurance, marketplace, entreprises et institutions au sein d'un même écosystème numérique.
+ADSO se concentre sur l'éducation routière, la formation à la mobilité, la prévention, les simulations, l'évaluation des compétences et les outils utiles aux établissements et institutions.
 
 ## Principes de présentation
 
