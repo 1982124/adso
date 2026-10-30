@@ -4,9 +4,9 @@ import { db } from "@/lib/db";
 import { getSession, getUserRole } from "@/lib/auth";
 import { hasMinRole } from "@/lib/rbac";
 import PrintReportButton from "@/components/admin/PrintReportButton";
+import { getNationalPeriod } from "@/lib/national-period";
 
 type Params = Promise<{ country?: string; period?: string }>;
-const periods = { "30": 30, "90": 90, "365": 365, all: null } as const;
 const fmt = (n: number) => new Intl.NumberFormat("fr-FR").format(n);
 const pct = (n: number, d: number) => d ? Math.round(n / d * 100) + " %" : "Non calculable";
 
@@ -15,10 +15,8 @@ export default async function NationalReport({ searchParams }: { searchParams: P
   if (!session?.user) redirect("/admin/login");
   if (!hasMinRole(getUserRole(session), "admin")) redirect("/");
   const params = await searchParams;
-  const key = params.period && params.period in periods ? params.period as keyof typeof periods : "90";
-  const days = periods[key];
   const now = new Date();
-  const since = days ? new Date(now.getTime() - days * 86400000) : undefined;
+  const { key, days, since } = getNationalPeriod(params.period, now);
   const countries = await db.country.findMany({ where: { continent: { contains: "Africa", mode: "insensitive" } }, orderBy: { name: "asc" }, select: { code: true, name: true } });
   const codes = countries.map(c => c.code);
   const requested = (params.country || "all").toUpperCase();
@@ -52,7 +50,7 @@ export default async function NationalReport({ searchParams }: { searchParams: P
   ] as const;
   const riskTotal = riskRows.reduce((sum, row) => sum + row[1], 0);
   const countryRows = countries.map(c => ({ ...c, learners: usersByCountry.find(r => r.country === c.code)?._count._all || 0, attempts: attemptsByCountry.find(r => r.country === c.code)?._count._all || 0, score: attemptsByCountry.find(r => r.country === c.code)?._avg.score ?? null })).filter(r => r.learners || r.attempts);
-  const dateLabel = since ? "Depuis le " + since.toLocaleDateString("fr-FR") : "Depuis l’origine des données disponibles";
+  const dateLabel = since ? "Du " + since.toLocaleDateString("fr-FR") + " au " + now.toLocaleDateString("fr-FR") : "Depuis l’origine des données disponibles jusqu’au " + now.toLocaleDateString("fr-FR");
 
   return (
     <main className="min-h-screen bg-slate-100 px-5 py-8 text-slate-900 print:bg-white print:p-0">
@@ -75,7 +73,7 @@ export default async function NationalReport({ searchParams }: { searchParams: P
           <h2 className="text-xl font-bold">1. Synthèse des formations et évaluations</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              ["Apprenants enregistrés", fmt(learners)],
+              ["Comptes utilisateurs enregistrés", fmt(learners)],
               ["Inscriptions", fmt(enrollments)],
               ["Parcours terminés", fmt(completed)],
               ["Taux de complétion", pct(completed, enrollments)],
@@ -85,7 +83,7 @@ export default async function NationalReport({ searchParams }: { searchParams: P
               ["Sessions de conduite", fmt(sessions)],
             ].map(([label, value]) => <article key={label} className="break-inside-avoid rounded-xl border border-slate-300 bg-white p-4"><p className="text-xs font-semibold uppercase text-slate-500">{label}</p><p className="mt-2 text-2xl font-black">{value}</p></article>)}
           </div>
-          <p className="mt-3 text-xs text-slate-500">Le nombre d’apprenants suit la même règle que le tableau de bord : comptes du périmètre pays, sans filtre de date. Les autres événements sont filtrés selon la période sélectionnée.</p>
+          <p className="mt-3 text-xs text-slate-500">Le nombre de comptes utilisateurs suit la même règle que le tableau de bord : comptes du périmètre pays, tous historiques. Les inscriptions, progressions, évaluations, compétences et sessions sont filtrées selon la période sélectionnée.</p>
         </section>
         <section className="break-inside-avoid">
           <h2 className="text-xl font-bold">2. Compétences évaluées</h2>
@@ -102,7 +100,7 @@ export default async function NationalReport({ searchParams }: { searchParams: P
         </section>
         <section className="break-inside-avoid">
           <h2 className="text-xl font-bold">4. Couverture par pays</h2>
-          {countryRows.length ? <table className="mt-3 w-full border-collapse text-left text-sm"><thead><tr className="border-b-2 border-slate-400"><th className="py-2">Pays</th><th>Apprenants</th><th>Évaluations</th><th>Score moyen</th></tr></thead><tbody>{countryRows.map(row => <tr key={row.code} className="border-b border-slate-200"><td className="py-2">{row.name} ({row.code})</td><td>{fmt(row.learners)}</td><td>{fmt(row.attempts)}</td><td>{row.score === null ? "Non disponible" : row.score.toFixed(1)}</td></tr>)}</tbody></table> : <p className="mt-3 text-sm">Aucun compte ou résultat d’évaluation enregistré dans le référentiel sélectionné.</p>}
+          {countryRows.length ? <table className="mt-3 w-full border-collapse text-left text-sm"><thead><tr className="border-b-2 border-slate-400"><th className="py-2">Pays</th><th>Comptes utilisateurs</th><th>Évaluations</th><th>Score moyen</th></tr></thead><tbody>{countryRows.map(row => <tr key={row.code} className="border-b border-slate-200"><td className="py-2">{row.name} ({row.code})</td><td>{fmt(row.learners)}</td><td>{fmt(row.attempts)}</td><td>{row.score === null ? "Non disponible" : row.score.toFixed(1)}</td></tr>)}</tbody></table> : <p className="mt-3 text-sm">Aucun compte ou résultat d’évaluation enregistré dans le référentiel sélectionné.</p>}
         </section>
         <section className="break-inside-avoid">
           <h2 className="text-xl font-bold">5. Limites méthodologiques et suites recommandées</h2>
