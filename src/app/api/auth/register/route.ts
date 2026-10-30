@@ -10,6 +10,28 @@ export async function POST(request: Request) {
     const email = String(body.email || '').trim().toLowerCase();
     const name = String(body.name || '').trim();
     const password = String(body.password || '');
+    // Respect the country/language selected in the learner onboarding cookies.
+    // If the learner registers directly from a scene, keep the country explicitly
+    // unknown instead of silently assigning France as the default context.
+    const cookieHeader = request.headers.get('cookie') || '';
+    const readCookie = (key: string) => {
+      const entry = cookieHeader.split(';').map((part) => part.trim()).find((part) => part.startsWith(`${key}=`));
+      return entry ? decodeURIComponent(entry.slice(key.length + 1)) : '';
+    };
+    let country = 'ZZ';
+    try {
+      const selectedCountry = JSON.parse(readCookie('adso-country')) as { code?: unknown };
+      if (typeof selectedCountry.code === 'string' && /^[A-Z]{2}$/.test(selectedCountry.code)) {
+        country = selectedCountry.code;
+      }
+    } catch {
+      // A missing or invalid cookie means the learner still needs to choose a country.
+    }
+    const requestedCountry = String(body.country || '').trim().toUpperCase();
+    if (/^[A-Z]{2}$/.test(requestedCountry)) country = requestedCountry;
+    const requestedLanguage = String(body.language || '').trim().toLowerCase();
+    const selectedLanguage = requestedLanguage || readCookie('adso-locale').toLowerCase();
+    const language = ['fr', 'en'].includes(selectedLanguage) ? selectedLanguage : 'fr';
 
     if (!email || !name || !password) {
       return NextResponse.json({ error: 'Nom, email et mot de passe sont requis.' }, { status: 400 });
@@ -33,8 +55,8 @@ export async function POST(request: Request) {
           email,
           name,
           role: 'student',
-          country: 'FR',
-          language: 'fr',
+          country,
+          language,
           subscription: 'free',
         },
         select: { id: true, email: true, name: true, role: true },

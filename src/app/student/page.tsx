@@ -19,8 +19,18 @@ export default function StudentCockpitPage() {
 
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY) || window.localStorage.getItem('adso-learner-onboarding-v1');
-    setOnboardingComplete(Boolean(saved && country.code !== 'ZZ'));
-  }, [country.code]);
+    let savedProfile = '';
+    if (saved) {
+      try {
+        savedProfile = String((JSON.parse(saved) as { profile?: string }).profile ?? '');
+      } catch {
+        savedProfile = '';
+      }
+    }
+    // A profile-specific entry link must take effect even when this browser
+    // already has a different learner profile saved.
+    setOnboardingComplete(Boolean(saved && country.code !== 'ZZ' && (!requestedProfile || savedProfile === requestedProfile)));
+  }, [country.code, requestedProfile]);
 
   const completeOnboarding = () => setOnboardingComplete(true);
 
@@ -39,7 +49,7 @@ export default function StudentCockpitPage() {
 
         <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           {!onboardingComplete ? (
-            <LearnerOnboarding onComplete={completeOnboarding} />
+            <LearnerOnboarding onComplete={completeOnboarding} initialProfile={requestedProfile} />
           ) : (
             <LearnerCockpit />
           )}

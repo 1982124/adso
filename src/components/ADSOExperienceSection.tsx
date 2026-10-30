@@ -1,92 +1,92 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Bike, CarFront, GraduationCap, HardHat, School, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, Bike, CarFront, GraduationCap, HardHat, School, ShieldCheck } from 'lucide-react';
 
 const groups = [
   {
     number: '01',
-    label: 'JEUNE USAGER',
-    description: 'Construire les premiers réflexes de mobilité sûre.',
+    label: 'ÉDUCATION ROUTIÈRE DES JEUNES',
+    description: 'Développer les connaissances et les comportements sûrs à chaque étape de la scolarité.',
     items: [
-      { icon: School, age: 'École', title: 'Je découvre la route', text: 'Situations simples, images et défis pour apprendre les premiers réflexes.', tone: 'bg-amber-50 border-amber-200 text-amber-950', iconTone: 'bg-amber-500 text-white' },
-      { icon: School, age: 'Collège', title: 'Je comprends la circulation', text: 'Panneaux, dangers, usagers vulnérables et décisions du quotidien.', tone: 'bg-sky-50 border-sky-200 text-sky-950', iconTone: 'bg-sky-600 text-white' },
-      { icon: GraduationCap, age: 'Lycée', title: 'Je prépare ma mobilité', text: 'Anticipation, vitesse, distraction et premiers réflexes du futur conducteur.', tone: 'bg-violet-50 border-violet-200 text-violet-950', iconTone: 'bg-violet-600 text-white' },
+      { icon: School, age: 'École primaire', profile: 'primaire', title: 'Découvrir les situations de circulation', text: 'Repérer les dangers, comprendre les panneaux et apprendre à se déplacer avec prudence.' },
+      { icon: School, age: 'Collège', profile: 'secondaire', title: 'Comprendre les risques routiers', text: 'Analyser la visibilité, les traversées, la vitesse et les interactions entre usagers.' },
+      { icon: GraduationCap, age: 'Lycée', profile: 'lycee', title: 'Préparer une mobilité responsable', text: 'Comprendre la distraction, la vitesse, les distances et les décisions à risque.' },
     ],
   },
   {
     number: '02',
-    label: 'ÉTUDIANT & FUTUR CONDUCTEUR',
-    description: 'Préparer son permis ou renforcer sa maîtrise du Code de la circulation.',
+    label: 'ÉTUDIANTS ET FUTURS CONDUCTEURS',
+    description: 'Renforcer les connaissances en complément des dispositifs officiels de formation au permis.',
     items: [
-      { icon: GraduationCap, age: 'Université · Permis', title: 'Je prépare mon permis', text: 'Code, conduite, risques et mobilité responsable pour préparer la suite.', tone: 'bg-emerald-50 border-emerald-200 text-emerald-950', iconTone: 'bg-emerald-600 text-white' },
-      { icon: ShieldCheck, age: 'Université · Code', title: 'Je maîtrise le Code de la circulation', text: 'Réviser, comprendre les règles et développer de meilleurs réflexes.', tone: 'bg-teal-50 border-teal-200 text-teal-950', iconTone: 'bg-teal-600 text-white' },
+      { icon: GraduationCap, age: 'Préparation au permis', profile: 'universitaire', title: 'Réviser les règles de circulation', text: 'Travailler les connaissances, les situations de risque et les principes de conduite responsable.' },
+      { icon: ShieldCheck, age: 'Formation continue', profile: 'taxi-voiture', title: 'Consolider les bons réflexes', text: 'Réexaminer les situations courantes et améliorer la prise de décision.' },
     ],
   },
   {
     number: '03',
-    label: 'APPRENTI & CONDUCTEUR',
-    description: 'Passer de l’apprentissage à une conduite plus sûre et plus autonome.',
+    label: 'APPRENTIS ET CONDUCTEURS',
+    description: 'Faire de la sécurité une compétence qui se développe avec la pratique et l’expérience.',
     items: [
-      { icon: HardHat, age: 'Apprentissage', title: 'Je me prépare à conduire', text: 'Observer, manœuvrer, décider et gérer les situations du quotidien.', tone: 'bg-orange-50 border-orange-200 text-orange-950', iconTone: 'bg-orange-600 text-white' },
-      { icon: CarFront, age: 'Conducteur', title: 'Je développe mes compétences', text: 'Entretenir ses connaissances, anticiper les risques et améliorer ses décisions.', tone: 'bg-slate-50 border-slate-200 text-slate-950', iconTone: 'bg-slate-800 text-white' },
+      { icon: HardHat, age: 'Apprentissage', profile: 'apprenti', title: 'Comprendre les risques en situation', text: 'Observer l’environnement, anticiper les dangers et prendre des décisions adaptées.' },
+      { icon: CarFront, age: 'Conducteurs', profile: 'taxi-voiture', title: 'Actualiser ses connaissances', text: 'Entretenir sa vigilance et réviser les principes de circulation et de prévention.' },
     ],
   },
   {
     number: '04',
     label: 'MOBILITÉ PROFESSIONNELLE',
-    description: 'Renforcer les compétences des conducteurs exposés aux réalités du trafic.',
+    description: 'Tenir compte des contraintes spécifiques des déplacements professionnels.',
     items: [
-      { icon: Bike, age: 'Taxi-moto', title: 'Je maîtrise ma conduite professionnelle', text: 'Passager, trafic, vigilance, anticipation et sécurité à chaque course.', tone: 'bg-cyan-50 border-cyan-200 text-cyan-950', iconTone: 'bg-cyan-700 text-white' },
-      { icon: CarFront, age: 'Taxi & voiture', title: 'Je perfectionne ma conduite professionnelle', text: 'Révision, anticipation, passagers et conduite sûre au quotidien.', tone: 'bg-blue-50 border-blue-200 text-blue-950', iconTone: 'bg-blue-700 text-white' },
+      { icon: Bike, age: 'Taxi-moto', profile: 'taxi-moto', title: 'Prévenir les risques du transport à deux-roues', text: 'Vigilance, protection, transport du passager et anticipation dans le trafic.' },
+      { icon: CarFront, age: 'Taxi et voiture', profile: 'taxi-voiture', title: 'Renforcer les pratiques de conduite sûre', text: 'Gestion des passagers, distances, fatigue et vigilance sur les trajets.' },
     ],
   },
 ];
 
 export default function ADSOExperienceSection() {
   return (
-    <section id="parcours" className="relative overflow-hidden bg-[#f7f8f4] py-14 sm:py-18" aria-labelledby="journeys-heading">
-      <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
-        <div className="mx-auto max-w-3xl text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-emerald-700 shadow-sm"><Sparkles className="size-3.5" aria-hidden="true" /> Une même mission · des parcours adaptés</span>
-          <h2 id="journeys-heading" className="mt-4 text-3xl font-black tracking-[-0.03em] text-slate-950 sm:text-4xl">ADSO grandit avec chaque personne.</h2>
-          <p className="mt-3 text-base leading-7 text-slate-600 sm:text-lg">De l’école à la vie professionnelle, chacun avance selon son âge, son niveau, sa mobilité et ses objectifs.</p>
+    <section id="parcours" className="bg-white py-14 sm:py-18" aria-labelledby="journeys-heading">
+      <div className="mx-auto max-w-7xl px-5 sm:px-8">
+        <div className="max-w-3xl">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-800">Parcours de formation</p>
+          <h2 id="journeys-heading" className="mt-3 text-3xl font-bold tracking-[-0.03em] text-slate-950 sm:text-4xl">Des apprentissages adaptés aux réalités de la mobilité.</h2>
+          <p className="mt-4 text-base leading-7 text-slate-600 sm:text-lg">ADSO propose des entrées pédagogiques selon les publics et les situations. Les contenus réglementaires doivent être adaptés au pays et vérifiés à partir de sources officielles.</p>
         </div>
 
-        <div className="mt-9 space-y-9">
+        <div className="mt-10 space-y-10">
           {groups.map((group) => (
-            <div key={group.number} className="border-t border-slate-200 pt-6 first:border-t-0 first:pt-0">
-              <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+            <section key={group.number} className="border-t border-slate-200 pt-6" aria-labelledby={`group-${group.number}`}>
+              <div className="mb-5 grid gap-2 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] md:items-end">
                 <div className="flex items-baseline gap-3">
-                  <span className="text-xs font-black tracking-[0.18em] text-emerald-700">{group.number}</span>
-                  <h3 className="text-sm font-black uppercase tracking-[0.12em] text-slate-900">{group.label}</h3>
+                  <span className="text-xs font-bold tabular-nums text-emerald-800">{group.number}</span>
+                  <h3 id={`group-${group.number}`} className="text-sm font-bold uppercase tracking-[0.1em] text-slate-900">{group.label}</h3>
                 </div>
-                <p className="max-w-2xl text-sm leading-6 text-slate-500 sm:text-right">{group.description}</p>
+                <p className="text-sm leading-6 text-slate-600 md:text-right">{group.description}</p>
               </div>
-              <div className={`grid gap-4 ${group.items.length === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
-                {group.items.map(({ icon: Icon, age, title, text, tone, iconTone }) => (
-                  <Link key={`${group.number}-${age}`} href="/student" className={`group rounded-2xl border p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 ${tone}`}>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-sm ${iconTone}`}><Icon className="h-5 w-5" aria-hidden="true" /></div>
-                      <span className="text-[10px] font-black uppercase tracking-[0.14em] opacity-60">{age}</span>
-                    </div>
-                    <h4 className="mt-5 text-lg font-black leading-tight">{title}</h4>
-                    <p className="mt-2 text-sm leading-6 opacity-75">{text}</p>
-                    <span className="mt-4 inline-flex items-center gap-1 text-sm font-extrabold">Commencer <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></span>
+              <div className={`grid gap-0 border-y border-slate-200 ${group.items.length === 3 ? 'lg:grid-cols-3' : 'md:grid-cols-2'}`}>
+                {group.items.map(({ icon: Icon, age, profile, title, text }) => (
+                  <Link key={age} href={`/student?profile=${profile}`} className="group flex min-w-0 gap-4 border-b border-slate-200 px-3 py-5 transition-colors hover:bg-slate-50 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0">
+                    <span className="mt-1 flex size-9 shrink-0 items-center justify-center border border-slate-200 bg-white text-[#0B1F33]"><Icon className="size-4" aria-hidden="true" /></span>
+                    <span className="min-w-0">
+                      <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">{age}</span>
+                      <span className="mt-1 block text-base font-bold leading-6 text-slate-950">{title}</span>
+                      <span className="mt-2 block text-sm leading-6 text-slate-600">{text}</span>
+                      <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-emerald-800">Accéder au parcours <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" aria-hidden="true" /></span>
+                    </span>
                   </Link>
                 ))}
               </div>
-            </div>
+            </section>
           ))}
         </div>
 
-        <div className="mt-9 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-10 flex flex-col gap-4 border-t border-slate-200 pt-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">Formation continue · tous les âges</p>
-            <p className="mt-1 text-base font-bold text-slate-900">Je progresse chaque jour.</p>
-            <p className="mt-1 text-sm text-slate-600">Mini-défis, scènes immersives et progression visible pour entretenir les compétences dans la durée.</p>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Formation continue</p>
+            <p className="mt-1 text-lg font-bold text-slate-950">La sécurité routière s’entretient dans la durée.</p>
+            <p className="mt-1 text-sm leading-6 text-slate-600">Les scènes immersives et les évaluations permettent de travailler les décisions et de suivre les acquis disponibles.</p>
           </div>
-          <Link href="/student" className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-extrabold text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500">Continuer mon parcours <ArrowRight className="ml-2 size-4" /></Link>
+          <Link href="/student" className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 border border-slate-300 px-4 py-3 text-sm font-bold text-slate-900 transition-colors hover:border-slate-500 hover:bg-slate-50">Voir les parcours <ArrowRight className="size-4" aria-hidden="true" /></Link>
         </div>
       </div>
     </section>

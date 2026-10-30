@@ -176,11 +176,25 @@ export async function POST(request: Request) {
       });
     }
 
+    const feedback = canonicalInteractions.map((interaction) => {
+      const submitted = answers.find((answer) => answer.interactionId === interaction.id);
+      const choice = interaction.choices.find((item) => item.id === submitted?.choiceId);
+      return {
+        interactionId: interaction.id,
+        prompt: interaction.prompt,
+        choiceLabel: choice?.label ?? '',
+        consequence: choice?.consequence ?? '',
+        explanation: choice?.explanation ?? '',
+        correct: Boolean(choice?.isCorrect),
+      };
+    });
+
     return NextResponse.json({
       ...result,
+      feedback,
       progress: persistedCourseProgress,
       progressStatus: persistedCourseStatus,
-    });
+    }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
     console.error('[immersive/attempts POST]', error);
     return NextResponse.json({ error: 'Impossible d’enregistrer la progression' }, { status: 500 });

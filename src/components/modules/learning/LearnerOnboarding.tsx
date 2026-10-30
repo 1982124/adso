@@ -36,7 +36,7 @@ const OBJECTIVES: Record<Objective, { title: string; description: string }> = {
 const STATIC_AFRICA_COUNTRIES: Country[] = africaCountryDirectory.map((item) => ({ ...item, id: item.code, continent: 'Afrique' }));
 const STORAGE_KEY = 'adso-learner-onboarding-v2';
 
-export default function LearnerOnboarding({ onComplete }: { onComplete: () => void }) {
+export default function LearnerOnboarding({ onComplete, initialProfile = '' }: { onComplete: () => void; initialProfile?: string }) {
   const country = useLocaleStore((s) => s.country);
   const locale = useLocaleStore((s) => s.locale);
   const locales = useLocaleStore((s) => s.locales);
@@ -45,16 +45,17 @@ export default function LearnerOnboarding({ onComplete }: { onComplete: () => vo
   const setCountry = useLocaleStore((s) => s.setCountry);
   const [countries, setCountries] = useState<Country[]>(STATIC_AFRICA_COUNTRIES);
   const [query, setQuery] = useState('');
-  const [profile, setProfile] = useState<LearnerProfile | null>(null);
-  const [objective, setObjective] = useState<Objective | null>(null);
+  const validInitialProfile = PROFILES.find((item) => item.id === initialProfile);
+  const [profile, setProfile] = useState<LearnerProfile | null>(validInitialProfile?.id ?? null);
+  const [objective, setObjective] = useState<Objective | null>(validInitialProfile?.objective ?? null);
 
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY) || window.localStorage.getItem('adso-learner-onboarding-v1');
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as { profile?: LearnerProfile; objective?: Objective; locale?: string; country?: { code: string; name: string } };
-        if (parsed.profile) setProfile(parsed.profile);
-        if (parsed.objective) setObjective(parsed.objective);
+        if (!validInitialProfile && parsed.profile) setProfile(parsed.profile);
+        if (!validInitialProfile && parsed.objective) setObjective(parsed.objective);
         if (parsed.locale) setLocale(parsed.locale);
         if (parsed.country?.code && parsed.country.code !== 'ZZ') setCountry(parsed.country);
       } catch { /* ignore malformed local state */ }
@@ -86,7 +87,7 @@ export default function LearnerOnboarding({ onComplete }: { onComplete: () => vo
         // Keep the guaranteed static African directory visible.
       });
     return () => controller.abort();
-  }, [setCountry, setLocale]);
+  }, [setCountry, setLocale, validInitialProfile]);
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();

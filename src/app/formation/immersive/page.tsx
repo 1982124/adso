@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 
-type Choice = { id: string; label: string; isCorrect: boolean; scoreDelta: number; consequence: string; explanation: string; competency?: string };
+type Choice = { id: string; label: string };
 type Interaction = { id: string; type: string; atSecond: number; prompt: string; explanation?: string; ttsText?: string; points: number; choices: Choice[] };
 type Scene = { id: string; title: string; description: string; videoUrl: string; durationSeconds: number; competency: string; level: string; language: string; status: string; interactions: Interaction[] };
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
+const DRAFT_STORAGE_KEY = 'adso-immersive-draft-v1';
 
 export default function ImmersiveFormationPage() {
   const [scenes, setScenes] = useState<Scene[]>([]);
@@ -14,7 +15,14 @@ export default function ImmersiveFormationPage() {
   const [answer, setAnswer] = useState<Record<string, string>>({});
   const [activeInteractionId, setActiveInteractionId] = useState<string | null>(null);
   const [triggered, setTriggered] = useState<Set<string>>(new Set());
-  const [result, setResult] = useState<{ score: number; maxScore: number; accuracy: number; competencyGain: number; completed: boolean } | null>(null);
+  const [result, setResult] = useState<{
+    score: number;
+    maxScore: number;
+    accuracy: number;
+    competencyGain: number;
+    completed: boolean;
+    feedback: Array<{ interactionId: string; prompt: string; choiceLabel: string; consequence: string; explanation: string; correct: boolean }>;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [saveError, setSaveError] = useState('');
@@ -26,7 +34,34 @@ export default function ImmersiveFormationPage() {
       .then((data) => {
         const nextScenes = Array.isArray(data.scenes) ? data.scenes : [];
         setScenes(nextScenes);
-        if (nextScenes[0]) setSelected(nextScenes[0]);
+
+        // Keep decisions across the sign-in redirect so learners do not lose
+        // their work when they authenticate to save their result.
+        let restoredDraft: { sceneId?: string; answers?: Record<string, string> } | null = null;
+        try {
+          const rawDraft = window.sessionStorage.getItem(DRAFT_STORAGE_KEY);
+          restoredDraft = rawDraft ? JSON.parse(rawDraft) : null;
+        } catch {
+          window.sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+        }
+
+        const restoredScene = restoredDraft?.sceneId
+          ? nextScenes.find((scene: Scene) => scene.id === restoredDraft?.sceneId)
+          : undefined;
+        if (restoredScene) {
+          const validAnswers: Record<string, string> = {};
+          for (const interaction of restoredScene.interactions ?? []) {
+            const choiceId = restoredDraft?.answers?.[interaction.id];
+            if (choiceId && interaction.choices.some((choice) => choice.id === choiceId)) {
+              validAnswers[interaction.id] = choiceId;
+            }
+          }
+          setSelected(restoredScene);
+          setAnswer(validAnswers);
+          setTriggered(new Set(Object.keys(validAnswers)));
+        } else if (nextScenes[0]) {
+          setSelected(nextScenes[0]);
+        }
       })
       .catch(() => setScenes([]))
       .finally(() => setLoading(false));
@@ -42,6 +77,7 @@ export default function ImmersiveFormationPage() {
   function selectScene(scene: Scene) {
     setSelected(scene);
     setAnswer({});
+    window.sessionStorage.removeItem(DRAFT_STORAGE_KEY);
     setActiveInteractionId(null);
     setTriggered(new Set());
     setResult(null);
@@ -62,7 +98,14 @@ export default function ImmersiveFormationPage() {
   }
 
   function choose(interactionId: string, choiceId: string) {
-    setAnswer((current) => ({ ...current, [interactionId]: choiceId }));
+    const nextAnswers = { ...answer, [interactionId]: choiceId };
+    setAnswer(nextAnswers);
+    if (selected) {
+      window.sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({
+        sceneId: selected.id,
+        answers: nextAnswers,
+      }));
+    }
     setSaveState('idle');
   }
 
@@ -102,6 +145,7 @@ export default function ImmersiveFormationPage() {
         throw new Error(message);
       }
       setResult(data);
+      window.sessionStorage.removeItem(DRAFT_STORAGE_KEY);
       setActiveInteractionId(null);
       setSaveState('saved');
     } catch (error) {
@@ -222,7 +266,25 @@ export default function ImmersiveFormationPage() {
                   {saveState === 'saving' ? 'Enregistrement…' : result ? 'Progression enregistrée' : 'Enregistrer ma progression'}
                 </button>
 
-                {saveState === 'error' && <div role="alert" className="mt-4 rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200">{saveError} <button type="button" onClick={submit} className="ml-2 font-bold underline">Réessayer</button></div>}
+                {saveState === 'error' && (
+                  <div role="alert" className="mt-4 rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200">
+                    <p>{saveError}</p>
+                    {saveError.toLowerCase().includes('connectez-vous') ? (
+                      <div className="mt-3 flex flex-wrap gap-3">
+                        <Link href="/api/auth/signin?callbackUrl=%2Fformation%2Fimmersive" className="inline-flex min-h-11 items-center rounded-lg bg-white px-4 py-2 font-bold text-slate-950 underline-offset-4 hover:underline">
+                          Se connecter pour sauvegarder
+                        </Link>
+                        <Link href="/inscription?from=%2Fformation%2Fimmersive" className="inline-flex min-h-11 items-center rounded-lg border border-white/20 px-4 py-2 font-semibold text-white underline-offset-4 hover:underline">
+                          Créer un compte
+                        </Link>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={submit} className="mt-3 min-h-11 font-bold underline underline-offset-4">
+                        Réessayer l’enregistrement
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {result && (
                   <div className="mt-6 rounded-3xl border border-emerald-400/30 bg-emerald-400/10 p-5 sm:p-6">
@@ -230,16 +292,15 @@ export default function ImmersiveFormationPage() {
                     <div className="mt-1 text-3xl font-black">{Math.round(result.accuracy * 100)}% · {result.score}/{result.maxScore}</div>
                     <div className="mt-1 text-sm text-slate-300">Progression de compétence : {result.competencyGain}%</div>
                     <div className="mt-5 grid gap-3">
-                      {orderedInteractions.map((interaction) => {
-                        const selectedChoice = interaction.choices.find((choice) => choice.id === answer[interaction.id]);
-                        return selectedChoice ? (
-                          <div key={interaction.id} className="rounded-2xl border border-white/10 bg-black/10 p-4 text-sm">
-                            <div className="font-semibold">{interaction.prompt}</div>
-                            <div className="mt-2 text-slate-300"><strong className="text-white">Conséquence :</strong> {selectedChoice.consequence}</div>
-                            <div className="mt-1 text-slate-300"><strong className="text-white">Pourquoi :</strong> {selectedChoice.explanation}</div>
-                          </div>
-                        ) : null;
-                      })}
+                      {result.feedback.map((item) => (
+                        <div key={item.interactionId} className="rounded-2xl border border-white/10 bg-black/10 p-4 text-sm">
+                          <div className="font-semibold">{item.prompt}</div>
+                          <div className="mt-2 text-slate-300"><strong className="text-white">Ta décision :</strong> {item.choiceLabel}</div>
+                          <div className="mt-2 text-slate-300"><strong className="text-white">Évaluation :</strong> {item.correct ? 'Décision adaptée' : 'Décision à améliorer'}</div>
+                          <div className="mt-1 text-slate-300"><strong className="text-white">Conséquence :</strong> {item.consequence}</div>
+                          <div className="mt-1 text-slate-300"><strong className="text-white">Pourquoi :</strong> {item.explanation}</div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}

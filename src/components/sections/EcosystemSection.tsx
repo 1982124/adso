@@ -1,33 +1,70 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { GraduationCap, Briefcase, Bike, ShieldCheck, Landmark, School, HeartHandshake, ArrowRight } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import Link from 'next/link';
+import { GraduationCap, Users, Bike, ShieldCheck, Landmark, School, HeartHandshake, ArrowRight } from 'lucide-react';
 
-interface EcosystemCard { id: string; title: string; icon: React.ComponentType<{ className?: string }>; bgClass: string; borderClass: string; iconBg: string; iconColor: string; textColor: string; features: string[]; }
+interface AudienceCard {
+  id: string;
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  description: string;
+  actions: string[];
+  href: string;
+}
 
-const cards: EcosystemCard[] = [
-  { id: 'education', title: 'Éducation routière — primaire → université', icon: GraduationCap, bgClass: 'bg-emerald-900', borderClass: 'border-emerald-800', iconBg: 'bg-emerald-800', iconColor: 'text-emerald-200', textColor: 'text-white', features: ['Primaire, collège & lycée', 'Université & campus', 'Parcours progressifs, quiz & certification'] },
-  { id: 'parents', title: 'Parents & communautés', icon: HeartHandshake, bgClass: 'bg-emerald-800', borderClass: 'border-emerald-700', iconBg: 'bg-emerald-700', iconColor: 'text-emerald-100', textColor: 'text-white', features: ['Suivi de progression', 'Prévention & sensibilisation', 'Communautés & programmes jeunesse'] },
-  { id: 'driver', title: 'Conducteurs & taxi-moto', icon: Bike, bgClass: 'bg-emerald-700', borderClass: 'border-emerald-600', iconBg: 'bg-emerald-600', iconColor: 'text-emerald-100', textColor: 'text-white', features: ['Préparation au permis', 'ADSO Moto Safe', 'Professionnalisation & certification'] },
-  { id: 'schools', title: 'Écoles & auto-écoles', icon: School, bgClass: 'bg-emerald-700', borderClass: 'border-emerald-600', iconBg: 'bg-emerald-600', iconColor: 'text-emerald-100', textColor: 'text-white', features: ['Gestion des apprenants', 'Cours & progression', 'Acquisition de futurs conducteurs'] },
-  { id: 'business', title: 'Entreprises & flottes', icon: Briefcase, bgClass: 'bg-emerald-600', borderClass: 'border-emerald-500', iconBg: 'bg-emerald-500', iconColor: 'text-white', textColor: 'text-white', features: ['Formation conducteurs', 'Suivi véhicules & équipes', 'Prévention & analytics'] },
-  { id: 'partners', title: 'Assureurs & partenaires', icon: Landmark, bgClass: 'bg-emerald-600', borderClass: 'border-emerald-500', iconBg: 'bg-emerald-500', iconColor: 'text-white', textColor: 'text-white', features: ['Assureurs & constructeurs', 'Télécoms, banques & fintech', 'ONG, gouvernements & institutions'] },
+const cards: AudienceCard[] = [
+  { id: 'citizens', title: 'Citoyens et communautés', icon: Users, description: 'Mieux reconnaître les dangers et comprendre les comportements qui réduisent les risques au quotidien.', actions: ['Piétons et passagers', 'Cyclistes et usagers de deux-roues', 'Prévention familiale et communautaire'], href: '/education' },
+  { id: 'young', title: 'Élèves, étudiants et apprentis', icon: GraduationCap, description: 'Développer les connaissances de mobilité sûre tout au long des apprentissages.', actions: ['Parcours pédagogiques adaptés', 'Scènes et décisions immersives', 'Évaluations des connaissances disponibles'], href: '/student?profile=primaire' },
+  { id: 'drivers', title: 'Conducteurs et professionnels', icon: Bike, description: 'Actualiser les connaissances et travailler l’anticipation des situations à risque.', actions: ['Règles de circulation', 'Vigilance et distances de sécurité', 'Prévention adaptée aux déplacements professionnels'], href: '/student?profile=taxi-voiture' },
+  { id: 'schools', title: 'Établissements et formateurs', icon: School, description: 'Intégrer des ressources numériques dans les actions d’éducation et de prévention.', actions: ['Ressources pédagogiques', 'Parcours et évaluations', 'Suivi selon les fonctions effectivement disponibles'], href: '/institutions' },
+  { id: 'government', title: 'Institutions et acteurs publics', icon: Landmark, description: 'Explorer un outil complémentaire aux politiques publiques de prévention et d’éducation routière.', actions: ['Sensibilisation et éducation', 'Indicateurs d’usage si disponibles', 'Adaptation aux sources et règles nationales vérifiées'], href: '/institutions' },
+  { id: 'partners', title: 'Associations et partenaires', icon: HeartHandshake, description: 'Soutenir des actions collectives de sensibilisation et de formation à la mobilité sûre.', actions: ['Mobilisation des communautés', 'Formation continue', 'Coopération avec les établissements'], href: '/institutions' },
 ];
 
-const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } };
-const itemVariants = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } } };
-
-function EcosystemCardComponent({ card, index }: { card: EcosystemCard; index: number }) {
-  return <motion.div variants={itemVariants} custom={index}><Card className={`${card.bgClass} ${card.borderClass} border-2 hover:scale-[1.03] transition-all duration-300 shadow-lg hover:shadow-xl h-full`}><CardContent className="p-4 sm:p-5"><div className="flex items-center gap-3 mb-3"><div className={`${card.iconBg} p-2 rounded-lg`}><card.icon className={`size-5 ${card.iconColor}`} /></div><h4 className={`font-bold text-sm sm:text-base ${card.textColor}`}>{card.title}</h4></div><ul className="space-y-1.5">{card.features.map((feature) => <li key={feature} className={`text-xs sm:text-sm ${card.textColor} opacity-90 flex items-center gap-2`}><span className="w-1 h-1 rounded-full bg-current opacity-60 shrink-0" />{feature}</li>)}</ul></CardContent></Card></motion.div>;
+function AudienceCardView({ card }: { card: AudienceCard }) {
+  return (
+    <article className="flex h-full min-w-0 flex-col border-t-2 border-[#0B1F33] bg-white px-4 py-5 sm:px-5">
+      <div className="flex items-start gap-3">
+        <card.icon className="mt-1 size-5 shrink-0 text-emerald-800" aria-hidden="true" />
+        <h3 className="text-base font-bold leading-snug text-slate-950">{card.title}</h3>
+      </div>
+      <p className="mt-3 text-sm leading-6 text-slate-600">{card.description}</p>
+      <ul className="mt-4 space-y-2 border-t border-slate-200 pt-3">
+        {card.actions.map((action) => <li key={action} className="flex items-start gap-2 text-sm leading-5 text-slate-700"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-emerald-800" aria-hidden="true" />{action}</li>)}
+      </ul>
+      <Link href={card.href} className="mt-5 inline-flex min-h-10 items-center gap-2 self-start text-sm font-semibold text-emerald-900 underline decoration-slate-300 underline-offset-4 transition-colors hover:decoration-emerald-800">Explorer <ArrowRight className="size-4" aria-hidden="true" /></Link>
+    </article>
+  );
 }
 
 export default function EcosystemSection() {
-  return <section id="ecosystem" className="bg-slate-50 py-16 sm:py-20 lg:py-24"><div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-    <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-100px' }} transition={{ duration: 0.6 }} className="text-center mb-12 sm:mb-16"><p className="text-sm font-bold uppercase tracking-[0.2em] text-emerald-600">L’écosystème ADSO</p><h2 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Une chaîne de valeur <span className="text-emerald-600">de l’école à la mobilité professionnelle</span></h2><p className="mt-4 text-base sm:text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">ADSO ne s’arrête pas au permis. La plateforme accompagne l’éducation routière, le futur conducteur, le professionnel taxi-moto, les écoles, les entreprises, les flottes et les partenaires de sécurité.</p></motion.div>
-    <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-50px' }} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {cards.map((card, index) => <EcosystemCardComponent key={card.id} card={card} index={index} />)}
-    </motion.div>
-    <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mt-8 rounded-3xl border border-emerald-100 bg-white p-6 shadow-sm sm:p-8"><div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center"><div><div className="flex items-center gap-2"><ShieldCheck className="size-5 text-emerald-600" aria-hidden="true" /><h3 className="font-bold text-gray-900 text-lg">Le même parcours, plusieurs modèles économiques</h3></div><p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">Élève, parent, école, conducteur, flotte, assureur ou institution : chacun accède à une proposition de valeur adaptée, tandis qu’ADSO mesure les usages, les coûts de service et la valeur créée.</p></div><ArrowRight className="hidden size-7 text-emerald-500 lg:block" aria-hidden="true" /></div></motion.div>
-  </div></section>;
+  return (
+    <section id="ecosystem" className="bg-slate-50 py-14 sm:py-18 lg:py-20" aria-labelledby="ecosystem-heading">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-9 max-w-3xl">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-800">Publics et usages</p>
+          <h2 id="ecosystem-heading" className="mt-3 text-3xl font-bold tracking-[-0.035em] text-slate-950 sm:text-4xl">Une approche commune, des responsabilités distinctes.</h2>
+          <p className="mt-4 text-base leading-7 text-slate-600 sm:text-lg">ADSO AFRICA propose des ressources numériques pour l’éducation routière et la prévention. Les besoins des citoyens, des formateurs et des institutions diffèrent ; les contenus et les données doivent rester adaptés au public et au contexte national.</p>
+        </div>
+
+        <div className="grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+          {cards.map((card) => <AudienceCardView key={card.id} card={card} />)}
+        </div>
+
+        <div className="mt-10 grid border-t border-slate-300 pt-7 md:grid-cols-2 md:gap-10">
+          <div className="pb-6 md:pb-0">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">Méthode pédagogique</p>
+            <h3 className="mt-2 text-xl font-bold text-slate-950">Observer, décider, comprendre.</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-600">Les activités immersives présentent des situations de circulation, invitent à choisir une réponse et expliquent les conséquences après la décision. Leur qualité dépend de scénarios réalistes et de contenus vérifiés.</p>
+          </div>
+          <div className="border-t border-slate-300 pt-6 md:border-l md:border-t-0 md:pl-8 md:pt-0">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">Redevabilité</p>
+            <h3 className="mt-2 text-xl font-bold text-slate-950">Mesurer ce qui est réellement démontré.</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-600">Les données d’utilisation et les résultats d’apprentissage ne prouvent pas, à eux seuls, une baisse des accidents. Toute évaluation d’impact exige des données fiables, une méthode explicite et une analyse adaptée.</p>
+            <Link href="/institutions" className="mt-4 inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-emerald-900 underline underline-offset-4">Consulter l’espace institutions <ArrowRight className="size-4" aria-hidden="true" /></Link>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }
