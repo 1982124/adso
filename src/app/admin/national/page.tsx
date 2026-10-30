@@ -49,8 +49,6 @@ export default async function NationalDashboardPage({ searchParams }: { searchPa
     drivingSessions,
     drivingRisk,
     countryUsers,
-    countryEnrollments,
-    countryCompleted,
     countryAttempts,
   ] = await Promise.all([
     db.user.count({ where: userWhere }),
@@ -63,8 +61,6 @@ export default async function NationalDashboardPage({ searchParams }: { searchPa
     db.drivingSession.count({ where: { user: userWhere, ...(dateWhere ? { createdAt: dateWhere } : {}) } }),
     db.drivingSession.aggregate({ where: { user: userWhere, ...(dateWhere ? { createdAt: dateWhere } : {}) }, _sum: { speedViolations: true, harshBrakes: true, harshAccel: true, harshTurns: true, fatigueEvents: true, distractionEvents: true }, _count: { _all: true } }),
     db.user.groupBy({ by: ["country"], where: userWhere, _count: { _all: true } }),
-    db.enrollment.groupBy({ by: ["userId"], where: { user: userWhere, ...(dateWhere ? { enrolledAt: dateWhere } : {}) }, _count: { _all: true } }),
-    db.studentProgress.count({ where: { status: "completed", user: userWhere, ...(dateWhere ? { updatedAt: dateWhere } : {}) } }),
     db.quizAttempt.groupBy({ by: ["country"], where: { country: { in: codes }, ...(dateWhere ? { createdAt: dateWhere } : {}) }, _count: { _all: true }, _avg: { score: true } }),
   ]);
 
