@@ -30,7 +30,7 @@ export default async function NationalReport({ searchParams }: { searchParams: P
   const [learners, enrollments, completed, attempts, passed, skillCount, skillGroups, sessions, risk, usersByCountry, attemptsByCountry] = await Promise.all([
     db.user.count({ where: userWhere }),
     db.enrollment.count({ where: { user: userWhere, ...(dateWhere ? { enrolledAt: dateWhere } : {}) } }),
-    db.studentProgress.count({ where: { status: "completed", user: userWhere, ...(dateWhere ? { updatedAt: dateWhere } : {}) } }),
+    db.studentProgress.count({ where: { status: "completed", user: userWhere, ...(dateWhere ? { enrollment: { enrolledAt: dateWhere } } : {}) } }),
     db.quizAttempt.count({ where: { country: { in: selectedCodes }, ...(dateWhere ? { createdAt: dateWhere } : {}) } }),
     db.quizAttempt.count({ where: { country: { in: selectedCodes }, passed: true, ...(dateWhere ? { createdAt: dateWhere } : {}) } }),
     db.skillRecord.count({ where: { user: userWhere, ...(dateWhere ? { updatedAt: dateWhere } : {}) } }),
@@ -83,7 +83,7 @@ export default async function NationalReport({ searchParams }: { searchParams: P
               ["Sessions de conduite", fmt(sessions)],
             ].map(([label, value]) => <article key={label} className="break-inside-avoid rounded-xl border border-slate-300 bg-white p-4"><p className="text-xs font-semibold uppercase text-slate-500">{label}</p><p className="mt-2 text-2xl font-black">{value}</p></article>)}
           </div>
-          <p className="mt-3 text-xs text-slate-500">Le nombre de comptes utilisateurs suit la même règle que le tableau de bord : comptes du périmètre pays, tous historiques. Les inscriptions, progressions, évaluations, compétences et sessions sont filtrées selon la période sélectionnée.</p>
+          <p className="mt-3 text-xs text-slate-500">Le nombre de comptes utilisateurs suit la même règle que le tableau de bord : comptes du périmètre pays, tous historiques. Les inscriptions et les progressions terminées sont rattachées à la même cohorte d’inscriptions (date d’inscription). Évaluations, compétences et sessions utilisent leur date propre.</p>
         </section>
         <section className="break-inside-avoid">
           <h2 className="text-xl font-bold">2. Compétences évaluées</h2>
