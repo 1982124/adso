@@ -3,9 +3,9 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { getSession, getUserRole } from "@/lib/auth";
 import { hasMinRole } from "@/lib/rbac";
+import { getNationalPeriod } from "@/lib/national-period";
 
 type SearchParams = Promise<{ country?: string; period?: string }>;
-const PERIODS = { "30": 30, "90": 90, "365": 365, all: null } as const;
 
 function metric(value: number) { return new Intl.NumberFormat("fr-FR").format(value); }
 function percent(numerator: number, denominator: number) {
@@ -19,9 +19,8 @@ export default async function NationalDashboardPage({ searchParams }: { searchPa
   if (!hasMinRole(role, "admin")) redirect("/");
 
   const params = await searchParams;
-  const periodKey = params.period && params.period in PERIODS ? params.period as keyof typeof PERIODS : "90";
-  const days = PERIODS[periodKey];
-  const since = days ? new Date(Date.now() - days * 24 * 60 * 60 * 1000) : undefined;
+  const reportClock = new Date();
+  const { key: periodKey, days, since } = getNationalPeriod(params.period, reportClock);
   const countries = await db.country.findMany({
     where: { continent: { contains: "Africa", mode: "insensitive" } },
     orderBy: { name: "asc" },
@@ -99,7 +98,7 @@ export default async function NationalDashboardPage({ searchParams }: { searchPa
 
         <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Indicateurs de formation">
           {[
-            ["Apprenants enregistrés", metric(learners), "Comptes dont le pays correspond au périmètre"],
+            ["Comptes utilisateurs enregistrés", metric(learners), "Comptes dont le pays correspond au périmètre, tous historiques"],
             ["Inscriptions en formation", metric(enrollments), "Inscriptions sur la période sélectionnée"],
             ["Parcours terminés", metric(completed), "Progressions marquées « completed »"],
             ["Taux de complétion", completionRate, "Terminés / inscriptions ; non calculable sans inscription"],
@@ -142,8 +141,8 @@ export default async function NationalDashboardPage({ searchParams }: { searchPa
 
         <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
           <h2 className="text-xl font-bold">Couverture par pays</h2>
-          <p className="mt-2 text-sm text-slate-400">Comptes apprenants et tentatives d’évaluation disponibles par code pays. Les pays sans enregistrement ne sont pas présentés comme ayant zéro accident ou zéro risque.</p>
-          {countryRows.length === 0 ? <p className="mt-5 rounded-xl border border-dashed border-white/15 p-5 text-sm text-slate-400">Aucun compte ou résultat d’évaluation enregistré dans le référentiel pays africain pour la période sélectionnée.</p> : <div className="mt-5 overflow-x-auto"><table className="w-full min-w-[560px] text-left text-sm"><thead className="text-xs text-slate-500"><tr><th className="pb-3">Pays</th><th className="pb-3">Apprenants</th><th className="pb-3">Évaluations</th><th className="pb-3">Score moyen</th></tr></thead><tbody className="divide-y divide-white/10">{countryRows.map((country) => <tr key={country.code}><td className="py-3 font-medium">{country.name} <span className="text-xs text-slate-500">{country.code}</span></td><td className="py-3 tabular-nums">{metric(country.learners)}</td><td className="py-3 tabular-nums">{metric(country.attempts)}</td><td className="py-3 tabular-nums">{country.averageScore === null ? "Non disponible" : country.averageScore.toFixed(1)}</td></tr>)}</tbody></table></div>}
+          <p className="mt-2 text-sm text-slate-400">Comptes utilisateurs (tous historiques) et tentatives d’évaluation (période sélectionnée) disponibles par code pays. Les pays sans enregistrement ne sont pas présentés comme ayant zéro accident ou zéro risque.</p>
+          {countryRows.length === 0 ? <p className="mt-5 rounded-xl border border-dashed border-white/15 p-5 text-sm text-slate-400">Aucun compte ou résultat d’évaluation enregistré dans le référentiel pays africain pour la période sélectionnée.</p> : <div className="mt-5 overflow-x-auto"><table className="w-full min-w-[560px] text-left text-sm"><thead className="text-xs text-slate-500"><tr><th className="pb-3">Pays</th><th className="pb-3">Comptes utilisateurs</th><th className="pb-3">Évaluations</th><th className="pb-3">Score moyen</th></tr></thead><tbody className="divide-y divide-white/10">{countryRows.map((country) => <tr key={country.code}><td className="py-3 font-medium">{country.name} <span className="text-xs text-slate-500">{country.code}</span></td><td className="py-3 tabular-nums">{metric(country.learners)}</td><td className="py-3 tabular-nums">{metric(country.attempts)}</td><td className="py-3 tabular-nums">{country.averageScore === null ? "Non disponible" : country.averageScore.toFixed(1)}</td></tr>)}</tbody></table></div>}
         </section>
 
         <footer className="border-t border-white/10 pt-5 text-xs leading-6 text-slate-500">
