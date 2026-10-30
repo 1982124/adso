@@ -52,7 +52,7 @@ export default async function NationalDashboardPage({ searchParams }: { searchPa
   ] = await Promise.all([
     db.user.count({ where: userWhere }),
     db.enrollment.count({ where: { user: userWhere, ...(dateWhere ? { enrolledAt: dateWhere } : {}) } }),
-    db.studentProgress.count({ where: { status: "completed", user: userWhere, ...(dateWhere ? { updatedAt: dateWhere } : {}) } }),
+    db.studentProgress.count({ where: { status: "completed", user: userWhere, ...(dateWhere ? { enrollment: { enrolledAt: dateWhere } } : {}) } }),
     db.quizAttempt.count({ where: { country: { in: codes }, ...(dateWhere ? { createdAt: dateWhere } : {}) } }),
     db.quizAttempt.count({ where: { country: { in: codes }, passed: true, ...(dateWhere ? { createdAt: dateWhere } : {}) } }),
     db.skillRecord.count({ where: { user: userWhere, ...(dateWhere ? { updatedAt: dateWhere } : {}) } }),
@@ -101,7 +101,7 @@ export default async function NationalDashboardPage({ searchParams }: { searchPa
             ["Comptes utilisateurs enregistrés", metric(learners), "Comptes dont le pays correspond au périmètre, tous historiques"],
             ["Inscriptions en formation", metric(enrollments), "Inscriptions sur la période sélectionnée"],
             ["Parcours terminés", metric(completed), "Progressions marquées « completed »"],
-            ["Taux de complétion", completionRate, "Terminés / inscriptions ; non calculable sans inscription"],
+            ["Taux de complétion", completionRate, "Progressions terminées parmi les inscriptions créées pendant la période"],
           ].map(([label, value, note]) => <article key={label} className="rounded-2xl border border-white/10 bg-white/[0.04] p-5"><p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</p><p className="mt-3 text-3xl font-black tabular-nums">{value}</p><p className="mt-2 text-xs leading-5 text-slate-500">{note}</p></article>)}
         </section>
 
