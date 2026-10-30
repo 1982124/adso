@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { getSession, getUserRole } from "@/lib/auth";
 import { hasMinRole } from "@/lib/rbac";
+import PrintReportButton from "@/components/admin/PrintReportButton";
 
 type Params = Promise<{ country?: string; period?: string }>;
 const periods = { "30": 30, "90": 90, "365": 365, all: null } as const;
@@ -60,7 +61,7 @@ export default async function NationalReport({ searchParams }: { searchParams: P
           <Link className="text-sm font-semibold text-emerald-800" href={`/admin/national?country=${selected.toLowerCase()}&period=${key}`}>← Tableau de bord</Link>
           <div className="flex flex-wrap gap-2">
             {(["30", "90", "365", "all"] as const).map(p => <Link key={p} className="rounded-lg border border-slate-300 px-3 py-2 text-sm" href={`/admin/national/report?country=${selected.toLowerCase()}&period=${p}`}>{p === "all" ? "Tout" : p + " jours"}</Link>)}
-            <button type="button" className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white" onClick={() => window.print()}>Imprimer / enregistrer</button>
+            <PrintReportButton />
           </div>
         </nav>
         <header className="border-b-2 border-emerald-800 pb-6">
