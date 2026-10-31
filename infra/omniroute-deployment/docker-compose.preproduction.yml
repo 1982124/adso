@@ -1,0 +1,85 @@
+# OmniRoute isolated preproduction only.
+# Do not point ADSO production at this instance until the validation checklist is signed off.
+# Copy .env.example to .env, fill in secrets on the server, and pin OMNIROUTE_IMAGE_TAG
+# to an exact published stable version before starting the stack.
+
+services:
+  redis:
+    image: redis:8.6.5-alpine
+    container_name: adso-omniroute-preprod-redis
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - omniroute-internal
+    # Intentionally no published Redis port.
+
+  omniroute:
+    image: diegosouzapw/omniroute:${OMNIROUTE_IMAGE_TAG:?Set OMNIROUTE_IMAGE_TAG to an exact stable release}
+    container_name: adso-omniroute-preprod
+    restart: unless-stopped
+    stop_grace_period: 40s
+    env_file:
+      - .env
+    environment:
+      PORT: "20128"
+      HOSTNAME: "0.0.0.0"
+      DATA_DIR: /app/data
+      REDIS_URL: redis://redis:6379
+      REQUIRE_API_KEY: "true"
+      AUTH_COOKIE_SECURE: "true"
+      NEXT_PUBLIC_BASE_URL: https://${OMNIROUTE_DOMAIN:?Set OMNIROUTE_DOMAIN}
+      BASE_URL: http://omniroute:20128
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.mjs"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - omniroute-internal
+    # No published application ports: only Caddy can reach this container.
+
+  caddy:
+    image: caddy:2
+    container_name: adso-omniroute-preprod-caddy
+    restart: unless-stopped
+    depends_on:
+      omniroute:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    command:
+      - caddy
+      - reverse-proxy
+      - --from
+      - https://${OMNIROUTE_DOMAIN:?Set OMNIROUTE_DOMAIN}
+      - --to
+      - http://omniroute:20128
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - omniroute-internal
+
+networks:
+  omniroute-internal:
+    driver: bridge
+
+volumes:
+  redis-data:
+  caddy-data:
+  caddy-config:
