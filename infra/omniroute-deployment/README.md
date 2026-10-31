@@ -8,7 +8,7 @@ Le modèle utilise Docker Compose, un répertoire de données durable, Redis int
 
 ## Prérequis opérateur
 
-- VPS Linux dédié, maintenu et avec Docker Engine + Docker Compose v2.
+- VPS Linux dédié, maintenu et avec Docker Engine 24+ et Docker Compose v2.
 - Domaine ou sous-domaine réservé à la préproduction, par exemple `omniroute-preprod.example.com`.
 - DNS A (et AAAA seulement si IPv6 est correctement configuré) pointant vers le VPS.
 - Pare-feu : SSH limité aux adresses administratives autorisées ; ports entrants 80/443 ouverts ; aucun port 20128/20129/20132 ou 6379 ouvert sur Internet.
@@ -18,23 +18,23 @@ Le modèle utilise Docker Compose, un répertoire de données durable, Redis int
 
 1. Créer un répertoire dédié, par exemple `/opt/adso-omniroute-preprod`, et y placer `docker-compose.preproduction.yml` ainsi que `.env.example` depuis ce dossier.
 2. Copier `.env.example` vers `.env`, puis renseigner le domaine et un tag d'image stable **exact**. Vérifier l'existence du tag dans la liste officielle des versions avant de démarrer ; ne pas utiliser `latest` pour les essais de validation reproductibles.
-3. Générer des secrets différents directement sur le VPS. Exemple pour chaque valeur : `openssl rand -hex 32`. Pour `INITIAL_PASSWORD`, utiliser un gestionnaire de mots de passe pour produire une valeur longue et unique.
+3. Générer des secrets différents directement sur le VPS. Exemple pour chaque secret hexadécimal : `openssl rand -hex 32`. Pour `INITIAL_PASSWORD`, utiliser un gestionnaire de mots de passe pour produire une valeur longue et unique.
 4. Protéger le fichier : `chmod 600 .env`; répertoire de déploiement accessible uniquement au compte d'administration. Ne jamais coller les secrets dans ChatGPT, GitHub Issues ou les logs.
 5. Préparer le répertoire de données et donner au processus Docker le droit d'écriture requis : `mkdir -p data && sudo chown -R 1000:1000 data` (vérifier l'UID du conteneur de la version choisie avant de l'appliquer).
 6. Valider le fichier Compose sans démarrer : `docker compose --env-file .env -f docker-compose.preproduction.yml config --quiet`.
 7. Télécharger puis inspecter l'image épinglée : `docker compose --env-file .env -f docker-compose.preproduction.yml pull`. Consigner le tag et le digest obtenu.
 8. Démarrer seulement après la revue opérateur : `docker compose --env-file .env -f docker-compose.preproduction.yml up -d`.
-9. Contrôler : `docker compose --env-file .env -f docker-compose.preproduction.yml ps` et les journaux. Vérifier la santé, le certificat HTTPS et le parcours de première connexion.
+9. Contrôler : `docker compose --env-file .env -f docker-compose.preproduction.yml ps` et les journaux. Le healthcheck du conteneur utilise le script fourni par l'image OmniRoute. Vérifier la santé, le certificat HTTPS et le parcours de première connexion.
 10. Faire un test de restauration à partir d'une sauvegarde avant toute utilisation réelle.
 
 ## Attention aux secrets et à l'accès
 
 - `REQUIRE_API_KEY=true` est imposé dans le Compose. Terminer l'onboarding, créer un jeton API dédié à ADSO si OmniRoute permet la portée voulue, puis vérifier qu'une requête non authentifiée reçoit 401/403.
 - Les clés des fournisseurs IA sont ajoutées dans le tableau de bord OmniRoute après connexion administrateur ; elles ne doivent pas être mises dans ce dépôt ni dans le fichier de configuration ADSO.
-- Si la version retenue exige d'autres variables obligatoires, suivre la documentation de **cette même version** avant démarrage. Ne pas copier aveuglément des variables d'une autre version.
+- Le modèle utilise les noms de secrets reconnus par OmniRoute : `JWT_SECRET`, `API_KEY_SECRET`, `INITIAL_PASSWORD`, `STORAGE_ENCRYPTION_KEY`, `STORAGE_ENCRYPTION_KEY_VERSION` et `OMNIROUTE_WS_BRIDGE_SECRET`. Vérifier les exigences de la version épinglée avant le démarrage.
 - Les données SQLite, clés de fournisseurs et configuration restent sous `./data`. Ne jamais supprimer ce dossier pour mettre à jour ou redémarrer.
 - Le service est prévu en **instance unique** : ne pas lancer plusieurs conteneurs OmniRoute sur le même fichier SQLite.
-- Le modèle utilise l'image Caddy `caddy:2). Pour une chaîne de livraison stricte, épingler aussi Caddy à une version/digest approuvé après vérification.
+- Le modèle utilise le tag majeur `caddy:2) et `redis:8.6.5-alpine`. Avant exploitation durable, épingler Caddy à une version ou un digest approuvé après vérification des publications et appliquer un processus de mise à jour de sécurité aux deux images.
 
 ## Tests obligatoires avant connexion à ADSO
 
@@ -63,3 +63,4 @@ Vérifier ces paramètres par un appel réel en préproduction avant toute utili
 
 - Guide Docker OmniRoute : https://github.com/cheaper-inference/OmniRoute/blob/release/v3.8.53/docs/guides/DOCKER_GUIDE.md
 - Guide d'auto-hébergement : https://github.com/cheaper-inference/OmniRoute/blob/release/v3.8.53/docs/getting-started/SELF_HOST_GUIDE.md
+- Contrat des variables d'environnement : https://github.com/cheaper-inference/OmniRoute/blob/release/v3.8.53/.env.example
