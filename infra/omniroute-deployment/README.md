@@ -34,7 +34,7 @@ Le modèle utilise Docker Compose, un répertoire de données durable, Redis int
 - Le modèle utilise les noms de secrets reconnus par OmniRoute : `JWT_SECRET`, `API_KEY_SECRET`, `INITIAL_PASSWORD`, `STORAGE_ENCRYPTION_KEY`, `STORAGE_ENCRYPTION_KEY_VERSION` et `OMNIROUTE_WS_BRIDGE_SECRET`. Vérifier les exigences de la version épinglée avant le démarrage.
 - Les données SQLite, clés de fournisseurs et configuration restent sous `./data`. Ne jamais supprimer ce dossier pour mettre à jour ou redémarrer.
 - Le service est prévu en **instance unique** : ne pas lancer plusieurs conteneurs OmniRoute sur le même fichier SQLite.
-- Le modèle utilise le tag majeur `caddy:2) et `redis:8.6.5-alpine`. Avant exploitation durable, épingler Caddy à une version ou un digest approuvé après vérification des publications et appliquer un processus de mise à jour de sécurité aux deux images.
+- Le modèle utilise le tag majeur `caddy:2` et `redis:8.6.5-alpine`. Avant exploitation durable, épingler Caddy à une version ou un digest approuvé après vérification des publications et appliquer un processus de mise à jour de sécurité aux deux images.
 
 ## Tests obligatoires avant connexion à ADSO
 
