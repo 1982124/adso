@@ -4,7 +4,7 @@
 
 Ce dossier est un modèle de déploiement autonome pour un **serveur/VPS séparé**. Il n'est pas exécuté par Vercel et ne change ni le déploiement, ni les variables, ni le trafic d'ADSO en production. Il ne contient aucun secret réel.
 
-Le modèle utilise Docker Compose, un volume de données durable, Redis interne et Caddy pour obtenir HTTPS automatique. Les ports de l'application et de Redis ne sont pas publiés sur l'hôte ; seul Caddy expose 80/443. Le domaine doit pointer vers le VPS et les ports 80/443 doivent être accessibles pour l'émission/renouvellement du certificat TLS.
+Le modèle utilise Docker Compose, un répertoire de données durable, Redis interne et Caddy pour obtenir HTTPS automatique. Les ports de l'application et de Redis ne sont pas publiés sur l'hôte ; seul Caddy expose 80/443. Le domaine doit pointer vers le VPS et les ports 80/443 doivent être accessibles pour l'émission et le renouvellement du certificat TLS.
 
 ## Prérequis opérateur
 
@@ -34,7 +34,7 @@ Le modèle utilise Docker Compose, un volume de données durable, Redis interne 
 - Si la version retenue exige d'autres variables obligatoires, suivre la documentation de **cette même version** avant démarrage. Ne pas copier aveuglément des variables d'une autre version.
 - Les données SQLite, clés de fournisseurs et configuration restent sous `./data`. Ne jamais supprimer ce dossier pour mettre à jour ou redémarrer.
 - Le service est prévu en **instance unique** : ne pas lancer plusieurs conteneurs OmniRoute sur le même fichier SQLite.
-- L'image Caddy utilise le canal majeur `caddy:2). Pour une chaîne de livraison stricte, épingler aussi Caddy à une version/digest approuvé après vérification.
+- Le modèle utilise l'image Caddy `caddy:2). Pour une chaîne de livraison stricte, épingler aussi Caddy à une version/digest approuvé après vérification.
 
 ## Tests obligatoires avant connexion à ADSO
 
@@ -52,13 +52,12 @@ Le modèle utilise Docker Compose, un volume de données durable, Redis interne 
 ## Connexion ADSO — étape ultérieure, non incluse ici
 
 Après approbation des tests seulement, ajouter dans **l'environnement de préproduction ADSO** :
-- `OMNIROUTE_BASE_URL=https://<domaine-preproduction>/v1` (à confirmer selon la version : le code ADSO ajoute `/v1/chat/completions` à la base URL ; la valeur finale doit éviter un double `/v1`).
+
+- `OMNIROUTE_BASE_URL=https://omniroute-preprod.example.com` — origine HTTPS uniquement, sans suffixe `/v1`, car le code ADSO ajoute lui-même `/v1/chat/completions`.
 - `OMNIROUTE_API_KEY=<jeton dédié, secret de serveur>`
 - `OMNIROUTE_MODEL=auto`
 
-Important : le code actuel ADSO construit `<OMNIROUTE_BASE_URL>/v1/chat/completions`. Par conséquent, pour éviter un chemin doublé, la valeur d'environnement attendue par ce code est l'origine OmniRoute **sans** suffixe `/v1`, par exemple `https://omniroute-preprod.example.com`. Vérifier avec un test réel avant d'enregistrer la valeur.
-
-Ne jamais définir ces valeurs avec le préfixe `NEXT_PUBLIC_`. Ne pas modifier les variables de production, ne pas fusionner la PR de préparation et ne pas basculer de trafic avant validation écrite.
+Vérifier ces paramètres par un appel réel en préproduction avant toute utilisation. Ne jamais définir ces valeurs avec le préfixe `NEXT_PUBLIC_`. Ne pas modifier les variables de production, ne pas fusionner la PR de préparation et ne pas basculer de trafic avant validation écrite.
 
 ## Sources officielles
 
