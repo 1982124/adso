@@ -25,14 +25,14 @@ Le fichier `.env.example` reprend les variables du modèle officiel :
 - `DASHBOARD_PORT=20128`
 - `API_PORT=20129`
 - `LIVE_WS_PORT=20132`
-- `APP_BIND_HOST=0.0.0.0`
+- `APP_BIND_HOST=127.0.0.1` (valeur de sécurité par défaut officielle)
 - `REQUIRE_API_KEY=true`
 - `OMNIROUTE_MEMORY_MB=2048`
 - `INITIAL_PASSWORD` reste facultatif ; l'onboarding peut créer le mot de passe administrateur.
 
 Les variables non confirmées par le modèle self-host v3.8.52 ont été retirées du modèle : `JWT_SECRET`, `API_KEY_SECRET`, `STORAGE_ENCRYPTION_KEY`, `STORAGE_ENCRYPTION_KEY_VERSION`, `OMNIROUTE_WS_BRIDGE_SECRET` et `AUTH_COOKIE_SECURE`. Ne pas les réintroduire sans preuve dans le contrat exact de la version déployée.
 
-`APP_BIND_HOST=0.0.0.0` est acceptable ici parce que `REQUIRE_API_KEY=true` et qu'aucun port de l'application n'est publié sur l'hôte : seul Caddy atteint OmniRoute via le réseau privé. Redis n'est jamais publié.
+`APP_BIND_HOST=127.0.0.1` conserve la valeur de sécurité officielle. Le Compose ne publie aucun port applicatif sur l'hôte ; Caddy atteint le service par le réseau Docker privé. Redis n'est jamais publié.
 
 ## Préparation sur le VPS — ne pas exécuter avant validation
 
