@@ -1,66 +1,83 @@
-# Déploiement isolé OmniRoute — préproduction ADSO AFRICA
+# Déploiement isolé OmniRoute v3.8.52 — préproduction ADSO AFRICA
 
-## Portée et garde-fous
+## Statut et périmètre
 
-Ce dossier est un modèle de déploiement autonome pour un **serveur/VPS séparé**. Il n'est pas exécuté par Vercel et ne change ni le déploiement, ni les variables, ni le trafic d'ADSO en production. Il ne contient aucun secret réel.
+Ce dossier prépare une instance OmniRoute sur un VPS distinct. Il ne modifie ni ADSO en production, ni ses variables Vercel, ni sa base de données, ni son trafic. Aucun secret réel n'est stocké dans Git.
 
-Le modèle utilise Docker Compose, un répertoire de données durable, Redis interne et Caddy pour obtenir HTTPS automatique. Les ports de l'application et de Redis ne sont pas publiés sur l'hôte ; seul Caddy expose 80/443. Le domaine doit pointer vers le VPS et les ports 80/443 doivent être accessibles pour l'émission et le renouvellement du certificat TLS.
+La configuration reprend le contrat self-host officiel OmniRoute v3.8.52, avec un réseau Docker privé et Caddy en frontal HTTPS :
+- OmniRoute : image épinglée sur le tag `3.8.52`, données persistantes dans `./data`.
+- Redis : `redis:8.6.5-alpine`, accessible uniquement depuis le réseau Docker.
+- Caddy : seul service publiant les ports 80/443.
+- Aucun port 20128, 20129, 20132 ou 6379 n'est publié sur l'hôte.
+- L'API unifiée LLM reste sur le port 20128 et le chemin `/v1`.
 
-## Prérequis opérateur
+## Prérequis VPS
 
-- VPS Linux dédié, maintenu et avec Docker Engine 24+ et Docker Compose v2.
-- Domaine ou sous-domaine réservé à la préproduction, par exemple `omniroute-preprod.example.com`.
-- DNS A (et AAAA seulement si IPv6 est correctement configuré) pointant vers le VPS.
-- Pare-feu : SSH limité aux adresses administratives autorisées ; ports entrants 80/443 ouverts ; aucun port 20128/20129/20132 ou 6379 ouvert sur Internet.
-- Sauvegardes chiffrées, hors du VPS, pour les données persistantes.
+- Linux maintenu, Docker Engine 24+ et Docker Compose v2.
+- Environ 2 Go de RAM libres au minimum ; prévoir davantage pour plusieurs modèles ou contextes volumineux.
+- Domaine dédié à la préproduction, DNS A vers le VPS (et AAAA seulement si IPv6 fonctionne réellement).
+- Pare-feu : SSH restreint, ports entrants 80/443 ouverts ; aucun port applicatif ou Redis ouvert depuis Internet.
+- Sauvegarde chiffrée et externalisée du répertoire `data`.
 
-## Préparer sur le VPS
+## Variables alignées sur v3.8.52
 
-1. Créer un répertoire dédié, par exemple `/opt/adso-omniroute-preprod`, et y placer `docker-compose.preproduction.yml` ainsi que `.env.example` depuis ce dossier.
-2. Copier `.env.example` vers `.env`, puis renseigner le domaine et un tag d'image stable **exact**. Vérifier l'existence du tag dans la liste officielle des versions avant de démarrer ; ne pas utiliser `latest` pour les essais de validation reproductibles.
-3. Générer des secrets différents directement sur le VPS. Exemple pour chaque secret hexadécimal : `openssl rand -hex 32`. Pour `INITIAL_PASSWORD`, utiliser un gestionnaire de mots de passe pour produire une valeur longue et unique.
-4. Protéger le fichier : `chmod 600 .env`; répertoire de déploiement accessible uniquement au compte d'administration. Ne jamais coller les secrets dans ChatGPT, GitHub Issues ou les logs.
-5. Préparer le répertoire de données et donner au processus Docker le droit d'écriture requis : `mkdir -p data && sudo chown -R 1000:1000 data` (vérifier l'UID du conteneur de la version choisie avant de l'appliquer).
-6. Valider le fichier Compose sans démarrer : `docker compose --env-file .env -f docker-compose.preproduction.yml config --quiet`.
-7. Télécharger puis inspecter l'image épinglée : `docker compose --env-file .env -f docker-compose.preproduction.yml pull`. Consigner le tag et le digest obtenu.
-8. Démarrer seulement après la revue opérateur : `docker compose --env-file .env -f docker-compose.preproduction.yml up -d`.
-9. Contrôler : `docker compose --env-file .env -f docker-compose.preproduction.yml ps` et les journaux. Le healthcheck du conteneur utilise le script fourni par l'image OmniRoute. Vérifier la santé, le certificat HTTPS et le parcours de première connexion.
-10. Faire un test de restauration à partir d'une sauvegarde avant toute utilisation réelle.
+Le fichier `.env.example` reprend les variables du modèle officiel :
+- `DASHBOARD_PORT=20128`
+- `API_PORT=20129`
+- `LIVE_WS_PORT=20132`
+- `APP_BIND_HOST=0.0.0.0`
+- `REQUIRE_API_KEY=true`
+- `OMNIROUTE_MEMORY_MB=2048`
+- `INITIAL_PASSWORD` reste facultatif ; l'onboarding peut créer le mot de passe administrateur.
 
-## Attention aux secrets et à l'accès
+Les variables non confirmées par le modèle self-host v3.8.52 ont été retirées du modèle : `JWT_SECRET`, `API_KEY_SECRET`, `STORAGE_ENCRYPTION_KEY`, `STORAGE_ENCRYPTION_KEY_VERSION`, `OMNIROUTE_WS_BRIDGE_SECRET` et `AUTH_COOKIE_SECURE`. Ne pas les réintroduire sans preuve dans le contrat exact de la version déployée.
 
-- `REQUIRE_API_KEY=true` est imposé dans le Compose. Terminer l'onboarding, créer un jeton API dédié à ADSO si OmniRoute permet la portée voulue, puis vérifier qu'une requête non authentifiée reçoit 401/403.
-- Les clés des fournisseurs IA sont ajoutées dans le tableau de bord OmniRoute après connexion administrateur ; elles ne doivent pas être mises dans ce dépôt ni dans le fichier de configuration ADSO.
-- Le modèle utilise les noms de secrets reconnus par OmniRoute : `JWT_SECRET`, `API_KEY_SECRET`, `INITIAL_PASSWORD`, `STORAGE_ENCRYPTION_KEY`, `STORAGE_ENCRYPTION_KEY_VERSION` et `OMNIROUTE_WS_BRIDGE_SECRET`. Vérifier les exigences de la version épinglée avant le démarrage.
-- Les données SQLite, clés de fournisseurs et configuration restent sous `./data`. Ne jamais supprimer ce dossier pour mettre à jour ou redémarrer.
-- Le service est prévu en **instance unique** : ne pas lancer plusieurs conteneurs OmniRoute sur le même fichier SQLite.
-- Le modèle utilise le tag majeur `caddy:2` et `redis:8.6.5-alpine`. Avant exploitation durable, épingler Caddy à une version ou un digest approuvé après vérification des publications et appliquer un processus de mise à jour de sécurité aux deux images.
+`APP_BIND_HOST=0.0.0.0` est acceptable ici parce que `REQUIRE_API_KEY=true` et qu'aucun port de l'application n'est publié sur l'hôte : seul Caddy atteint OmniRoute via le réseau privé. Redis n'est jamais publié.
 
-## Tests obligatoires avant connexion à ADSO
+## Préparation sur le VPS — ne pas exécuter avant validation
 
-1. HTTPS valide, redirection HTTP vers HTTPS et absence d'avertissement de certificat.
-2. Dashboard accessible uniquement sur le domaine préproduction.
-3. `/v1/models` et un appel de test fonctionnent avec le jeton dédié ; appels sans jeton ou avec un jeton invalide refusés.
-4. Redis et les ports applicatifs ne sont pas accessibles depuis l'extérieur.
-5. Redémarrer les conteneurs : configuration et données toujours présentes.
-6. Vérifier 429, erreurs fournisseur, timeout, indisponibilité du modèle et comportement de repli.
-7. Confirmer que les secrets ne sont jamais renvoyés au navigateur ni écrits dans les journaux.
-8. Mesurer latence, consommation, limites de dépense et qualité sur des prompts non sensibles.
-9. Effectuer une revue de rétention et d'utilisation des données de chaque fournisseur.
-10. Vérifier la procédure de sauvegarde, restauration et retour à la version précédente.
+1. Créer `/opt/adso-omniroute-preprod` et y déposer `docker-compose.preproduction.yml` et le modèle `.env.example`.
+2. Copier `.env.example` vers `.env`, renseigner le vrai domaine, puis protéger le fichier avec `chmod 600 .env`.
+3. Créer le dossier persistant : `mkdir -p data`. L'image officielle fonctionne sous l'utilisateur `node` UID/GID 1000 ; après vérification de l'image téléchargée, appliquer si nécessaire `sudo chown -R 1000:1000 data`.
+4. Vérifier que le DNS pointe vers le VPS et que les ports 80/443 sont accessibles.
+5. Valider la syntaxe sans démarrer : `docker compose --env-file .env -f docker-compose.preproduction.yml config --quiet`.
+6. Vérifier la disponibilité du tag d'image puis télécharger : `docker compose --env-file .env -f docker-compose.preproduction.yml pull`. Consigner le digest exact obtenu.
+7. Ne démarrer qu'après validation opérateur : `docker compose --env-file .env -f docker-compose.preproduction.yml up -d`.
+8. Contrôler `docker compose --env-file .env -f docker-compose.preproduction.yml ps`, les journaux et le healthcheck.
+9. Vérifier `https://<domaine>/healthz` (réponse attendue : `{"status":"ok"}`), le certificat TLS et le dashboard.
+10. Terminer l'onboarding du dashboard. Avec `REQUIRE_API_KEY=true`, créer le mot de passe ; si l'assistant demande un jeton bootstrap, le lire sur le VPS avec `docker logs adso-omniroute-preprod 2>&1 | grep BOOTSTRAP`.
+11. Créer ensuite un jeton API dédié à ADSO dans OmniRoute et vérifier qu'une requête sans jeton ou avec un jeton invalide est refusée.
 
-## Connexion ADSO — étape ultérieure, non incluse ici
+## Persistance et sauvegardes
 
-Après approbation des tests seulement, ajouter dans **l'environnement de préproduction ADSO** :
+Les bases SQLite, migrations, journaux d'audit et clés fournisseurs chiffrées sont conservés dans `./data`. Ne jamais supprimer ce dossier lors d'une mise à jour. Le service est prévu en instance unique : ne pas lancer plusieurs instances OmniRoute sur le même fichier SQLite. Mettre en place une sauvegarde chiffrée hors VPS et tester une restauration.
 
-- `OMNIROUTE_BASE_URL=https://omniroute-preprod.example.com` — origine HTTPS uniquement, sans suffixe `/v1`, car le code ADSO ajoute lui-même `/v1/chat/completions`.
-- `OMNIROUTE_API_KEY=<jeton dédié, secret de serveur>`
-- `OMNIROUTE_MODEL=auto`
+## Contrôles avant connexion ADSO
 
-Vérifier ces paramètres par un appel réel en préproduction avant toute utilisation. Ne jamais définir ces valeurs avec le préfixe `NEXT_PUBLIC_`. Ne pas modifier les variables de production, ne pas fusionner la PR de préparation et ne pas basculer de trafic avant validation écrite.
+- HTTPS valide et redirection HTTP/HTTPS correcte.
+- `/v1/models` et un appel de chat de test répondent avec le jeton dédié.
+- Sans jeton et avec jeton invalide : refus 401/403.
+- Aucun port applicatif ni Redis accessible depuis Internet.
+- Redémarrage sans perte des données.
+- Test des erreurs fournisseur, 429, 5xx, timeout, modèle indisponible et limites de dépense.
+- Aucune clé fournisseur dans le navigateur ou les journaux.
+- Mesure de latence, consommation et coûts.
 
-## Sources officielles
+## Connexion ADSO — ultérieure et uniquement en préproduction
 
-- Guide Docker OmniRoute : https://github.com/cheaper-inference/OmniRoute/blob/release/v3.8.53/docs/guides/DOCKER_GUIDE.md
-- Guide d'auto-hébergement : https://github.com/cheaper-inference/OmniRoute/blob/release/v3.8.53/docs/getting-started/SELF_HOST_GUIDE.md
-- Contrat des variables d'environnement : https://github.com/cheaper-inference/OmniRoute/blob/release/v3.8.53/.env.example
+Après validation des tests seulement, configurer dans l'environnement de préproduction ADSO :
+- `OMNIROUTE_BASE_URL=https://<domaine>` — origine seule, sans `/v1`, car ADSO ajoute le chemin `/v1/chat/completions`.
+- `OMNIROUTE_API_KEY=<jeton dédié>` — secret serveur uniquement.
+- `OMNIROUTE_MODEL=auto`.
+
+Ne jamais utiliser de préfixe `NEXT_PUBLIC_` pour un secret. Ne pas modifier les variables de production, fusionner cette PR ou basculer du trafic sans validation explicite.
+
+## Réserve sur le tag Docker
+
+La version source/documentation v3.8.52 est bien identifiée, mais la présence du tag Docker `diegosouzapw/omniroute:3.8.52` doit être confirmée par un `docker pull` depuis le VPS avant démarrage. Si le registre ne publie pas ce tag, ne pas remplacer silencieusement par `latest` ou `3.8.51` : arrêter et faire valider le tag exact correspondant au code v3.8.52.
+
+## Sources officielles consultées
+
+- Self-Host Guide v3.8.52 : https://github.com/wuxueeee/omniroute/blob/release/v3.8.52/docs/getting-started/SELF_HOST_GUIDE.md
+- `.env.selfhost.example` v3.8.52 : https://github.com/wuxueeee/omniroute/blob/release/v3.8.52/.env.selfhost.example
+- `docker-compose.selfhost.yml` v3.8.52 : https://github.com/wuxueeee/omniroute/blob/release/v3.8.52/docker-compose.selfhost.yml
