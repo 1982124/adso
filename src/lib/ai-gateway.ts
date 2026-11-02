@@ -117,7 +117,9 @@ async function callOpenAI(openAiKey: string, messages: ChatMessage[], options: A
 }
 
 export async function aiChat(request: NextRequest, messages: ChatMessage[], options: AiOptions = {}) {
-  const gatewayToken = process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN
+  // Vercel Functions inject the short-lived OIDC token into this request header.
+  // API keys and the environment token are fallbacks for local/CI runtimes.
+  const gatewayToken = request.headers.get('x-vercel-oidc-token') || process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN
   const failures: string[] = []
 
   // 1. OmniRoute: preferred ADSO multi-provider gateway when configured.
