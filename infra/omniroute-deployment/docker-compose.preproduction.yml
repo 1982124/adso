@@ -1,10 +1,10 @@
-# OmniRoute isolated preproduction only.
-# This stack is independent from ADSO's Vercel production deployment.
-# Pin OMNIROUTE_IMAGE_TAG to an exact published OmniRoute release before use.
+# OmniRoute v3.8.52 — préproduction isolée uniquement.
+# Aucun port applicatif ni Redis n'est publié sur l'hôte.
+# Seul Caddy expose HTTP/HTTPS ; ADSO production reste indépendant.
 
 services:
   redis:
-    image: redis:8.6.5-alpine
+    image: docker.io/library/redis:8.6.5-alpine
     container_name: adso-omniroute-preprod-redis
     restart: unless-stopped
     command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
@@ -14,26 +14,23 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 3
     networks:
       - omniroute-internal
-    # No host port: Redis is reachable only by containers on this network.
 
   omniroute:
-    image: diegosouzapw/omniroute:${OMNIROUTE_IMAGE_TAG:?Set OMNIROUTE_IMAGE_TAG to an exact stable release}
+    image: diegosouzapw/omniroute:${OMNIROUTE_IMAGE_TAG:?Set OMNIROUTE_IMAGE_TAG to 3.8.52}
     container_name: adso-omniroute-preprod
     restart: unless-stopped
     stop_grace_period: 40s
     env_file:
       - .env
     environment:
-      PORT: "20128"
       DATA_DIR: /app/data
       REDIS_URL: redis://redis:6379
-      REQUIRE_API_KEY: "true"
-      AUTH_COOKIE_SECURE: "true"
       NEXT_PUBLIC_BASE_URL: https://${OMNIROUTE_DOMAIN:?Set OMNIROUTE_DOMAIN}
       BASE_URL: http://omniroute:20128
+      REQUIRE_API_KEY: "true"
     volumes:
       - ./data:/app/data
     depends_on:
@@ -47,7 +44,7 @@ services:
       start_period: 30s
     networks:
       - omniroute-internal
-    # No host ports: only Caddy can reach the app.
+    # Pas de ports publiés : Caddy est le seul accès réseau entrant.
 
   caddy:
     image: caddy:2
